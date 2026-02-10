@@ -1,0 +1,371 @@
+// Prisma Schema for Headless CRM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model with authentication
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String?  // Nullable for OAuth-only users
+  firstName     String
+  lastName      String
+  avatar        String?
+  role          UserRole @default(USER)
+
+  // OAuth fields
+  googleId      String?  @unique
+  githubId      String?  @unique
+
+  // Tokens
+  refreshToken  String?
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations
+  organizations UserOrganization[]
+  activities    Activity[]
+  dealsOwned    Deal[]
+
+  @@index([email])
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  VIEWER
+}
+
+// Organization for multi-tenancy
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  domain      String?
+  logo        String?
+  settings    Json?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users       UserOrganization[]
+  contacts    Contact[]
+  companies   Company[]
+  deals       Deal[]
+  activities  Activity[]
+  tags        Tag[]
+
+  @@index([slug])
+  @@map("organizations")
+}
+
+// Junction table for User-Organization many-to-many
+model UserOrganization {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  role           OrgRole      @default(MEMBER)
+
+  createdAt      DateTime     @default(now())
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("user_organizations")
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+// Contact - Individual person
+model Contact {
+  id             String       @id @default(cuid())
+  organizationId String
+
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String?
+  mobile         String?
+  title          String?
+  avatar         String?
+
+  // Address
+  address        String?
+  city           String?
+  state          String?
+  postalCode     String?
+  country        String?
+
+  // Social
+  linkedIn       String?
+  twitter        String?
+
+  // Related company
+  companyId      String?
+
+  // Metadata
+  notes          String?
+  customFields   Json?
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  company        Company?     @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  deals          Deal[]
+  activities     Activity[]
+  tags           ContactTag[]
+
+  @@index([organizationId])
+  @@index([companyId])
+  @@index([email])
+  @@map("contacts")
+}
+
+// Company - Business organization
+model Company {
+  id             String       @id @default(cuid())
+  organizationId String
+
+  name           String
+  domain         String?
+  industry       String?
+  size           CompanySize?
+  logo           String?
+
+  // Contact info
+  email          String?
+  phone          String?
+  website        String?
+
+  // Address
+  address        String?
+  city           String?
+  state          String?
+  postalCode     String?
+  country        String?
+
+  // Social
+  linkedIn       String?
+  twitter        String?
+
+  // Metadata
+  description    String?
+  customFields   Json?
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contacts       Contact[]
+  deals          Deal[]
+  activities     Activity[]
+  tags           CompanyTag[]
+
+  @@index([organizationId])
+  @@index([domain])
+  @@map("companies")
+}
+
+enum CompanySize {
+  STARTUP
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+// Deal - Sales opportunity
+model Deal {
+  id             String       @id @default(cuid())
+  organizationId String
+
+  title          String
+  amount         Float?
+  currency       String       @default("USD")
+  stage          DealStage    @default(LEAD)
+  probability    Int?         // 0-100
+
+  // Relationships
+  contactId      String?
+  companyId      String?
+  ownerId        String?
+
+  // Dates
+  expectedCloseDate DateTime?
+  closedAt       DateTime?
+
+  // Metadata
+  description    String?
+  customFields   Json?
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact        Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  company        Company?     @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  owner          User?        @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  activities     Activity[]
+  tags           DealTag[]
+
+  @@index([organizationId])
+  @@index([contactId])
+  @@index([companyId])
+  @@index([ownerId])
+  @@index([stage])
+  @@map("deals")
+}
+
+enum DealStage {
+  LEAD
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+// Activity - Tasks, calls, meetings, notes
+model Activity {
+  id             String         @id @default(cuid())
+  organizationId String
+
+  type           ActivityType
+  title          String
+  description    String?
+
+  // Status
+  status         ActivityStatus @default(PENDING)
+  priority       Priority       @default(MEDIUM)
+
+  // Dates
+  dueDate        DateTime?
+  completedAt    DateTime?
+
+  // Relations
+  userId         String
+  contactId      String?
+  companyId      String?
+  dealId         String?
+
+  // Metadata
+  customFields   Json?
+
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // Relations
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contact        Contact?       @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  company        Company?       @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  deal           Deal?          @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([contactId])
+  @@index([companyId])
+  @@index([dealId])
+  @@index([type])
+  @@index([status])
+  @@map("activities")
+}
+
+enum ActivityType {
+  TASK
+  CALL
+  MEETING
+  EMAIL
+  NOTE
+}
+
+enum ActivityStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// Tag - Flexible categorization
+model Tag {
+  id             String       @id @default(cuid())
+  organizationId String
+
+  name           String
+  color          String?      // Hex color
+
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contacts       ContactTag[]
+  companies      CompanyTag[]
+  deals          DealTag[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("tags")
+}
+
+// Junction tables for tags
+model ContactTag {
+  contactId String
+  tagId     String
+
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, tagId])
+  @@map("contact_tags")
+}
+
+model CompanyTag {
+  companyId String
+  tagId     String
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([companyId, tagId])
+  @@map("company_tags")
+}
+
+model DealTag {
+  dealId    String
+  tagId     String
+
+  deal      Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  tag       Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([dealId, tagId])
+  @@map("deal_tags")
+}

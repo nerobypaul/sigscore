@@ -1,0 +1,102 @@
+import { Request, Response, NextFunction } from 'express';
+import * as activityService from '../services/activities';
+import { logger } from '../utils/logger';
+
+export const getActivities = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const organizationId = req.user?.organizationId;
+    if (!organizationId) {
+      return res.status(400).json({ error: 'Organization ID required' });
+    }
+
+    const filters = {
+      type: req.query.type as string,
+      status: req.query.status as string,
+      userId: req.query.userId as string,
+      contactId: req.query.contactId as string,
+      companyId: req.query.companyId as string,
+      dealId: req.query.dealId as string,
+      page: req.query.page ? parseInt(req.query.page as string) : undefined,
+      limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
+    };
+
+    const result = await activityService.getActivities(organizationId, filters);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getActivity = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const organizationId = req.user?.organizationId;
+
+    if (!organizationId) {
+      return res.status(400).json({ error: 'Organization ID required' });
+    }
+
+    const activity = await activityService.getActivityById(id, organizationId);
+    if (!activity) {
+      return res.status(404).json({ error: 'Activity not found' });
+    }
+
+    res.json(activity);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createActivity = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const organizationId = req.user?.organizationId;
+    const userId = req.user?.id;
+
+    if (!organizationId || !userId) {
+      return res.status(400).json({ error: 'Organization ID and User ID required' });
+    }
+
+    const activity = await activityService.createActivity(organizationId, userId, req.body);
+    logger.info(`Activity created: ${activity.id}`);
+
+    res.status(201).json(activity);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateActivity = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const organizationId = req.user?.organizationId;
+
+    if (!organizationId) {
+      return res.status(400).json({ error: 'Organization ID required' });
+    }
+
+    const activity = await activityService.updateActivity(id, organizationId, req.body);
+    logger.info(`Activity updated: ${activity.id}`);
+
+    res.json(activity);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteActivity = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const organizationId = req.user?.organizationId;
+
+    if (!organizationId) {
+      return res.status(400).json({ error: 'Organization ID required' });
+    }
+
+    await activityService.deleteActivity(id, organizationId);
+    logger.info(`Activity deleted: ${id}`);
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
