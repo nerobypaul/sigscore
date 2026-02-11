@@ -1,6 +1,5 @@
-import { PrismaClient, Prisma } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Prisma } from '@prisma/client';
+import { prisma } from '../config/database';
 
 export interface ActivityFilters {
   type?: string;
@@ -14,8 +13,9 @@ export interface ActivityFilters {
 }
 
 export const getActivities = async (organizationId: string, filters: ActivityFilters) => {
-  const { type, status, userId, contactId, companyId, dealId, page = 1, limit = 20 } = filters;
-  const skip = (page - 1) * limit;
+  const { type, status, userId, contactId, companyId, dealId, page = 1, limit } = filters;
+  const clampedLimit = Math.min(100, Math.max(1, limit ?? 20));
+  const skip = (page - 1) * clampedLimit;
 
   const where: Prisma.ActivityWhereInput = {
     organizationId,
@@ -31,7 +31,7 @@ export const getActivities = async (organizationId: string, filters: ActivityFil
     prisma.activity.findMany({
       where,
       skip,
-      take: limit,
+      take: clampedLimit,
       include: {
         user: {
           select: { id: true, firstName: true, lastName: true },
@@ -55,9 +55,9 @@ export const getActivities = async (organizationId: string, filters: ActivityFil
     activities,
     pagination: {
       page,
-      limit,
+      limit: clampedLimit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / clampedLimit),
     },
   };
 };
@@ -101,6 +101,8 @@ export const createActivity = async (organizationId: string, userId: string, dat
 };
 
 export const updateActivity = async (id: string, organizationId: string, data: Prisma.ActivityUpdateInput) => {
+  const existing = await prisma.activity.findFirst({ where: { id, organizationId } });
+  if (!existing) throw new Error('Activity not found');
   return prisma.activity.update({
     where: { id },
     data,
@@ -122,6 +124,8 @@ export const updateActivity = async (id: string, organizationId: string, data: P
 };
 
 export const deleteActivity = async (id: string, organizationId: string) => {
+  const existing = await prisma.activity.findFirst({ where: { id, organizationId } });
+  if (!existing) throw new Error('Activity not found');
   return prisma.activity.delete({
     where: { id },
   });

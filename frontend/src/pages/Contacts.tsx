@@ -2,9 +2,13 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import type { Contact, Pagination } from '../types';
+import Spinner from '../components/Spinner';
+import EmptyState from '../components/EmptyState';
+import { useToast } from '../components/Toast';
 
 export default function Contacts() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [search, setSearch] = useState('');
@@ -71,96 +75,108 @@ export default function Contacts() {
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left py-3 px-4 font-semibold text-gray-600">Name</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-600">Email</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-600">Title</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-600">Company</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-600">Created</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center text-gray-400">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto" />
-                  </td>
-                </tr>
-              ) : contacts.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center text-gray-400">
-                    {search ? 'No contacts match your search' : 'No contacts yet. Create your first one!'}
-                  </td>
-                </tr>
-              ) : (
-                contacts.map((contact) => (
-                  <tr
-                    key={contact.id}
-                    onClick={() => navigate(`/contacts/${contact.id}`)}
-                    className="hover:bg-gray-50 cursor-pointer transition-colors"
-                  >
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                          {contact.firstName?.[0]}
-                          {contact.lastName?.[0]}
-                        </div>
-                        <span className="font-medium text-gray-900">
-                          {contact.firstName} {contact.lastName}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">{contact.email || '--'}</td>
-                    <td className="py-3 px-4 text-gray-600">{contact.title || '--'}</td>
-                    <td className="py-3 px-4">
-                      {contact.company ? (
-                        <Link
-                          to={`/companies`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-indigo-600 hover:text-indigo-500"
-                        >
-                          {contact.company.name}
-                        </Link>
-                      ) : (
-                        <span className="text-gray-400">--</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-gray-500">
-                      {new Date(contact.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {pagination && pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50">
-            <p className="text-sm text-gray-600">
-              Page {pagination.page} of {pagination.totalPages}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setPage((p) => p + 1)}
-                disabled={page >= (pagination?.totalPages ?? 1)}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Spinner />
           </div>
+        ) : contacts.length === 0 ? (
+          search ? (
+            <div className="py-12 text-center text-gray-400 text-sm">
+              No contacts match your search
+            </div>
+          ) : (
+            <EmptyState
+              icon={
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+              }
+              title="No contacts yet"
+              description="Get started by adding your first contact to begin building your network."
+              actionLabel="Add Contact"
+              onAction={() => setShowCreate(true)}
+            />
+          )
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="text-left py-3 px-4 font-semibold text-gray-600">Name</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-600">Email</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-600">Title</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-600">Company</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-600">Created</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {contacts.map((contact) => (
+                    <tr
+                      key={contact.id}
+                      onClick={() => navigate(`/contacts/${contact.id}`)}
+                      className="hover:bg-gray-50 cursor-pointer transition-colors"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                            {contact.firstName?.[0]}
+                            {contact.lastName?.[0]}
+                          </div>
+                          <span className="font-medium text-gray-900">
+                            {contact.firstName} {contact.lastName}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-gray-600">{contact.email || '--'}</td>
+                      <td className="py-3 px-4 text-gray-600">{contact.title || '--'}</td>
+                      <td className="py-3 px-4">
+                        {contact.company ? (
+                          <Link
+                            to={`/companies`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-indigo-600 hover:text-indigo-500"
+                          >
+                            {contact.company.name}
+                          </Link>
+                        ) : (
+                          <span className="text-gray-400">--</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-gray-500">
+                        {new Date(contact.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {pagination && pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50">
+                <p className="text-sm text-gray-600">
+                  Page {pagination.page} of {pagination.totalPages}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={page >= (pagination?.totalPages ?? 1)}
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -171,6 +187,7 @@ export default function Contacts() {
           onCreated={() => {
             setShowCreate(false);
             fetchContacts();
+            toast.success('Contact created successfully');
           }}
         />
       )}
@@ -185,6 +202,7 @@ function CreateContactModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const toast = useToast();
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -213,7 +231,9 @@ function CreateContactModal({
       onCreated();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string } } };
-      setError(axiosErr.response?.data?.error || 'Failed to create contact');
+      const msg = axiosErr.response?.data?.error || 'Failed to create contact';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }

@@ -2,6 +2,17 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const isProduction = process.env.NODE_ENV === 'production';
+
+function requireEnv(name: string, fallback: string): string {
+  const value = process.env[name];
+  if (value) return value;
+  if (isProduction) {
+    throw new Error(`CRITICAL: ${name} must be set in production. Do not run with fallback secrets.`);
+  }
+  return fallback;
+}
+
 export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   env: process.env.NODE_ENV || 'development',
@@ -14,8 +25,8 @@ export const config = {
   },
 
   jwt: {
-    secret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
+    secret: requireEnv('JWT_SECRET', 'UNSAFE-DEV-SECRET-DO-NOT-USE-IN-PROD'),
+    refreshSecret: requireEnv('JWT_REFRESH_SECRET', 'UNSAFE-DEV-REFRESH-SECRET-DO-NOT-USE-IN-PROD'),
     expiresIn: process.env.JWT_EXPIRES_IN || '15m',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
@@ -35,6 +46,17 @@ export const config = {
 
   frontend: {
     url: process.env.FRONTEND_URL || 'http://localhost:5173',
+  },
+
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379', 10),
+    password: process.env.REDIS_PASSWORD || undefined,
+  },
+
+  anthropic: {
+    apiKey: process.env.ANTHROPIC_API_KEY || '',
+    model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929',
   },
 
   rateLimit: {

@@ -2,10 +2,14 @@ import { useEffect, useState, useCallback } from 'react';
 import api from '../lib/api';
 import type { Deal, DealStage } from '../types';
 import { DEAL_STAGES, STAGE_LABELS, STAGE_COLORS } from '../types';
+import Spinner from '../components/Spinner';
+import EmptyState from '../components/EmptyState';
+import { useToast } from '../components/Toast';
 
 type ViewMode = 'pipeline' | 'list';
 
 export default function Deals() {
+  const toast = useToast();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('pipeline');
@@ -42,7 +46,9 @@ export default function Deals() {
       setDeals((prev) =>
         prev.map((d) => (d.id === dealId ? { ...d, stage: newStage } : d))
       );
+      toast.success(`Deal moved to ${STAGE_LABELS[newStage]}`);
     } catch {
+      toast.error('Failed to update deal stage');
       // Revert on failure by refetching
       fetchDeals();
     }
@@ -51,7 +57,7 @@ export default function Deals() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+        <Spinner size="lg" />
       </div>
     );
   }
@@ -96,7 +102,21 @@ export default function Deals() {
         </div>
       </div>
 
-      {viewMode === 'pipeline' ? (
+      {deals.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1">
+          <EmptyState
+            icon={
+              <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            }
+            title="No deals yet"
+            description="Track your sales pipeline by creating your first deal."
+            actionLabel="Add Deal"
+            onAction={() => setShowCreate(true)}
+          />
+        </div>
+      ) : viewMode === 'pipeline' ? (
         <PipelineView dealsByStage={dealsByStage} onStageChange={handleStageChange} />
       ) : (
         <ListView deals={deals} />
@@ -108,6 +128,7 @@ export default function Deals() {
           onCreated={() => {
             setShowCreate(false);
             fetchDeals();
+            toast.success('Deal created successfully');
           }}
         />
       )}
@@ -278,42 +299,34 @@ function ListView({ deals }: { deals: Deal[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {deals.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-12 text-center text-gray-400">
-                  No deals yet
+            {deals.map((deal) => (
+              <tr key={deal.id} className="hover:bg-gray-50 transition-colors">
+                <td className="py-3 px-4 font-medium text-gray-900">{deal.title}</td>
+                <td className="py-3 px-4 text-gray-700">
+                  {deal.amount != null ? `$${deal.amount.toLocaleString()}` : '--'}
+                </td>
+                <td className="py-3 px-4">
+                  <span
+                    className={`text-xs font-medium px-2 py-1 rounded-full ${STAGE_COLORS[deal.stage]}`}
+                  >
+                    {STAGE_LABELS[deal.stage]}
+                  </span>
+                </td>
+                <td className="py-3 px-4 text-gray-600">
+                  {deal.contact
+                    ? `${deal.contact.firstName} ${deal.contact.lastName}`
+                    : '--'}
+                </td>
+                <td className="py-3 px-4 text-gray-600">
+                  {deal.company?.name || '--'}
+                </td>
+                <td className="py-3 px-4 text-gray-500">
+                  {deal.expectedCloseDate
+                    ? new Date(deal.expectedCloseDate).toLocaleDateString()
+                    : '--'}
                 </td>
               </tr>
-            ) : (
-              deals.map((deal) => (
-                <tr key={deal.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="py-3 px-4 font-medium text-gray-900">{deal.title}</td>
-                  <td className="py-3 px-4 text-gray-700">
-                    {deal.amount != null ? `$${deal.amount.toLocaleString()}` : '--'}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`text-xs font-medium px-2 py-1 rounded-full ${STAGE_COLORS[deal.stage]}`}
-                    >
-                      {STAGE_LABELS[deal.stage]}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-gray-600">
-                    {deal.contact
-                      ? `${deal.contact.firstName} ${deal.contact.lastName}`
-                      : '--'}
-                  </td>
-                  <td className="py-3 px-4 text-gray-600">
-                    {deal.company?.name || '--'}
-                  </td>
-                  <td className="py-3 px-4 text-gray-500">
-                    {deal.expectedCloseDate
-                      ? new Date(deal.expectedCloseDate).toLocaleDateString()
-                      : '--'}
-                  </td>
-                </tr>
-              ))
-            )}
+            ))}
           </tbody>
         </table>
       </div>
@@ -328,6 +341,7 @@ function CreateDealModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const toast = useToast();
   const [form, setForm] = useState({
     title: '',
     amount: '',
@@ -356,7 +370,9 @@ function CreateDealModal({
       onCreated();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string } } };
-      setError(axiosErr.response?.data?.error || 'Failed to create deal');
+      const msg = axiosErr.response?.data?.error || 'Failed to create deal';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }

@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../lib/api';
 import type { Company, Pagination } from '../types';
+import Spinner from '../components/Spinner';
+import EmptyState from '../components/EmptyState';
+import { useToast } from '../components/Toast';
 
 const SIZE_LABELS: Record<string, string> = {
   STARTUP: 'Startup',
@@ -11,6 +14,7 @@ const SIZE_LABELS: Record<string, string> = {
 };
 
 export default function Companies() {
+  const toast = useToast();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [search, setSearch] = useState('');
@@ -78,14 +82,28 @@ export default function Companies() {
       {/* Grid */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+          <Spinner />
         </div>
       ) : companies.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <p className="text-gray-400">
-            {search ? 'No companies match your search' : 'No companies yet. Create your first one!'}
-          </p>
-        </div>
+        search ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+            <p className="text-gray-400 text-sm">No companies match your search</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <EmptyState
+              icon={
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5M3.75 3v18m16.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                </svg>
+              }
+              title="No companies yet"
+              description="Start tracking the organizations you work with by adding your first company."
+              actionLabel="Add Company"
+              onAction={() => setShowCreate(true)}
+            />
+          </div>
+        )
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {companies.map((company) => (
@@ -126,6 +144,7 @@ export default function Companies() {
           onCreated={() => {
             setShowCreate(false);
             fetchCompanies();
+            toast.success('Company created successfully');
           }}
         />
       )}
@@ -174,6 +193,7 @@ function CreateCompanyModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const toast = useToast();
   const [form, setForm] = useState({
     name: '',
     domain: '',
@@ -202,7 +222,9 @@ function CreateCompanyModal({
       onCreated();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string } } };
-      setError(axiosErr.response?.data?.error || 'Failed to create company');
+      const msg = axiosErr.response?.data?.error || 'Failed to create company';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }

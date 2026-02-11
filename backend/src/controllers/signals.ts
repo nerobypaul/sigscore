@@ -4,12 +4,9 @@ import * as accountScoreService from '../services/account-scores';
 import * as webhookService from '../services/webhooks';
 import { logger } from '../utils/logger';
 
-export const ingestSignal = async (req: Request, res: Response, next: NextFunction) => {
+export const ingestSignal = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = req.organizationId;
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const signal = await signalService.ingestSignal(organizationId, req.body);
     logger.info(`Signal ingested: ${signal.id} (${signal.type})`);
@@ -35,16 +32,14 @@ export const ingestSignal = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const ingestSignalBatch = async (req: Request, res: Response, next: NextFunction) => {
+export const ingestSignalBatch = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = req.organizationId;
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const { signals } = req.body;
     if (!Array.isArray(signals)) {
-      return res.status(400).json({ error: 'signals must be an array' });
+      res.status(400).json({ error: 'signals must be an array' });
+      return;
     }
 
     const results = await signalService.ingestSignalBatch(organizationId, signals);
@@ -62,12 +57,9 @@ export const ingestSignalBatch = async (req: Request, res: Response, next: NextF
   }
 };
 
-export const getSignals = async (req: Request, res: Response, next: NextFunction) => {
+export const getSignals = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = req.organizationId;
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const filters = {
       type: req.query.type as string,
@@ -87,13 +79,9 @@ export const getSignals = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const getAccountSignals = async (req: Request, res: Response, next: NextFunction) => {
+export const getAccountSignals = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = req.organizationId;
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
-
+    const organizationId = req.organizationId!;
     const { accountId } = req.params;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
 
@@ -104,13 +92,9 @@ export const getAccountSignals = async (req: Request, res: Response, next: NextF
   }
 };
 
-export const getAccountTimeline = async (req: Request, res: Response, next: NextFunction) => {
+export const getAccountTimeline = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = req.organizationId;
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
-
+    const organizationId = req.organizationId!;
     const { accountId } = req.params;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
 
@@ -121,18 +105,15 @@ export const getAccountTimeline = async (req: Request, res: Response, next: Next
   }
 };
 
-export const getAccountScore = async (req: Request, res: Response, next: NextFunction) => {
+export const getAccountScore = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = req.organizationId;
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
-
+    const organizationId = req.organizationId!;
     const { accountId } = req.params;
     const score = await accountScoreService.getAccountScore(organizationId, accountId);
 
     if (!score) {
-      return res.status(404).json({ error: 'No score computed for this account yet' });
+      res.status(404).json({ error: 'No score computed for this account yet' });
+      return;
     }
 
     res.json(score);
@@ -141,13 +122,9 @@ export const getAccountScore = async (req: Request, res: Response, next: NextFun
   }
 };
 
-export const computeAccountScore = async (req: Request, res: Response, next: NextFunction) => {
+export const computeAccountScore = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = req.organizationId;
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
-
+    const organizationId = req.organizationId!;
     const { accountId } = req.params;
     const score = await accountScoreService.computeAccountScore(organizationId, accountId);
 
@@ -158,12 +135,9 @@ export const computeAccountScore = async (req: Request, res: Response, next: Nex
   }
 };
 
-export const getTopAccounts = async (req: Request, res: Response, next: NextFunction) => {
+export const getTopAccounts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = req.organizationId;
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
     const tier = req.query.tier as string | undefined;

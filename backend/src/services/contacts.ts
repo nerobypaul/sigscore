@@ -1,6 +1,5 @@
-import { PrismaClient, Prisma } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Prisma } from '@prisma/client';
+import { prisma } from '../config/database';
 
 export interface ContactFilters {
   search?: string;
@@ -10,8 +9,9 @@ export interface ContactFilters {
 }
 
 export const getContacts = async (organizationId: string, filters: ContactFilters) => {
-  const { search, companyId, page = 1, limit = 20 } = filters;
-  const skip = (page - 1) * limit;
+  const { search, companyId, page = 1, limit } = filters;
+  const clampedLimit = Math.min(100, Math.max(1, limit ?? 20));
+  const skip = (page - 1) * clampedLimit;
 
   const where: Prisma.ContactWhereInput = {
     organizationId,
@@ -29,7 +29,7 @@ export const getContacts = async (organizationId: string, filters: ContactFilter
     prisma.contact.findMany({
       where,
       skip,
-      take: limit,
+      take: clampedLimit,
       include: {
         company: {
           select: { id: true, name: true },
@@ -47,9 +47,9 @@ export const getContacts = async (organizationId: string, filters: ContactFilter
     contacts,
     pagination: {
       page,
-      limit,
+      limit: clampedLimit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / clampedLimit),
     },
   };
 };
@@ -87,6 +87,8 @@ export const createContact = async (organizationId: string, data: Prisma.Contact
 };
 
 export const updateContact = async (id: string, organizationId: string, data: Prisma.ContactUpdateInput) => {
+  const existing = await prisma.contact.findFirst({ where: { id, organizationId } });
+  if (!existing) throw new Error('Contact not found');
   return prisma.contact.update({
     where: { id },
     data,
@@ -100,6 +102,8 @@ export const updateContact = async (id: string, organizationId: string, data: Pr
 };
 
 export const deleteContact = async (id: string, organizationId: string) => {
+  const existing = await prisma.contact.findFirst({ where: { id, organizationId } });
+  if (!existing) throw new Error('Contact not found');
   return prisma.contact.delete({
     where: { id },
   });

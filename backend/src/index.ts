@@ -28,17 +28,30 @@ app.use(cors({
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: 'Too many requests from this IP, please try again later.'
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.max,
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use('/api/', limiter);
+
+// Stricter rate limiter for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  message: 'Too many authentication attempts, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/v1/auth/login', authLimiter);
+app.use('/api/v1/auth/register', authLimiter);
 
 // Higher rate limit for signal ingest (needs to handle high throughput)
 const signalLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 500,
-  message: 'Signal ingest rate limit exceeded.'
+  message: 'Signal ingest rate limit exceeded.',
 });
 app.use('/api/v1/signals', signalLimiter);
 

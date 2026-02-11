@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import type { Contact } from '../types';
+import Spinner from '../components/Spinner';
+import { useToast } from '../components/Toast';
 
 export default function ContactDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const toast = useToast();
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -24,8 +27,10 @@ export default function ContactDetail() {
     if (!confirm('Are you sure you want to delete this contact?')) return;
     try {
       await api.delete(`/contacts/${id}`);
+      toast.success('Contact deleted successfully');
       navigate('/contacts');
     } catch {
+      toast.error('Failed to delete contact');
       setError('Failed to delete contact');
     }
   };
@@ -33,7 +38,7 @@ export default function ContactDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+        <Spinner size="lg" />
       </div>
     );
   }

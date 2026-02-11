@@ -2,12 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import * as companyService from '../services/companies';
 import { logger } from '../utils/logger';
 
-export const getCompanies = async (req: Request, res: Response, next: NextFunction) => {
+export const getCompanies = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = req.user?.organizationId;
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const filters = {
       search: req.query.search as string,
@@ -23,18 +20,15 @@ export const getCompanies = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const getCompany = async (req: Request, res: Response, next: NextFunction) => {
+export const getCompany = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
-    const organizationId = req.user?.organizationId;
-
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const company = await companyService.getCompanyById(id, organizationId);
     if (!company) {
-      return res.status(404).json({ error: 'Company not found' });
+      res.status(404).json({ error: 'Company not found' });
+      return;
     }
 
     res.json(company);
@@ -43,12 +37,9 @@ export const getCompany = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const createCompany = async (req: Request, res: Response, next: NextFunction) => {
+export const createCompany = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = req.user?.organizationId;
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const company = await companyService.createCompany(organizationId, req.body);
     logger.info(`Company created: ${company.id}`);
@@ -59,14 +50,10 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const updateCompany = async (req: Request, res: Response, next: NextFunction) => {
+export const updateCompany = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
-    const organizationId = req.user?.organizationId;
-
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const company = await companyService.updateCompany(id, organizationId, req.body);
     logger.info(`Company updated: ${company.id}`);
@@ -77,14 +64,10 @@ export const updateCompany = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const deleteCompany = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteCompany = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
-    const organizationId = req.user?.organizationId;
-
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     await companyService.deleteCompany(id, organizationId);
     logger.info(`Company deleted: ${id}`);

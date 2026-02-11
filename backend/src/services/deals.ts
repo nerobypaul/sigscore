@@ -1,6 +1,5 @@
-import { PrismaClient, Prisma } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Prisma } from '@prisma/client';
+import { prisma } from '../config/database';
 
 export interface DealFilters {
   stage?: string;
@@ -11,8 +10,9 @@ export interface DealFilters {
 }
 
 export const getDeals = async (organizationId: string, filters: DealFilters) => {
-  const { stage, ownerId, companyId, page = 1, limit = 20 } = filters;
-  const skip = (page - 1) * limit;
+  const { stage, ownerId, companyId, page = 1, limit } = filters;
+  const clampedLimit = Math.min(100, Math.max(1, limit ?? 20));
+  const skip = (page - 1) * clampedLimit;
 
   const where: Prisma.DealWhereInput = {
     organizationId,
@@ -25,7 +25,7 @@ export const getDeals = async (organizationId: string, filters: DealFilters) => 
     prisma.deal.findMany({
       where,
       skip,
-      take: limit,
+      take: clampedLimit,
       include: {
         contact: {
           select: { id: true, firstName: true, lastName: true },
@@ -49,9 +49,9 @@ export const getDeals = async (organizationId: string, filters: DealFilters) => 
     deals,
     pagination: {
       page,
-      limit,
+      limit: clampedLimit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / clampedLimit),
     },
   };
 };
@@ -100,6 +100,8 @@ export const createDeal = async (organizationId: string, data: Prisma.DealCreate
 };
 
 export const updateDeal = async (id: string, organizationId: string, data: Prisma.DealUpdateInput) => {
+  const existing = await prisma.deal.findFirst({ where: { id, organizationId } });
+  if (!existing) throw new Error('Deal not found');
   return prisma.deal.update({
     where: { id },
     data,
@@ -117,6 +119,8 @@ export const updateDeal = async (id: string, organizationId: string, data: Prism
 };
 
 export const deleteDeal = async (id: string, organizationId: string) => {
+  const existing = await prisma.deal.findFirst({ where: { id, organizationId } });
+  if (!existing) throw new Error('Deal not found');
   return prisma.deal.delete({
     where: { id },
   });

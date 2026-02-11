@@ -67,6 +67,8 @@ model Organization {
   accountScores      AccountScore[]
   customObjectSchemas CustomObjectSchema[]
   webhookEndpoints   WebhookEndpoint[]
+  accountBriefs      AccountBrief[]
+  apiKeys            ApiKey[]
 
   @@index([slug])
   @@map("organizations")
@@ -181,6 +183,7 @@ model Company {
   tags           CompanyTag[]
   signals        Signal[]
   score          AccountScore?
+  briefs         AccountBrief[]
 
   @@index([organizationId])
   @@index([domain])
@@ -543,6 +546,55 @@ model CustomObjectRecord {
 
   @@index([schemaId, organizationId])
   @@map("custom_object_records")
+}
+
+// ============================================================
+// AI BRIEFS — Cached AI-generated account intelligence
+// ============================================================
+
+model AccountBrief {
+  id             String   @id @default(cuid())
+  organizationId String
+  accountId      String
+  content        String   // markdown brief
+  generatedAt    DateTime
+  validUntil     DateTime // cache expiry
+  promptTokens   Int?
+  outputTokens   Int?
+
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  account        Company      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, generatedAt(sort: Desc)])
+  @@index([organizationId])
+  @@map("account_briefs")
+}
+
+// ============================================================
+// API KEYS — External API authentication
+// ============================================================
+
+model ApiKey {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  keyHash        String   @unique // SHA-256 hash of the actual key
+  keyPrefix      String   // first 8 chars for identification (ds_live_xxxx...)
+  scopes         String[] // e.g. ["signals:write", "accounts:read"]
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  active         Boolean  @default(true)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([keyHash])
+  @@map("api_keys")
 }
 
 // ============================================================

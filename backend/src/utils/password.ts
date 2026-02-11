@@ -12,3 +12,6 @@ export const comparePassword = async (
 ): Promise<boolean> => {
   return bcrypt.compare(password, hash);
 };
+
+// Alias for backward compatibility
+export const verifyPassword = comparePassword;

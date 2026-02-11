@@ -2,12 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import * as activityService from '../services/activities';
 import { logger } from '../utils/logger';
 
-export const getActivities = async (req: Request, res: Response, next: NextFunction) => {
+export const getActivities = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = req.user?.organizationId;
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const filters = {
       type: req.query.type as string,
@@ -27,18 +24,15 @@ export const getActivities = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const getActivity = async (req: Request, res: Response, next: NextFunction) => {
+export const getActivity = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
-    const organizationId = req.user?.organizationId;
-
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const activity = await activityService.getActivityById(id, organizationId);
     if (!activity) {
-      return res.status(404).json({ error: 'Activity not found' });
+      res.status(404).json({ error: 'Activity not found' });
+      return;
     }
 
     res.json(activity);
@@ -47,14 +41,10 @@ export const getActivity = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-export const createActivity = async (req: Request, res: Response, next: NextFunction) => {
+export const createActivity = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = req.user?.organizationId;
-    const userId = req.user?.id;
-
-    if (!organizationId || !userId) {
-      return res.status(400).json({ error: 'Organization ID and User ID required' });
-    }
+    const organizationId = req.organizationId!;
+    const userId = req.user!.id;
 
     const activity = await activityService.createActivity(organizationId, userId, req.body);
     logger.info(`Activity created: ${activity.id}`);
@@ -65,14 +55,10 @@ export const createActivity = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-export const updateActivity = async (req: Request, res: Response, next: NextFunction) => {
+export const updateActivity = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
-    const organizationId = req.user?.organizationId;
-
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const activity = await activityService.updateActivity(id, organizationId, req.body);
     logger.info(`Activity updated: ${activity.id}`);
@@ -83,14 +69,10 @@ export const updateActivity = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-export const deleteActivity = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteActivity = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
-    const organizationId = req.user?.organizationId;
-
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     await activityService.deleteActivity(id, organizationId);
     logger.info(`Activity deleted: ${id}`);

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import type { Contact, Deal, Activity } from '../types';
 import { STAGE_LABELS, STAGE_COLORS } from '../types';
+import Spinner from '../components/Spinner';
 
 interface DashboardStats {
   contacts: { total: number; recent: Contact[] };
@@ -69,7 +70,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+        <Spinner size="lg" />
       </div>
     );
   }

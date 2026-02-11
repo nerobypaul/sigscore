@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../lib/api';
 import type { Activity, ActivityType, ActivityStatus, ActivityPriority, Pagination } from '../types';
+import Spinner from '../components/Spinner';
+import EmptyState from '../components/EmptyState';
+import { useToast } from '../components/Toast';
 
 const TYPE_COLORS: Record<string, string> = {
   TASK: 'bg-blue-100 text-blue-700',
@@ -25,6 +28,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 export default function Activities() {
+  const toast = useToast();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [page, setPage] = useState(1);
@@ -111,13 +115,27 @@ export default function Activities() {
       {/* Activities list */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+          <div className="flex items-center justify-center py-16">
+            <Spinner />
           </div>
         ) : activities.length === 0 ? (
-          <div className="py-12 text-center text-gray-400">
-            No activities yet
-          </div>
+          (filterType || filterStatus) ? (
+            <div className="py-12 text-center text-gray-400 text-sm">
+              No activities match your filters
+            </div>
+          ) : (
+            <EmptyState
+              icon={
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                </svg>
+              }
+              title="No activities yet"
+              description="Keep track of tasks, calls, meetings, and notes by creating your first activity."
+              actionLabel="Add Activity"
+              onAction={() => setShowCreate(true)}
+            />
+          )
         ) : (
           <div className="divide-y divide-gray-100">
             {activities.map((activity) => (
@@ -158,6 +176,7 @@ export default function Activities() {
           onCreated={() => {
             setShowCreate(false);
             fetchActivities();
+            toast.success('Activity created successfully');
           }}
         />
       )}
@@ -172,6 +191,8 @@ function ActivityRow({
   activity: Activity;
   onUpdate: () => void;
 }) {
+  const toast = useToast();
+
   const handleToggleComplete = async () => {
     const newStatus = activity.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED';
     try {
@@ -180,8 +201,11 @@ function ActivityRow({
         completedAt: newStatus === 'COMPLETED' ? new Date().toISOString() : undefined,
       });
       onUpdate();
+      toast.success(
+        newStatus === 'COMPLETED' ? 'Activity marked as completed' : 'Activity reopened'
+      );
     } catch {
-      // Silently fail
+      toast.error('Failed to update activity');
     }
   };
 
@@ -257,6 +281,7 @@ function CreateActivityModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const toast = useToast();
   const [form, setForm] = useState({
     type: 'TASK' as ActivityType,
     title: '',
@@ -285,7 +310,9 @@ function CreateActivityModal({
       onCreated();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string } } };
-      setError(axiosErr.response?.data?.error || 'Failed to create activity');
+      const msg = axiosErr.response?.data?.error || 'Failed to create activity';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }

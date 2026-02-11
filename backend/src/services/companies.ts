@@ -1,6 +1,5 @@
-import { PrismaClient, Prisma } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Prisma } from '@prisma/client';
+import { prisma } from '../config/database';
 
 export interface CompanyFilters {
   search?: string;
@@ -10,8 +9,9 @@ export interface CompanyFilters {
 }
 
 export const getCompanies = async (organizationId: string, filters: CompanyFilters) => {
-  const { search, industry, page = 1, limit = 20 } = filters;
-  const skip = (page - 1) * limit;
+  const { search, industry, page = 1, limit } = filters;
+  const clampedLimit = Math.min(100, Math.max(1, limit ?? 20));
+  const skip = (page - 1) * clampedLimit;
 
   const where: Prisma.CompanyWhereInput = {
     organizationId,
@@ -28,7 +28,7 @@ export const getCompanies = async (organizationId: string, filters: CompanyFilte
     prisma.company.findMany({
       where,
       skip,
-      take: limit,
+      take: clampedLimit,
       include: {
         _count: {
           select: { contacts: true, deals: true },
@@ -46,9 +46,9 @@ export const getCompanies = async (organizationId: string, filters: CompanyFilte
     companies,
     pagination: {
       page,
-      limit,
+      limit: clampedLimit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / clampedLimit),
     },
   };
 };
@@ -89,6 +89,8 @@ export const createCompany = async (organizationId: string, data: Prisma.Company
 };
 
 export const updateCompany = async (id: string, organizationId: string, data: Prisma.CompanyUpdateInput) => {
+  const existing = await prisma.company.findFirst({ where: { id, organizationId } });
+  if (!existing) throw new Error('Company not found');
   return prisma.company.update({
     where: { id },
     data,
@@ -101,6 +103,8 @@ export const updateCompany = async (id: string, organizationId: string, data: Pr
 };
 
 export const deleteCompany = async (id: string, organizationId: string) => {
+  const existing = await prisma.company.findFirst({ where: { id, organizationId } });
+  if (!existing) throw new Error('Company not found');
   return prisma.company.delete({
     where: { id },
   });

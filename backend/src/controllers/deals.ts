@@ -2,12 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import * as dealService from '../services/deals';
 import { logger } from '../utils/logger';
 
-export const getDeals = async (req: Request, res: Response, next: NextFunction) => {
+export const getDeals = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = req.user?.organizationId;
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const filters = {
       stage: req.query.stage as string,
@@ -24,18 +21,15 @@ export const getDeals = async (req: Request, res: Response, next: NextFunction) 
   }
 };
 
-export const getDeal = async (req: Request, res: Response, next: NextFunction) => {
+export const getDeal = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
-    const organizationId = req.user?.organizationId;
-
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const deal = await dealService.getDealById(id, organizationId);
     if (!deal) {
-      return res.status(404).json({ error: 'Deal not found' });
+      res.status(404).json({ error: 'Deal not found' });
+      return;
     }
 
     res.json(deal);
@@ -44,12 +38,9 @@ export const getDeal = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
-export const createDeal = async (req: Request, res: Response, next: NextFunction) => {
+export const createDeal = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = req.user?.organizationId;
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const deal = await dealService.createDeal(organizationId, req.body);
     logger.info(`Deal created: ${deal.id}`);
@@ -60,14 +51,10 @@ export const createDeal = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const updateDeal = async (req: Request, res: Response, next: NextFunction) => {
+export const updateDeal = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
-    const organizationId = req.user?.organizationId;
-
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     const deal = await dealService.updateDeal(id, organizationId, req.body);
     logger.info(`Deal updated: ${deal.id}`);
@@ -78,14 +65,10 @@ export const updateDeal = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const deleteDeal = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteDeal = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
-    const organizationId = req.user?.organizationId;
-
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID required' });
-    }
+    const organizationId = req.organizationId!;
 
     await dealService.deleteDeal(id, organizationId);
     logger.info(`Deal deleted: ${id}`);

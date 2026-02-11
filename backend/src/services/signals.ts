@@ -83,8 +83,9 @@ export const ingestSignalBatch = async (organizationId: string, signals: SignalI
 };
 
 export const getSignals = async (organizationId: string, filters: SignalFilters) => {
-  const { type, sourceId, accountId, actorId, from, to, page = 1, limit = 50 } = filters;
-  const skip = (page - 1) * limit;
+  const { type, sourceId, accountId, actorId, from, to, page = 1, limit } = filters;
+  const clampedLimit = Math.min(100, Math.max(1, limit ?? 50));
+  const skip = (page - 1) * clampedLimit;
 
   const where: Prisma.SignalWhereInput = {
     organizationId,
@@ -104,7 +105,7 @@ export const getSignals = async (organizationId: string, filters: SignalFilters)
     prisma.signal.findMany({
       where,
       skip,
-      take: limit,
+      take: clampedLimit,
       include: {
         source: { select: { id: true, name: true, type: true } },
         actor: { select: { id: true, firstName: true, lastName: true, email: true } },
@@ -117,7 +118,7 @@ export const getSignals = async (organizationId: string, filters: SignalFilters)
 
   return {
     signals,
-    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    pagination: { page, limit: clampedLimit, total, totalPages: Math.ceil(total / clampedLimit) },
   };
 };
 

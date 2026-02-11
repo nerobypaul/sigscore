@@ -3,6 +3,8 @@
 You are being run by **Nero**, an AI assistant (OpenClaw bot) on a remote VPS.
 Paul (the owner) sends instructions via Telegram → Nero delegates coding tasks to you.
 
+/Users/paulnispel/headless-crm/claude-flow-md is to be used!!
+
 ## Your role
 
 - Execute the task fully. Write code, create files, fix bugs — whatever is needed.
@@ -45,3 +47,9 @@ After completing your work, **always** update the changelog:
 - Keep commits atomic and well-described
 - If the task is large, commit in logical chunks (but always update the changelog at the end)
 
+
+
+WE USE /Users/paulnispel/headless-crm/claude-flow-md 
+
+
+!!!!

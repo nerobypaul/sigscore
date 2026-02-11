@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { getDeals, getDeal, createDeal, updateDeal, deleteDeal } from '../controllers/deals';
-import { authenticate } from '../middleware/auth';
+import { authenticate, requireOrganization } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
 
 const router = Router();
 
-// All routes require authentication
+// All routes require authentication + organization context
 router.use(authenticate);
+router.use(requireOrganization);
 
 // Validation schemas
 // PLG-native pipeline stages
