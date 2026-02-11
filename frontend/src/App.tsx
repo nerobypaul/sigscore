@@ -1,21 +1,68 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './lib/auth';
+import Layout from './components/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Contacts from './pages/Contacts';
+import ContactDetail from './pages/ContactDetail';
+import Companies from './pages/Companies';
+import Deals from './pages/Deals';
+import Activities from './pages/Activities';
+
+function AppRoutes() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route
+        path="/login"
+        element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
+      />
+      <Route
+        path="/register"
+        element={isAuthenticated ? <Navigate to="/" replace /> : <Register />}
+      />
+
+      {/* Protected routes */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/contacts" element={<Contacts />} />
+        <Route path="/contacts/:id" element={<ContactDetail />} />
+        <Route path="/companies" element={<Companies />} />
+        <Route path="/deals" element={<Deals />} />
+        <Route path="/activities" element={<Activities />} />
+      </Route>
+
+      {/* Catch all */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 function App() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
-          Headless CRM
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Admin UI - Frontend scaffolding is ready.
-        </p>
-        <div className="space-y-2 text-sm text-gray-500">
-          <p>✓ Backend API implemented</p>
-          <p>✓ Database schema defined</p>
-          <p>✓ Docker setup configured</p>
-          <p>⏳ Frontend pages to be built</p>
-        </div>
-      </div>
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
