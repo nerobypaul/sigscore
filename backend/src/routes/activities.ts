@@ -11,32 +11,28 @@ router.use(authenticate);
 
 // Validation schemas
 const createActivitySchema = z.object({
-  body: z.object({
-    type: z.enum(['TASK', 'CALL', 'MEETING', 'EMAIL', 'NOTE']),
-    title: z.string().min(1),
-    description: z.string().optional(),
-    status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).default('PENDING'),
-    priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
-    dueDate: z.string().datetime().optional(),
-    contactId: z.string().optional(),
-    companyId: z.string().optional(),
-    dealId: z.string().optional(),
-  }),
+  type: z.enum(['TASK', 'CALL', 'MEETING', 'EMAIL', 'NOTE']),
+  title: z.string().min(1),
+  description: z.string().optional(),
+  status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).default('PENDING'),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
+  dueDate: z.string().datetime().optional(),
+  contactId: z.string().optional(),
+  companyId: z.string().optional(),
+  dealId: z.string().optional(),
 });
 
 const updateActivitySchema = z.object({
-  body: z.object({
-    type: z.enum(['TASK', 'CALL', 'MEETING', 'EMAIL', 'NOTE']).optional(),
-    title: z.string().min(1).optional(),
-    description: z.string().optional(),
-    status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
-    priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
-    dueDate: z.string().datetime().optional(),
-    completedAt: z.string().datetime().optional(),
-    contactId: z.string().optional(),
-    companyId: z.string().optional(),
-    dealId: z.string().optional(),
-  }),
+  type: z.enum(['TASK', 'CALL', 'MEETING', 'EMAIL', 'NOTE']).optional(),
+  title: z.string().min(1).optional(),
+  description: z.string().optional(),
+  status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
+  dueDate: z.string().datetime().optional(),
+  completedAt: z.string().datetime().optional(),
+  contactId: z.string().optional(),
+  companyId: z.string().optional(),
+  dealId: z.string().optional(),
 });
 
 // Routes

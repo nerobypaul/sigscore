@@ -1,4 +1,4 @@
-// Prisma Schema for Headless CRM
+// Prisma Schema for DevSignal — AI-First Headless CRM for DevTool Companies
 
 generator client {
   provider = "prisma-client-js"
@@ -9,29 +9,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model with authentication
+// ============================================================
+// AUTH & TENANCY
+// ============================================================
+
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
-  password      String?  // Nullable for OAuth-only users
+  password      String?
   firstName     String
   lastName      String
   avatar        String?
   role          UserRole @default(USER)
 
-  // OAuth fields
   googleId      String?  @unique
   githubId      String?  @unique
 
-  // Tokens
   refreshToken  String?
 
-  // Timestamps
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   lastLoginAt   DateTime?
 
-  // Relations
   organizations UserOrganization[]
   activities    Activity[]
   dealsOwned    Deal[]
@@ -46,7 +45,6 @@ enum UserRole {
   VIEWER
 }
 
-// Organization for multi-tenancy
 model Organization {
   id          String   @id @default(cuid())
   name        String
@@ -58,19 +56,22 @@ model Organization {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
-  users       UserOrganization[]
-  contacts    Contact[]
-  companies   Company[]
-  deals       Deal[]
-  activities  Activity[]
-  tags        Tag[]
+  users              UserOrganization[]
+  contacts           Contact[]
+  companies          Company[]
+  deals              Deal[]
+  activities         Activity[]
+  tags               Tag[]
+  signalSources      SignalSource[]
+  signals            Signal[]
+  accountScores      AccountScore[]
+  customObjectSchemas CustomObjectSchema[]
+  webhookEndpoints   WebhookEndpoint[]
 
   @@index([slug])
   @@map("organizations")
 }
 
-// Junction table for User-Organization many-to-many
 model UserOrganization {
   id             String       @id @default(cuid())
   userId         String
@@ -95,7 +96,10 @@ enum OrgRole {
   VIEWER
 }
 
-// Contact - Individual person
+// ============================================================
+// CORE CRM OBJECTS
+// ============================================================
+
 model Contact {
   id             String       @id @default(cuid())
   organizationId String
@@ -108,33 +112,31 @@ model Contact {
   title          String?
   avatar         String?
 
-  // Address
   address        String?
   city           String?
   state          String?
   postalCode     String?
   country        String?
 
-  // Social
   linkedIn       String?
   twitter        String?
+  github         String?
 
-  // Related company
   companyId      String?
 
-  // Metadata
   notes          String?
   customFields   Json?
 
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  // Relations
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   company        Company?     @relation(fields: [companyId], references: [id], onDelete: SetNull)
   deals          Deal[]
   activities     Activity[]
   tags           ContactTag[]
+  identities     ContactIdentity[]
+  signals        Signal[]
 
   @@index([organizationId])
   @@index([companyId])
@@ -142,7 +144,6 @@ model Contact {
   @@map("contacts")
 }
 
-// Company - Business organization
 model Company {
   id             String       @id @default(cuid())
   organizationId String
@@ -153,35 +154,33 @@ model Company {
   size           CompanySize?
   logo           String?
 
-  // Contact info
   email          String?
   phone          String?
   website        String?
 
-  // Address
   address        String?
   city           String?
   state          String?
   postalCode     String?
   country        String?
 
-  // Social
   linkedIn       String?
   twitter        String?
+  githubOrg      String?
 
-  // Metadata
   description    String?
   customFields   Json?
 
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  // Relations
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   contacts       Contact[]
   deals          Deal[]
   activities     Activity[]
   tags           CompanyTag[]
+  signals        Signal[]
+  score          AccountScore?
 
   @@index([organizationId])
   @@index([domain])
@@ -196,7 +195,6 @@ enum CompanySize {
   ENTERPRISE
 }
 
-// Deal - Sales opportunity
 model Deal {
   id             String       @id @default(cuid())
   organizationId String
@@ -204,26 +202,22 @@ model Deal {
   title          String
   amount         Float?
   currency       String       @default("USD")
-  stage          DealStage    @default(LEAD)
-  probability    Int?         // 0-100
+  stage          DealStage    @default(ANONYMOUS_USAGE)
+  probability    Int?
 
-  // Relationships
   contactId      String?
   companyId      String?
   ownerId        String?
 
-  // Dates
   expectedCloseDate DateTime?
   closedAt       DateTime?
 
-  // Metadata
   description    String?
   customFields   Json?
 
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  // Relations
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   contact        Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
   company        Company?     @relation(fields: [companyId], references: [id], onDelete: SetNull)
@@ -239,16 +233,19 @@ model Deal {
   @@map("deals")
 }
 
+// PLG-native pipeline stages
 enum DealStage {
-  LEAD
-  QUALIFIED
-  PROPOSAL
+  ANONYMOUS_USAGE
+  IDENTIFIED
+  ACTIVATED
+  TEAM_ADOPTION
+  EXPANSION_SIGNAL
+  SALES_QUALIFIED
   NEGOTIATION
   CLOSED_WON
   CLOSED_LOST
 }
 
-// Activity - Tasks, calls, meetings, notes
 model Activity {
   id             String         @id @default(cuid())
   organizationId String
@@ -257,27 +254,22 @@ model Activity {
   title          String
   description    String?
 
-  // Status
   status         ActivityStatus @default(PENDING)
   priority       Priority       @default(MEDIUM)
 
-  // Dates
   dueDate        DateTime?
   completedAt    DateTime?
 
-  // Relations
   userId         String
   contactId      String?
   companyId      String?
   dealId         String?
 
-  // Metadata
   customFields   Json?
 
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  // Relations
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   contact        Contact?       @relation(fields: [contactId], references: [id], onDelete: SetNull)
@@ -316,13 +308,16 @@ enum Priority {
   URGENT
 }
 
-// Tag - Flexible categorization
+// ============================================================
+// TAGS
+// ============================================================
+
 model Tag {
   id             String       @id @default(cuid())
   organizationId String
 
   name           String
-  color          String?      // Hex color
+  color          String?
 
   createdAt      DateTime     @default(now())
 
@@ -336,7 +331,6 @@ model Tag {
   @@map("tags")
 }
 
-// Junction tables for tags
 model ContactTag {
   contactId String
   tagId     String
@@ -368,4 +362,225 @@ model DealTag {
 
   @@id([dealId, tagId])
   @@map("deal_tags")
+}
+
+// ============================================================
+// SIGNAL ENGINE — The core differentiator
+// ============================================================
+
+// Configured signal sources (GitHub App, npm tracker, etc.)
+model SignalSource {
+  id             String             @id @default(cuid())
+  organizationId String
+  type           SignalSourceType
+  name           String
+  config         Json               // API keys, repo list, endpoint URLs (encrypted at app layer)
+  status         SignalSourceStatus  @default(ACTIVE)
+  lastSyncAt     DateTime?
+  errorMessage   String?
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  signals        Signal[]
+
+  @@index([organizationId, type])
+  @@map("signal_sources")
+}
+
+enum SignalSourceType {
+  GITHUB
+  NPM
+  WEBSITE
+  DOCS
+  PRODUCT_API
+  SEGMENT
+  CUSTOM_WEBHOOK
+}
+
+enum SignalSourceStatus {
+  ACTIVE
+  PAUSED
+  ERROR
+}
+
+// Raw signal events (append-only event log)
+model Signal {
+  id             String    @id @default(cuid())
+  organizationId String
+  sourceId       String
+  type           String    // repo_clone, package_install, page_view, api_call, signup, etc.
+
+  // Resolved actor & account (nullable if still anonymous)
+  actorId        String?
+  accountId      String?
+  anonymousId    String?   // fingerprint/IP for unresolved signals
+
+  metadata       Json      // source-specific payload
+  idempotencyKey String?   @unique
+  timestamp      DateTime
+
+  createdAt      DateTime  @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  source         SignalSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  actor          Contact?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  account        Company?     @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, timestamp(sort: Desc)])
+  @@index([accountId, timestamp(sort: Desc)])
+  @@index([actorId, timestamp(sort: Desc)])
+  @@index([type, timestamp(sort: Desc)])
+  @@index([sourceId])
+  @@map("signals")
+}
+
+// ============================================================
+// PQA SCORING — Product-Qualified Account scores
+// ============================================================
+
+model AccountScore {
+  id             String     @id @default(cuid())
+  organizationId String
+  accountId      String     @unique
+  score          Int        // 0-100
+  tier           ScoreTier
+  factors        Json       // [{ name, weight, value, description }]
+  signalCount    Int        @default(0)
+  userCount      Int        @default(0)
+  lastSignalAt   DateTime?
+  trend          ScoreTrend @default(STABLE)
+
+  computedAt     DateTime
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  account        Company      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, score(sort: Desc)])
+  @@index([organizationId, tier])
+  @@map("account_scores")
+}
+
+enum ScoreTier {
+  HOT
+  WARM
+  COLD
+  INACTIVE
+}
+
+enum ScoreTrend {
+  RISING
+  STABLE
+  FALLING
+}
+
+// ============================================================
+// IDENTITY RESOLUTION
+// ============================================================
+
+model ContactIdentity {
+  id         String       @id @default(cuid())
+  contactId  String
+  type       IdentityType
+  value      String
+  verified   Boolean      @default(false)
+  confidence Float        @default(1.0)
+
+  createdAt  DateTime     @default(now())
+
+  contact    Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([type, value])
+  @@index([contactId])
+  @@map("contact_identities")
+}
+
+enum IdentityType {
+  EMAIL
+  GITHUB
+  NPM
+  TWITTER
+  LINKEDIN
+  IP
+  DOMAIN
+}
+
+// ============================================================
+// CUSTOM OBJECTS — Metadata-driven extensibility
+// ============================================================
+
+model CustomObjectSchema {
+  id             String   @id @default(cuid())
+  organizationId String
+  slug           String
+  name           String
+  description    String?
+  fields         Json     // [{ name, type, required, default }]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  records        CustomObjectRecord[]
+
+  @@unique([organizationId, slug])
+  @@map("custom_object_schemas")
+}
+
+model CustomObjectRecord {
+  id             String   @id @default(cuid())
+  schemaId       String
+  organizationId String
+  data           Json
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  schema         CustomObjectSchema @relation(fields: [schemaId], references: [id], onDelete: Cascade)
+
+  @@index([schemaId, organizationId])
+  @@map("custom_object_records")
+}
+
+// ============================================================
+// WEBHOOKS — Outbound event delivery
+// ============================================================
+
+model WebhookEndpoint {
+  id             String   @id @default(cuid())
+  organizationId String
+  url            String
+  events         String[] // event types to subscribe to
+  secret         String   // HMAC-SHA256 signing secret
+  active         Boolean  @default(true)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  deliveries     WebhookDelivery[]
+
+  @@index([organizationId])
+  @@map("webhook_endpoints")
+}
+
+model WebhookDelivery {
+  id         String   @id @default(cuid())
+  endpointId String
+  event      String
+  payload    Json
+  statusCode Int?
+  response   String?
+  success    Boolean  @default(false)
+  attempts   Int      @default(0)
+
+  createdAt  DateTime @default(now())
+
+  endpoint   WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([endpointId, createdAt(sort: Desc)])
+  @@map("webhook_deliveries")
 }

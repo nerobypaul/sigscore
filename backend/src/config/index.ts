@@ -3,9 +3,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const config = {
+  nodeEnv: process.env.NODE_ENV || 'development',
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3000', 10),
   apiUrl: process.env.API_URL || 'http://localhost:3000',
+  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
 
   database: {
     url: process.env.DATABASE_URL || '',

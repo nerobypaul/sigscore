@@ -11,6 +11,9 @@ import contactRoutes from './routes/contacts';
 import companyRoutes from './routes/companies';
 import dealRoutes from './routes/deals';
 import activityRoutes from './routes/activities';
+import signalRoutes from './routes/signals';
+import signalSourceRoutes from './routes/signal-sources';
+import webhookRoutes from './routes/webhooks';
 
 const app = express();
 
@@ -23,27 +26,45 @@ app.use(cors({
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);
 
+// Higher rate limit for signal ingest (needs to handle high throughput)
+const signalLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 500,
+  message: 'Signal ingest rate limit exceeded.'
+});
+app.use('/api/v1/signals', signalLimiter);
+
 // Body parsing
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    service: 'devsignal-crm',
+    timestamp: new Date().toISOString(),
+    version: '0.2.0',
+  });
 });
 
-// API routes
+// API routes — Core CRM
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/contacts', contactRoutes);
 app.use('/api/v1/companies', companyRoutes);
 app.use('/api/v1/deals', dealRoutes);
 app.use('/api/v1/activities', activityRoutes);
+
+// API routes — Signal Engine
+app.use('/api/v1/signals', signalRoutes);
+app.use('/api/v1/sources', signalSourceRoutes);
+app.use('/api/v1/webhooks', webhookRoutes);
 
 // Swagger documentation
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(undefined, {
@@ -63,7 +84,7 @@ app.use(errorHandler);
 // Start server
 const PORT = config.port;
 app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
+  logger.info(`DevSignal CRM running on port ${PORT}`);
   logger.info(`Environment: ${config.nodeEnv}`);
   logger.info(`API Documentation: http://localhost:${PORT}/api/docs`);
 });

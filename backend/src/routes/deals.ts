@@ -10,35 +10,44 @@ const router = Router();
 router.use(authenticate);
 
 // Validation schemas
+// PLG-native pipeline stages
+const PLG_STAGES = [
+  'ANONYMOUS_USAGE',
+  'IDENTIFIED',
+  'ACTIVATED',
+  'TEAM_ADOPTION',
+  'EXPANSION_SIGNAL',
+  'SALES_QUALIFIED',
+  'NEGOTIATION',
+  'CLOSED_WON',
+  'CLOSED_LOST',
+] as const;
+
 const createDealSchema = z.object({
-  body: z.object({
-    title: z.string().min(1),
-    amount: z.number().optional(),
-    currency: z.string().default('USD'),
-    stage: z.enum(['LEAD', 'QUALIFIED', 'PROPOSAL', 'NEGOTIATION', 'CLOSED_WON', 'CLOSED_LOST']).default('LEAD'),
-    probability: z.number().min(0).max(100).optional(),
-    contactId: z.string().optional(),
-    companyId: z.string().optional(),
-    ownerId: z.string().optional(),
-    expectedCloseDate: z.string().datetime().optional(),
-    description: z.string().optional(),
-  }),
+  title: z.string().min(1),
+  amount: z.number().optional(),
+  currency: z.string().default('USD'),
+  stage: z.enum(PLG_STAGES).default('ANONYMOUS_USAGE'),
+  probability: z.number().min(0).max(100).optional(),
+  contactId: z.string().optional(),
+  companyId: z.string().optional(),
+  ownerId: z.string().optional(),
+  expectedCloseDate: z.string().datetime().optional(),
+  description: z.string().optional(),
 });
 
 const updateDealSchema = z.object({
-  body: z.object({
-    title: z.string().min(1).optional(),
-    amount: z.number().optional(),
-    currency: z.string().optional(),
-    stage: z.enum(['LEAD', 'QUALIFIED', 'PROPOSAL', 'NEGOTIATION', 'CLOSED_WON', 'CLOSED_LOST']).optional(),
-    probability: z.number().min(0).max(100).optional(),
-    contactId: z.string().optional(),
-    companyId: z.string().optional(),
-    ownerId: z.string().optional(),
-    expectedCloseDate: z.string().datetime().optional(),
-    closedAt: z.string().datetime().optional(),
-    description: z.string().optional(),
-  }),
+  title: z.string().min(1).optional(),
+  amount: z.number().optional(),
+  currency: z.string().optional(),
+  stage: z.enum(PLG_STAGES).optional(),
+  probability: z.number().min(0).max(100).optional(),
+  contactId: z.string().optional(),
+  companyId: z.string().optional(),
+  ownerId: z.string().optional(),
+  expectedCloseDate: z.string().datetime().optional(),
+  closedAt: z.string().datetime().optional(),
+  description: z.string().optional(),
 });
 
 // Routes
