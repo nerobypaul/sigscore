@@ -1,0 +1,104 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+# Only run after CI passes — this workflow triggers on push to main
+# but the build job requires the CI workflow to have passed first
+# (GitHub branch protection rules should enforce this)
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/api
+
+jobs:
+  # ---- Build & Push Docker Image ----
+  build-and-push:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ---- Deploy (Placeholder) ----
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ----------------------------------------------------------
+      # TODO: Add your actual deployment step here.
+      # Options:
+      #
+      # 1. SSH deploy to VPS:
+      #    - name: Deploy via SSH
+      #      uses: appleboy/ssh-action@v1
+      #      with:
+      #        host: ${{ secrets.DEPLOY_HOST }}
+      #        username: ${{ secrets.DEPLOY_USER }}
+      #        key: ${{ secrets.DEPLOY_SSH_KEY }}
+      #        script: |
+      #          cd /opt/devsignal
+      #          docker compose -f docker-compose.prod.yml pull
+      #          docker compose -f docker-compose.prod.yml up -d
+      #
+      # 2. Deploy to Railway/Render/Fly.io:
+      #    - Use the respective GitHub Action for your platform
+      #
+      # 3. Deploy to Kubernetes:
+      #    - Update image tag in manifests
+      #    - kubectl apply -f k8s/
+      #
+      # 4. AWS ECS / Google Cloud Run:
+      #    - Use aws-actions/amazon-ecs-deploy-task-definition
+      #    - or google-github-actions/deploy-cloudrun
+      # ----------------------------------------------------------
+
+      - name: Placeholder deploy step
+        run: |
+          echo "============================================="
+          echo "  DEPLOY PLACEHOLDER"
+          echo "  Image built and pushed to GHCR."
+          echo "  Replace this step with actual deployment."
+          echo "============================================="
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
