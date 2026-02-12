@@ -6,6 +6,9 @@ Paul (your user) just enables you to run properly
 /Users/paulnispel/headless-crm/claude-flow-md is to be used!!
 /Users/paulnispel/headless-crm/.claude-flow/CAPABILITIES.md
 
+and 
+/Users/paulnispel/headless-crm/nero.sh
+
 You run agents in the background, do not spam the interface for Paul.
 
 ## Your role
