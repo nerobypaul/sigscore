@@ -11,6 +11,7 @@ interface AuthContextType {
   register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   logout: () => Promise<void>;
   setOrganizationId: (id: string) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -107,6 +108,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const { data } = await api.get('/auth/me');
+      setUser(data);
+      // Sync organizationId from user data if available
+      if (data.organizations?.length > 0) {
+        const storedOrgId = localStorage.getItem('organizationId');
+        const firstOrgId = data.organizations[0].organizationId;
+        // Set if not already set, or update React state to match localStorage
+        if (!storedOrgId) {
+          localStorage.setItem('organizationId', firstOrgId);
+          setOrgId(firstOrgId);
+        } else {
+          setOrgId(storedOrgId);
+        }
+      }
+    } catch {
+      // If /me fails, leave current user state as-is
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await api.post('/auth/logout');
@@ -131,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         setOrganizationId,
+        refreshUser,
       }}
     >
       {children}

@@ -7,13 +7,31 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Spinner from './components/Spinner';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import Contacts from './pages/Contacts';
 import ContactDetail from './pages/ContactDetail';
 import Companies from './pages/Companies';
 import Deals from './pages/Deals';
 import Activities from './pages/Activities';
+import Signals from './pages/Signals';
+import PQADashboard from './pages/PQADashboard';
 import NotFound from './pages/NotFound';
+
+/**
+ * Wrapper that redirects authenticated users with no organization to /onboarding.
+ * Used inside the protected layout routes.
+ */
+function RequireOrg({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const hasOrg = user?.organizations && user.organizations.length > 0;
+
+  if (!hasOrg) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return <>{children}</>;
+}
 
 function AppRoutes() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -38,11 +56,23 @@ function AppRoutes() {
         element={isAuthenticated ? <Navigate to="/" replace /> : <Register />}
       />
 
-      {/* Protected routes */}
+      {/* Onboarding: must be logged in, shown when user has no org */}
+      <Route
+        path="/onboarding"
+        element={
+          <ProtectedRoute>
+            <Onboarding />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Protected routes (require org) */}
       <Route
         element={
           <ProtectedRoute>
-            <Layout />
+            <RequireOrg>
+              <Layout />
+            </RequireOrg>
           </ProtectedRoute>
         }
       >
@@ -52,6 +82,8 @@ function AppRoutes() {
         <Route path="/companies" element={<Companies />} />
         <Route path="/deals" element={<Deals />} />
         <Route path="/activities" element={<Activities />} />
+        <Route path="/signals" element={<Signals />} />
+        <Route path="/scores" element={<PQADashboard />} />
       </Route>
 
       {/* 404 catch-all */}

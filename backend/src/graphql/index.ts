@@ -5,6 +5,7 @@ import { verifyAccessToken } from '../utils/jwt';
 import { logger } from '../utils/logger';
 import typeDefs from './typeDefs';
 import resolvers, { type GraphQLContext } from './resolvers';
+import { createLoaders } from './dataloader';
 
 // ============================================================
 // Apollo Server instance
@@ -49,10 +50,14 @@ async function buildContext(req: Request): Promise<GraphQLContext> {
     throw new Error('Access to organization denied');
   }
 
+  // Create fresh DataLoaders per request for proper batching isolation
+  const loaders = createLoaders(prisma, organizationId);
+
   return {
     userId: payload.userId,
     organizationId,
     prisma,
+    loaders,
   };
 }
 

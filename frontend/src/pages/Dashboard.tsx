@@ -4,6 +4,7 @@ import api from '../lib/api';
 import type { Contact, Deal, Activity } from '../types';
 import { STAGE_LABELS, STAGE_COLORS } from '../types';
 import Spinner from '../components/Spinner';
+import GettingStarted from '../components/GettingStarted';
 
 interface DashboardStats {
   contacts: { total: number; recent: Contact[] };
@@ -106,6 +107,9 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      {/* Getting Started checklist for new users */}
+      <GettingStarted />
+
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="mt-1 text-sm text-gray-500">Overview of your CRM data</p>

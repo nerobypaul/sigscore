@@ -250,3 +250,54 @@ export interface PaginatedResponse<T> {
   data: T[];
   pagination: Pagination;
 }
+
+// === Signals ===
+
+export type SignalSourceType = 'GITHUB' | 'NPM' | 'WEBSITE' | 'DOCS' | 'PRODUCT_API' | 'SEGMENT' | 'CUSTOM_WEBHOOK';
+
+export interface Signal {
+  id: string;
+  type: string;
+  metadata: Record<string, unknown>;
+  timestamp: string;
+  anonymousId?: string | null;
+  actorId?: string | null;
+  accountId?: string | null;
+  sourceId: string;
+  actor?: { id: string; firstName: string; lastName: string; email?: string } | null;
+  account?: { id: string; name: string; domain?: string } | null;
+  source?: { id: string; name: string; type: SignalSourceType } | null;
+  createdAt: string;
+}
+
+// === Account Scores (PQA) ===
+
+export type ScoreTier = 'HOT' | 'WARM' | 'COLD' | 'INACTIVE';
+export type ScoreTrend = 'RISING' | 'STABLE' | 'FALLING';
+
+export interface AccountScore {
+  id: string;
+  accountId: string;
+  score: number;
+  tier: ScoreTier;
+  factors: Array<{ name: string; weight: number; value: number; description: string }>;
+  signalCount: number;
+  userCount: number;
+  lastSignalAt?: string | null;
+  trend: ScoreTrend;
+  computedAt: string;
+  account?: { id: string; name: string; domain?: string } | null;
+}
+
+export const TIER_COLORS: Record<ScoreTier, string> = {
+  HOT: 'bg-red-100 text-red-700',
+  WARM: 'bg-orange-100 text-orange-700',
+  COLD: 'bg-blue-100 text-blue-700',
+  INACTIVE: 'bg-gray-100 text-gray-600',
+};
+
+export const TREND_ICONS: Record<ScoreTrend, string> = {
+  RISING: 'arrow-up',
+  STABLE: 'minus',
+  FALLING: 'arrow-down',
+};

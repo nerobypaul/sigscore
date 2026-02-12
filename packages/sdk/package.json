@@ -1,0 +1,17 @@
+{
+  "name": "@devsignal/node",
+  "version": "0.1.0",
+  "description": "Official Node.js SDK for the DevSignal API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["devsignal", "crm", "plg", "signals", "sdk"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

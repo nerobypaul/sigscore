@@ -1,5 +1,6 @@
 import { GraphQLScalarType, Kind, type ValueNode } from 'graphql';
 import type { PrismaClient, Company, Contact, Deal, Signal, AccountScore } from '@prisma/client';
+import type { DataLoaders } from './dataloader';
 
 // ============================================================
 // Context type used by all resolvers
@@ -9,6 +10,7 @@ export interface GraphQLContext {
   userId: string;
   organizationId: string;
   prisma: PrismaClient;
+  loaders: DataLoaders;
 }
 
 // ============================================================
@@ -280,37 +282,20 @@ const resolvers = {
   // ============================================================
 
   Account: {
-    contacts: async (parent: Company, _args: unknown, ctx: GraphQLContext) => {
-      return ctx.prisma.contact.findMany({
-        where: { companyId: parent.id, organizationId: ctx.organizationId },
-      });
-    },
+    contacts: (parent: Company, _args: unknown, ctx: GraphQLContext) =>
+      ctx.loaders.contactsByCompanyId.load(parent.id),
 
-    deals: async (parent: Company, _args: unknown, ctx: GraphQLContext) => {
-      return ctx.prisma.deal.findMany({
-        where: { companyId: parent.id, organizationId: ctx.organizationId },
-      });
-    },
+    deals: (parent: Company, _args: unknown, ctx: GraphQLContext) =>
+      ctx.loaders.dealsByCompanyId.load(parent.id),
 
-    signals: async (parent: Company, _args: unknown, ctx: GraphQLContext) => {
-      return ctx.prisma.signal.findMany({
-        where: { accountId: parent.id, organizationId: ctx.organizationId },
-        orderBy: { timestamp: 'desc' },
-      });
-    },
+    signals: (parent: Company, _args: unknown, ctx: GraphQLContext) =>
+      ctx.loaders.signalsByAccountId.load(parent.id),
 
-    score: async (parent: Company, _args: unknown, ctx: GraphQLContext) => {
-      return ctx.prisma.accountScore.findFirst({
-        where: { accountId: parent.id, organizationId: ctx.organizationId },
-      });
-    },
+    score: (parent: Company, _args: unknown, ctx: GraphQLContext) =>
+      ctx.loaders.scoreByAccountId.load(parent.id),
 
-    brief: async (parent: Company, _args: unknown, ctx: GraphQLContext) => {
-      return ctx.prisma.accountBrief.findFirst({
-        where: { accountId: parent.id, organizationId: ctx.organizationId },
-        orderBy: { generatedAt: 'desc' },
-      });
-    },
+    brief: (parent: Company, _args: unknown, ctx: GraphQLContext) =>
+      ctx.loaders.briefByAccountId.load(parent.id),
   },
 
   // ============================================================
@@ -318,25 +303,16 @@ const resolvers = {
   // ============================================================
 
   Contact: {
-    company: async (parent: Contact, _args: unknown, ctx: GraphQLContext) => {
+    company: (parent: Contact, _args: unknown, ctx: GraphQLContext) => {
       if (!parent.companyId) return null;
-      return ctx.prisma.company.findFirst({
-        where: { id: parent.companyId, organizationId: ctx.organizationId },
-      });
+      return ctx.loaders.companyById.load(parent.companyId);
     },
 
-    identities: async (parent: Contact, _args: unknown, ctx: GraphQLContext) => {
-      return ctx.prisma.contactIdentity.findMany({
-        where: { contactId: parent.id },
-      });
-    },
+    identities: (parent: Contact, _args: unknown, ctx: GraphQLContext) =>
+      ctx.loaders.identitiesByContactId.load(parent.id),
 
-    signals: async (parent: Contact, _args: unknown, ctx: GraphQLContext) => {
-      return ctx.prisma.signal.findMany({
-        where: { actorId: parent.id, organizationId: ctx.organizationId },
-        orderBy: { timestamp: 'desc' },
-      });
-    },
+    signals: (parent: Contact, _args: unknown, ctx: GraphQLContext) =>
+      ctx.loaders.signalsByActorId.load(parent.id),
   },
 
   // ============================================================
@@ -344,23 +320,19 @@ const resolvers = {
   // ============================================================
 
   Deal: {
-    contact: async (parent: Deal, _args: unknown, ctx: GraphQLContext) => {
+    contact: (parent: Deal, _args: unknown, ctx: GraphQLContext) => {
       if (!parent.contactId) return null;
-      return ctx.prisma.contact.findFirst({
-        where: { id: parent.contactId, organizationId: ctx.organizationId },
-      });
+      return ctx.loaders.contactById.load(parent.contactId);
     },
 
-    company: async (parent: Deal, _args: unknown, ctx: GraphQLContext) => {
+    company: (parent: Deal, _args: unknown, ctx: GraphQLContext) => {
       if (!parent.companyId) return null;
-      return ctx.prisma.company.findFirst({
-        where: { id: parent.companyId, organizationId: ctx.organizationId },
-      });
+      return ctx.loaders.companyById.load(parent.companyId);
     },
 
-    owner: async (parent: Deal, _args: unknown, ctx: GraphQLContext) => {
+    owner: (parent: Deal, _args: unknown, ctx: GraphQLContext) => {
       if (!parent.ownerId) return null;
-      return ctx.prisma.user.findUnique({ where: { id: parent.ownerId } });
+      return ctx.loaders.userById.load(parent.ownerId);
     },
   },
 
@@ -369,25 +341,18 @@ const resolvers = {
   // ============================================================
 
   Signal: {
-    actor: async (parent: Signal, _args: unknown, ctx: GraphQLContext) => {
+    actor: (parent: Signal, _args: unknown, ctx: GraphQLContext) => {
       if (!parent.actorId) return null;
-      return ctx.prisma.contact.findFirst({
-        where: { id: parent.actorId, organizationId: ctx.organizationId },
-      });
+      return ctx.loaders.contactById.load(parent.actorId);
     },
 
-    account: async (parent: Signal, _args: unknown, ctx: GraphQLContext) => {
+    account: (parent: Signal, _args: unknown, ctx: GraphQLContext) => {
       if (!parent.accountId) return null;
-      return ctx.prisma.company.findFirst({
-        where: { id: parent.accountId, organizationId: ctx.organizationId },
-      });
+      return ctx.loaders.companyById.load(parent.accountId);
     },
 
-    source: async (parent: Signal, _args: unknown, ctx: GraphQLContext) => {
-      return ctx.prisma.signalSource.findFirst({
-        where: { id: parent.sourceId, organizationId: ctx.organizationId },
-      });
-    },
+    source: (parent: Signal, _args: unknown, ctx: GraphQLContext) =>
+      ctx.loaders.signalSourceById.load(parent.sourceId),
   },
 
   // ============================================================
@@ -395,11 +360,8 @@ const resolvers = {
   // ============================================================
 
   AccountScore: {
-    account: async (parent: AccountScore, _args: unknown, ctx: GraphQLContext) => {
-      return ctx.prisma.company.findFirst({
-        where: { id: parent.accountId, organizationId: ctx.organizationId },
-      });
-    },
+    account: (parent: AccountScore, _args: unknown, ctx: GraphQLContext) =>
+      ctx.loaders.companyById.load(parent.accountId),
   },
 };
 
