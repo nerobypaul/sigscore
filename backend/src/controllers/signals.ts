@@ -3,6 +3,7 @@ import { ScoreTier } from '@prisma/client';
 import * as signalService from '../services/signals';
 import * as accountScoreService from '../services/account-scores';
 import * as webhookService from '../services/webhooks';
+import { notifyHighValueSignal } from '../services/slack-notifications';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
 
@@ -27,6 +28,18 @@ export const ingestSignal = async (req: Request, res: Response, next: NextFuncti
         .computeAccountScore(organizationId, signal.accountId)
         .catch((err) => logger.error('Score recompute error:', err));
     }
+
+    // Notify Slack for high-value signals (fire-and-forget)
+    const actorName = signal.actor
+      ? `${signal.actor.firstName} ${signal.actor.lastName}`.trim()
+      : null;
+    notifyHighValueSignal(
+      organizationId,
+      signal.type,
+      signal.account?.name || null,
+      actorName,
+      req.body.metadata || {},
+    ).catch((err) => logger.error('Slack signal notification error:', err));
 
     res.status(201).json(signal);
   } catch (error) {

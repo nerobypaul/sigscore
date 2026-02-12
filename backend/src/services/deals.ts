@@ -1,6 +1,7 @@
 import { Prisma, DealStage } from '@prisma/client';
 import { prisma } from '../config/database';
 import { AppError } from '../utils/errors';
+import { broadcastDealCreated, broadcastDealUpdate } from './websocket';
 
 const VALID_DEAL_STAGES = new Set<string>(Object.values(DealStage));
 
@@ -84,7 +85,7 @@ export const getDealById = async (id: string, organizationId: string) => {
 };
 
 export const createDeal = async (organizationId: string, data: Prisma.DealCreateInput) => {
-  return prisma.deal.create({
+  const deal = await prisma.deal.create({
     data: {
       ...data,
       organization: { connect: { id: organizationId } },
@@ -100,12 +101,17 @@ export const createDeal = async (organizationId: string, data: Prisma.DealCreate
       },
     },
   });
+
+  broadcastDealCreated(organizationId, deal);
+
+  return deal;
 };
 
 export const updateDeal = async (id: string, organizationId: string, data: Prisma.DealUpdateInput) => {
   const existing = await prisma.deal.findFirst({ where: { id, organizationId } });
   if (!existing) throw new AppError('Deal not found', 404);
-  return prisma.deal.update({
+
+  const deal = await prisma.deal.update({
     where: { id },
     data,
     include: {
@@ -119,6 +125,10 @@ export const updateDeal = async (id: string, organizationId: string, data: Prism
       },
     },
   });
+
+  broadcastDealUpdate(organizationId, deal);
+
+  return deal;
 };
 
 export const deleteDeal = async (id: string, organizationId: string) => {

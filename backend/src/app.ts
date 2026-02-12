@@ -16,9 +16,12 @@ import activityRoutes from './routes/activities';
 import signalRoutes from './routes/signals';
 import signalSourceRoutes from './routes/signal-sources';
 import webhookRoutes from './routes/webhooks';
+import githubWebhookRoutes from './routes/github-webhook';
 import apiKeyRoutes from './routes/api-keys';
 import customObjectRoutes from './routes/custom-objects';
 import aiRoutes from './routes/ai';
+import csvImportRoutes from './routes/csv-import';
+import slackSettingsRoutes from './routes/slack-settings';
 
 const app = express();
 
@@ -98,10 +101,22 @@ app.use('/api/v1/api-keys', apiKeyRoutes);
 // API routes — Signal Engine
 app.use('/api/v1/signals', signalRoutes);
 app.use('/api/v1/sources', signalSourceRoutes);
+
+// Inbound connector webhooks (no auth — verified via HMAC signature)
+// Must be mounted BEFORE the authenticated /webhooks routes so the
+// more specific /webhooks/github path takes precedence.
+app.use('/api/v1/webhooks/github', githubWebhookRoutes);
+
 app.use('/api/v1/webhooks', webhookRoutes);
 
 // API routes — Custom Objects
 app.use('/api/v1/objects', customObjectRoutes);
+
+// API routes — CSV Import
+app.use('/api/v1/import', csvImportRoutes);
+
+// API routes — Settings (Slack, etc.)
+app.use('/api/v1/settings', slackSettingsRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);

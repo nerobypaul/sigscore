@@ -5,6 +5,7 @@ import type { Contact, Pagination } from '../types';
 import Spinner from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
+import CSVImport from '../components/CSVImport';
 
 export default function Contacts() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function Contacts() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const fetchContacts = useCallback(async () => {
     setLoading(true);
@@ -54,12 +56,23 @@ export default function Contacts() {
             {pagination ? `${pagination.total} total contacts` : ''}
           </p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
-        >
-          Add Contact
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowImport(true)}
+            className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            </svg>
+            Import CSV
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
+          >
+            Add Contact
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -188,6 +201,18 @@ export default function Contacts() {
             setShowCreate(false);
             fetchContacts();
             toast.success('Contact created successfully');
+          }}
+        />
+      )}
+
+      {/* CSV Import Modal */}
+      {showImport && (
+        <CSVImport
+          entityType="contacts"
+          onClose={() => setShowImport(false)}
+          onImported={() => {
+            fetchContacts();
+            toast.success('Contacts imported successfully');
           }}
         />
       )}

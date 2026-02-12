@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
+import { broadcastSignalCreated } from './websocket';
 
 export interface SignalInput {
   sourceId: string;
@@ -48,7 +49,7 @@ export const ingestSignal = async (organizationId: string, data: SignalInput) =>
     }
   }
 
-  return prisma.signal.create({
+  const signal = await prisma.signal.create({
     data: {
       organizationId,
       sourceId: data.sourceId,
@@ -66,6 +67,10 @@ export const ingestSignal = async (organizationId: string, data: SignalInput) =>
       account: { select: { id: true, name: true, domain: true } },
     },
   });
+
+  broadcastSignalCreated(organizationId, signal);
+
+  return signal;
 };
 
 export const ingestSignalBatch = async (organizationId: string, signals: SignalInput[]) => {
@@ -125,9 +130,10 @@ export const ingestSignalBatch = async (organizationId: string, signals: SignalI
       return txResults;
     });
 
-    // All succeeded — map to success results
+    // All succeeded — map to success results and broadcast each
     for (let i = 0; i < created.length; i++) {
       results.push({ success: true, signal: created[i] });
+      broadcastSignalCreated(organizationId, created[i]);
     }
   } catch (error: unknown) {
     // Transaction failed — all signals rolled back, report each as failed

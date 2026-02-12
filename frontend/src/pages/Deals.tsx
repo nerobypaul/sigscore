@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../lib/api';
+import { useWebSocket } from '../lib/useWebSocket';
+import type { WebSocketMessage } from '../lib/useWebSocket';
 import type { Deal, DealStage } from '../types';
 import { DEAL_STAGES, STAGE_LABELS, STAGE_COLORS } from '../types';
 import Spinner from '../components/Spinner';
@@ -31,6 +33,18 @@ export default function Deals() {
   useEffect(() => {
     fetchDeals();
   }, [fetchDeals]);
+
+  // Real-time updates via WebSocket
+  const handleWSMessage = useCallback(
+    (msg: WebSocketMessage) => {
+      if (msg.type === 'deal.updated' || msg.type === 'deal.created') {
+        fetchDeals();
+      }
+    },
+    [fetchDeals]
+  );
+
+  useWebSocket(handleWSMessage);
 
   const dealsByStage = DEAL_STAGES.reduce(
     (acc, stage) => {

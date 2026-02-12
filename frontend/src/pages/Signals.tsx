@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../lib/api';
+import { useWebSocket } from '../lib/useWebSocket';
+import type { WebSocketMessage } from '../lib/useWebSocket';
 import type { Signal, Pagination } from '../types';
 import Spinner from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
@@ -100,6 +102,18 @@ export default function Signals() {
   useEffect(() => {
     fetchSignals();
   }, [fetchSignals]);
+
+  // Real-time updates via WebSocket
+  const handleWSMessage = useCallback(
+    (msg: WebSocketMessage) => {
+      if (msg.type === 'signal.created') {
+        fetchSignals();
+      }
+    },
+    [fetchSignals]
+  );
+
+  useWebSocket(handleWSMessage);
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">

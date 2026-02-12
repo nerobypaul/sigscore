@@ -1,5 +1,7 @@
 import { Prisma, ScoreTier, ScoreTrend } from '@prisma/client';
 import { prisma } from '../config/database';
+import { logger } from '../utils/logger';
+import { notifyTierChange } from './slack-notifications';
 
 interface ScoreFactor {
   name: string;
@@ -155,10 +157,10 @@ export const computeAccountScore = async (organizationId: string, accountId: str
     100
   );
 
-  // Get previous score for trend calculation
+  // Get previous score for trend calculation and tier change detection
   const existingScore = await prisma.accountScore.findUnique({
     where: { accountId },
-    select: { score: true },
+    select: { score: true, tier: true },
   });
 
   const tier = computeTier(totalScore);
@@ -193,6 +195,14 @@ export const computeAccountScore = async (organizationId: string, accountId: str
       account: { select: { id: true, name: true, domain: true } },
     },
   });
+
+  // Notify Slack on tier change (fire-and-forget)
+  const oldTier = existingScore?.tier;
+  if (oldTier && oldTier !== tier) {
+    const accountName = score.account?.name || 'Unknown';
+    notifyTierChange(organizationId, accountName, oldTier, tier, totalScore, totalSignals, userCount)
+      .catch((err) => logger.error('Slack tier notification failed', { err }));
+  }
 
   return score;
 };
