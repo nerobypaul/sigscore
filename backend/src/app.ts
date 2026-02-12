@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
 import { config } from './config';
+import { swaggerSpec } from './config/swagger';
 import { errorHandler } from './middleware/error';
 import authRoutes from './routes/auth';
 import contactRoutes from './routes/contacts';
@@ -88,11 +89,24 @@ app.use('/api/v1/objects', customObjectRoutes);
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);
 
-// Swagger documentation
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(undefined, {
-  swaggerOptions: {
-    url: '/api/openapi.json'
-  }
+// Swagger / OpenAPI documentation
+
+// Raw JSON spec endpoints
+app.get('/api-docs.json', (_req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+app.get('/api/openapi.json', (_req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
+// Swagger UI at /api-docs (primary) and /api/docs (legacy)
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'DevSignal CRM API Docs',
+}));
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'DevSignal CRM API Docs',
 }));
 
 // 404 handler
