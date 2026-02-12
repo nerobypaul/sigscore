@@ -69,16 +69,74 @@ export const ingestSignal = async (organizationId: string, data: SignalInput) =>
 };
 
 export const ingestSignalBatch = async (organizationId: string, signals: SignalInput[]) => {
-  const results = [];
-  for (const signal of signals) {
-    try {
-      const result = await ingestSignal(organizationId, signal);
-      results.push({ success: true, signal: result });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+  const results: { success: boolean; signal?: unknown; error?: string; input?: SignalInput }[] = [];
+
+  try {
+    const created = await prisma.$transaction(async (tx) => {
+      const txResults = [];
+
+      for (const data of signals) {
+        // Resolve account from actor's contact if actorId provided
+        let accountId = data.accountId;
+        if (!accountId && data.actorId) {
+          const contact = await tx.contact.findFirst({
+            where: { id: data.actorId, organizationId },
+            select: { companyId: true },
+          });
+          if (contact?.companyId) {
+            accountId = contact.companyId;
+          }
+        }
+
+        // Resolve via anonymousId (email domain matching)
+        if (!accountId && data.anonymousId && data.anonymousId.includes('@')) {
+          const domain = data.anonymousId.split('@')[1];
+          const company = await tx.company.findFirst({
+            where: { organizationId, domain },
+            select: { id: true },
+          });
+          if (company) {
+            accountId = company.id;
+          }
+        }
+
+        const signal = await tx.signal.create({
+          data: {
+            organizationId,
+            sourceId: data.sourceId,
+            type: data.type,
+            actorId: data.actorId || null,
+            accountId: accountId || null,
+            anonymousId: data.anonymousId || null,
+            metadata: data.metadata as Prisma.InputJsonValue,
+            idempotencyKey: data.idempotencyKey || null,
+            timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
+          },
+          include: {
+            source: { select: { id: true, name: true, type: true } },
+            actor: { select: { id: true, firstName: true, lastName: true, email: true } },
+            account: { select: { id: true, name: true, domain: true } },
+          },
+        });
+
+        txResults.push(signal);
+      }
+
+      return txResults;
+    });
+
+    // All succeeded — map to success results
+    for (let i = 0; i < created.length; i++) {
+      results.push({ success: true, signal: created[i] });
+    }
+  } catch (error: unknown) {
+    // Transaction failed — all signals rolled back, report each as failed
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    for (const signal of signals) {
       results.push({ success: false, error: message, input: signal });
     }
   }
+
   return results;
 };
 

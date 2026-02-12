@@ -143,6 +143,8 @@ model Contact {
   @@index([organizationId])
   @@index([companyId])
   @@index([email])
+  @@index([organizationId, lastName])
+  @@index([organizationId, createdAt(sort: Desc)])
   @@map("contacts")
 }
 
@@ -187,6 +189,8 @@ model Company {
 
   @@index([organizationId])
   @@index([domain])
+  @@index([organizationId, name])
+  @@index([organizationId, createdAt(sort: Desc)])
   @@map("companies")
 }
 
@@ -233,6 +237,7 @@ model Deal {
   @@index([companyId])
   @@index([ownerId])
   @@index([stage])
+  @@index([organizationId, stage, createdAt(sort: Desc)])
   @@map("deals")
 }
 
@@ -286,6 +291,7 @@ model Activity {
   @@index([dealId])
   @@index([type])
   @@index([status])
+  @@index([organizationId, type, status])
   @@map("activities")
 }
 
@@ -436,6 +442,8 @@ model Signal {
   @@index([actorId, timestamp(sort: Desc)])
   @@index([type, timestamp(sort: Desc)])
   @@index([sourceId])
+  @@index([organizationId, type, timestamp(sort: Desc)])
+  @@index([organizationId, sourceId, timestamp(sort: Desc)])
   @@map("signals")
 }
 

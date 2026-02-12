@@ -18,6 +18,20 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: crm-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -26,12 +40,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://crm_user:crm_password@postgres:5432/crm_db
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-in-production-too}
       NODE_ENV: development
       PORT: 3000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
       - "3000:3000"
     volumes:
@@ -41,3 +59,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:

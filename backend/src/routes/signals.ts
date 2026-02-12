@@ -20,8 +20,8 @@ router.use(requireOrganization);
 
 // Signal ingest schemas
 const ingestSignalSchema = z.object({
-  sourceId: z.string().min(1),
-  type: z.string().min(1),
+  sourceId: z.string().min(1, 'sourceId is required'),
+  type: z.string().min(1, 'type is required'),
   actorId: z.string().optional(),
   accountId: z.string().optional(),
   anonymousId: z.string().optional(),
@@ -31,7 +31,7 @@ const ingestSignalSchema = z.object({
 });
 
 const ingestBatchSchema = z.object({
-  signals: z.array(ingestSignalSchema).min(1).max(1000),
+  signals: z.array(ingestSignalSchema).min(1, 'At least one signal required').max(1000, 'Maximum 1000 signals per batch'),
 });
 
 /**
