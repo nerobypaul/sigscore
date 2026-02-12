@@ -213,14 +213,14 @@ describe('Deals CRUD Integration', () => {
       expect(res.status).toBe(204);
     });
 
-    it('should return 500 when deal does not exist (service throws)', async () => {
+    it('should return 404 when deal does not exist', async () => {
       mockPrisma.deal.findFirst.mockResolvedValue(null);
 
       const res = await request(app)
         .delete('/api/v1/deals/nonexistent')
         .set(authHeaders());
 
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(404);
     });
   });
 });

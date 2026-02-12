@@ -205,15 +205,14 @@ describe('Contacts CRUD Integration', () => {
       expect(res.status).toBe(204);
     });
 
-    it('should return 500 when contact does not exist (service throws)', async () => {
+    it('should return 404 when contact does not exist', async () => {
       mockPrisma.contact.findFirst.mockResolvedValue(null);
 
       const res = await request(app)
         .delete('/api/v1/contacts/nonexistent')
         .set(authHeaders());
 
-      // The service throws Error('Contact not found') which becomes 500 via error handler
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(404);
     });
   });
 });

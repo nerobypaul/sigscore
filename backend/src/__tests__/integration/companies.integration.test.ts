@@ -186,14 +186,14 @@ describe('Companies CRUD Integration', () => {
       expect(res.status).toBe(204);
     });
 
-    it('should return 500 when company does not exist (service throws)', async () => {
+    it('should return 404 when company does not exist', async () => {
       mockPrisma.company.findFirst.mockResolvedValue(null);
 
       const res = await request(app)
         .delete('/api/v1/companies/nonexistent')
         .set(authHeaders());
 
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(404);
     });
   });
 });
