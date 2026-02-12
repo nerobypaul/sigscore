@@ -1,5 +1,6 @@
 import { Prisma, ActivityType, ActivityStatus } from '@prisma/client';
 import { prisma } from '../config/database';
+import { AppError } from '../utils/errors';
 
 const VALID_ACTIVITY_TYPES = new Set<string>(Object.values(ActivityType));
 const VALID_ACTIVITY_STATUSES = new Set<string>(Object.values(ActivityStatus));
@@ -105,7 +106,7 @@ export const createActivity = async (organizationId: string, userId: string, dat
 
 export const updateActivity = async (id: string, organizationId: string, data: Prisma.ActivityUpdateInput) => {
   const existing = await prisma.activity.findFirst({ where: { id, organizationId } });
-  if (!existing) throw new Error('Activity not found');
+  if (!existing) throw new AppError('Activity not found', 404);
   return prisma.activity.update({
     where: { id },
     data,
@@ -128,7 +129,7 @@ export const updateActivity = async (id: string, organizationId: string, data: P
 
 export const deleteActivity = async (id: string, organizationId: string) => {
   const existing = await prisma.activity.findFirst({ where: { id, organizationId } });
-  if (!existing) throw new Error('Activity not found');
+  if (!existing) throw new AppError('Activity not found', 404);
   return prisma.activity.delete({
     where: { id },
   });

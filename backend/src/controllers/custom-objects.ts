@@ -1,10 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import * as customObjectService from '../services/custom-objects';
-import {
-  SchemaNotFoundError,
-  SchemaConflictError,
-  RecordValidationError,
-} from '../services/custom-objects';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
 
@@ -58,10 +53,6 @@ export const createSchema = async (
     logger.info(`Custom object schema created: ${schema.id}`);
     res.status(201).json(schema);
   } catch (error) {
-    if (error instanceof SchemaConflictError) {
-      res.status(409).json({ error: error.message });
-      return;
-    }
     next(error);
   }
 };
@@ -134,10 +125,6 @@ export const getRecords = async (
     const result = await customObjectService.getRecords(organizationId, slug, filters);
     res.json(result);
   } catch (error) {
-    if (error instanceof SchemaNotFoundError) {
-      res.status(404).json({ error: error.message });
-      return;
-    }
     next(error);
   }
 };
@@ -159,10 +146,6 @@ export const getRecord = async (
 
     res.json(record);
   } catch (error) {
-    if (error instanceof SchemaNotFoundError) {
-      res.status(404).json({ error: error.message });
-      return;
-    }
     next(error);
   }
 };
@@ -180,14 +163,6 @@ export const createRecord = async (
     logger.info(`Custom object record created: ${record.id}`);
     res.status(201).json(record);
   } catch (error) {
-    if (error instanceof SchemaNotFoundError) {
-      res.status(404).json({ error: error.message });
-      return;
-    }
-    if (error instanceof RecordValidationError) {
-      res.status(400).json({ error: error.message, details: error.details });
-      return;
-    }
     next(error);
   }
 };
@@ -210,14 +185,6 @@ export const updateRecord = async (
     logger.info(`Custom object record updated: ${record.id}`);
     res.json(record);
   } catch (error) {
-    if (error instanceof SchemaNotFoundError) {
-      res.status(404).json({ error: error.message });
-      return;
-    }
-    if (error instanceof RecordValidationError) {
-      res.status(400).json({ error: error.message, details: error.details });
-      return;
-    }
     next(error);
   }
 };
@@ -240,10 +207,6 @@ export const deleteRecord = async (
     logger.info(`Custom object record deleted: ${record.id}`);
     res.status(204).send();
   } catch (error) {
-    if (error instanceof SchemaNotFoundError) {
-      res.status(404).json({ error: error.message });
-      return;
-    }
     next(error);
   }
 };

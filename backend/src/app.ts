@@ -4,9 +4,11 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
 import { config } from './config';
+import { prisma } from './config/database';
 import { swaggerSpec } from './config/swagger';
 import { errorHandler } from './middleware/error';
 import authRoutes from './routes/auth';
+import organizationRoutes from './routes/organizations';
 import contactRoutes from './routes/contacts';
 import companyRoutes from './routes/companies';
 import dealRoutes from './routes/deals';
@@ -61,17 +63,32 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
-app.get('/health', (_req, res) => {
-  res.json({
-    status: 'ok',
-    service: 'devsignal-crm',
-    timestamp: new Date().toISOString(),
-    version: '0.2.0',
-  });
+app.get('/health', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({
+      status: 'ok',
+      service: 'devsignal-crm',
+      timestamp: new Date().toISOString(),
+      version: '0.2.0',
+      db: 'connected',
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(503).json({
+      status: 'degraded',
+      service: 'devsignal-crm',
+      timestamp: new Date().toISOString(),
+      version: '0.2.0',
+      db: 'disconnected',
+      error: message,
+    });
+  }
 });
 
 // API routes — Core CRM
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/organizations', organizationRoutes);
 app.use('/api/v1/contacts', contactRoutes);
 app.use('/api/v1/companies', companyRoutes);
 app.use('/api/v1/deals', dealRoutes);

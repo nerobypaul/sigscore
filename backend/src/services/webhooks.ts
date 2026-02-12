@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
+import { AppError } from '../utils/errors';
 
 export interface WebhookInput {
   url: string;
@@ -41,7 +42,7 @@ export const deleteWebhookEndpoint = async (id: string, organizationId: string) 
   const endpoint = await prisma.webhookEndpoint.findFirst({
     where: { id, organizationId },
   });
-  if (!endpoint) throw new Error('Webhook endpoint not found');
+  if (!endpoint) throw new AppError('Webhook endpoint not found', 404);
 
   return prisma.webhookEndpoint.delete({ where: { id } });
 };

@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
+import { AppError } from '../utils/errors';
 
 export interface ContactFilters {
   search?: string;
@@ -88,7 +89,7 @@ export const createContact = async (organizationId: string, data: Prisma.Contact
 
 export const updateContact = async (id: string, organizationId: string, data: Prisma.ContactUpdateInput) => {
   const existing = await prisma.contact.findFirst({ where: { id, organizationId } });
-  if (!existing) throw new Error('Contact not found');
+  if (!existing) throw new AppError('Contact not found', 404);
   return prisma.contact.update({
     where: { id },
     data,
@@ -103,7 +104,7 @@ export const updateContact = async (id: string, organizationId: string, data: Pr
 
 export const deleteContact = async (id: string, organizationId: string) => {
   const existing = await prisma.contact.findFirst({ where: { id, organizationId } });
-  if (!existing) throw new Error('Contact not found');
+  if (!existing) throw new AppError('Contact not found', 404);
   return prisma.contact.delete({
     where: { id },
   });

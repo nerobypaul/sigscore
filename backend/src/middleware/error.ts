@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
 import { ZodError } from 'zod';
+import { AppError } from '../utils/errors';
 
 export const errorHandler = (
   err: Error,
@@ -29,6 +30,11 @@ export const errorHandler = (
 
   if (err.name === 'TokenExpiredError') {
     res.status(401).json({ error: 'Token expired' });
+    return;
+  }
+
+  if (err instanceof AppError) {
+    res.status(err.statusCode).json({ error: err.message });
     return;
   }
 

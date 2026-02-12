@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
+import { AppError } from '../utils/errors';
 
 // ============================================================
 // Types
@@ -143,7 +144,7 @@ export const createSchema = async (organizationId: string, data: CreateSchemaInp
   });
 
   if (existing) {
-    throw new SchemaConflictError(`A custom object with slug "${slug}" already exists`);
+    throw new AppError(`A custom object with slug "${slug}" already exists`, 409);
   }
 
   const schema = await prisma.customObjectSchema.create({
@@ -257,14 +258,14 @@ export const createRecord = async (
   });
 
   if (!schema) {
-    throw new SchemaNotFoundError(`Custom object "${slug}" not found`);
+    throw new AppError(`Custom object "${slug}" not found`, 404);
   }
 
   const fields = schema.fields as unknown as FieldDefinition[];
   const validation = validateRecordData(data, fields);
 
   if (!validation.valid) {
-    throw new RecordValidationError('Record validation failed', validation.errors);
+    throw new AppError(`Record validation failed: ${validation.errors.join(', ')}`, 400);
   }
 
   const coercedData = coerceRecordData(data, fields);
@@ -291,7 +292,7 @@ export const getRecords = async (
   });
 
   if (!schema) {
-    throw new SchemaNotFoundError(`Custom object "${slug}" not found`);
+    throw new AppError(`Custom object "${slug}" not found`, 404);
   }
 
   const { page = 1, limit = 20, ...fieldFilters } = filters;
@@ -347,7 +348,7 @@ export const getRecordById = async (
   });
 
   if (!schema) {
-    throw new SchemaNotFoundError(`Custom object "${slug}" not found`);
+    throw new AppError(`Custom object "${slug}" not found`, 404);
   }
 
   return prisma.customObjectRecord.findFirst({
@@ -370,7 +371,7 @@ export const updateRecord = async (
   });
 
   if (!schema) {
-    throw new SchemaNotFoundError(`Custom object "${slug}" not found`);
+    throw new AppError(`Custom object "${slug}" not found`, 404);
   }
 
   const existing = await prisma.customObjectRecord.findFirst({
@@ -394,7 +395,7 @@ export const updateRecord = async (
   const validation = validateRecordData(mergedData, fields);
 
   if (!validation.valid) {
-    throw new RecordValidationError('Record validation failed', validation.errors);
+    throw new AppError(`Record validation failed: ${validation.errors.join(', ')}`, 400);
   }
 
   const coercedData = coerceRecordData(mergedData, fields);
@@ -418,7 +419,7 @@ export const deleteRecord = async (
   });
 
   if (!schema) {
-    throw new SchemaNotFoundError(`Custom object "${slug}" not found`);
+    throw new AppError(`Custom object "${slug}" not found`, 404);
   }
 
   const existing = await prisma.customObjectRecord.findFirst({

@@ -1,5 +1,6 @@
 import { Prisma, SignalSourceStatus, SignalSourceType } from '@prisma/client';
 import { prisma } from '../config/database';
+import { AppError } from '../utils/errors';
 
 export interface SignalSourceInput {
   type: SignalSourceType;
@@ -74,7 +75,7 @@ export const deleteSignalSource = async (id: string, organizationId: string) => 
   const source = await prisma.signalSource.findFirst({
     where: { id, organizationId },
   });
-  if (!source) throw new Error('Signal source not found');
+  if (!source) throw new AppError('Signal source not found', 404);
 
   return prisma.signalSource.delete({ where: { id } });
 };
@@ -83,7 +84,7 @@ export const testSignalSource = async (id: string, organizationId: string) => {
   const source = await prisma.signalSource.findFirst({
     where: { id, organizationId },
   });
-  if (!source) throw new Error('Signal source not found');
+  if (!source) throw new AppError('Signal source not found', 404);
 
   // For now, just verify the source exists and is active
   // In the future, this would test the actual connection (GitHub API, npm registry, etc.)

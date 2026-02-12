@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
+import { AppError } from '../utils/errors';
 
 export interface CompanyFilters {
   search?: string;
@@ -90,7 +91,7 @@ export const createCompany = async (organizationId: string, data: Prisma.Company
 
 export const updateCompany = async (id: string, organizationId: string, data: Prisma.CompanyUpdateInput) => {
   const existing = await prisma.company.findFirst({ where: { id, organizationId } });
-  if (!existing) throw new Error('Company not found');
+  if (!existing) throw new AppError('Company not found', 404);
   return prisma.company.update({
     where: { id },
     data,
@@ -104,7 +105,7 @@ export const updateCompany = async (id: string, organizationId: string, data: Pr
 
 export const deleteCompany = async (id: string, organizationId: string) => {
   const existing = await prisma.company.findFirst({ where: { id, organizationId } });
-  if (!existing) throw new Error('Company not found');
+  if (!existing) throw new AppError('Company not found', 404);
   return prisma.company.delete({
     where: { id },
   });
