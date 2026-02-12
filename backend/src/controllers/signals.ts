@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
+import { ScoreTier } from '@prisma/client';
 import * as signalService from '../services/signals';
 import * as accountScoreService from '../services/account-scores';
 import * as webhookService from '../services/webhooks';
 import { logger } from '../utils/logger';
+import { parsePageInt } from '../utils/pagination';
 
 export const ingestSignal = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -68,8 +70,8 @@ export const getSignals = async (req: Request, res: Response, next: NextFunction
       actorId: req.query.actorId as string,
       from: req.query.from as string,
       to: req.query.to as string,
-      page: req.query.page ? parseInt(req.query.page as string) : undefined,
-      limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
+      page: parsePageInt(req.query.page),
+      limit: parsePageInt(req.query.limit),
     };
 
     const result = await signalService.getSignals(organizationId, filters);
@@ -83,7 +85,7 @@ export const getAccountSignals = async (req: Request, res: Response, next: NextF
   try {
     const organizationId = req.organizationId!;
     const { accountId } = req.params;
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+    const limit = parsePageInt(req.query.limit) ?? 50;
 
     const signals = await signalService.getSignalsByAccount(organizationId, accountId, limit);
     res.json({ signals });
@@ -96,7 +98,7 @@ export const getAccountTimeline = async (req: Request, res: Response, next: Next
   try {
     const organizationId = req.organizationId!;
     const { accountId } = req.params;
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
+    const limit = parsePageInt(req.query.limit) ?? 100;
 
     const timeline = await signalService.getAccountTimeline(organizationId, accountId, limit);
     res.json({ timeline });
@@ -139,13 +141,17 @@ export const getTopAccounts = async (req: Request, res: Response, next: NextFunc
   try {
     const organizationId = req.organizationId!;
 
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
-    const tier = req.query.tier as string | undefined;
+    const limit = parsePageInt(req.query.limit) ?? 20;
+    const tierParam = req.query.tier as string | undefined;
+    const validTiers: ScoreTier[] = ['HOT', 'WARM', 'COLD', 'INACTIVE'];
+    const tier = tierParam && validTiers.includes(tierParam as ScoreTier)
+      ? (tierParam as ScoreTier)
+      : undefined;
 
     const accounts = await accountScoreService.getTopAccounts(
       organizationId,
       limit,
-      tier as any
+      tier
     );
 
     res.json({ accounts });

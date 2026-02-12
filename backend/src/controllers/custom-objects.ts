@@ -6,6 +6,7 @@ import {
   RecordValidationError,
 } from '../services/custom-objects';
 import { logger } from '../utils/logger';
+import { parsePageInt } from '../utils/pagination';
 
 // ============================================================
 // Schema Handlers
@@ -125,8 +126,8 @@ export const getRecords = async (
     const { page, limit, ...fieldFilters } = req.query;
 
     const filters: customObjectService.RecordFilters = {
-      page: page ? parseInt(page as string) : undefined,
-      limit: limit ? parseInt(limit as string) : undefined,
+      page: parsePageInt(page),
+      limit: parsePageInt(limit),
       ...fieldFilters,
     };
 

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as activityService from '../services/activities';
 import { logger } from '../utils/logger';
+import { parsePageInt } from '../utils/pagination';
 
 export const getActivities = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -13,8 +14,8 @@ export const getActivities = async (req: Request, res: Response, next: NextFunct
       contactId: req.query.contactId as string,
       companyId: req.query.companyId as string,
       dealId: req.query.dealId as string,
-      page: req.query.page ? parseInt(req.query.page as string) : undefined,
-      limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
+      page: parsePageInt(req.query.page),
+      limit: parsePageInt(req.query.limit),
     };
 
     const result = await activityService.getActivities(organizationId, filters);

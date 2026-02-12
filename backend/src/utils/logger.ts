@@ -1,8 +1,10 @@
 import winston from 'winston';
 import { config } from '../config';
 
+const isProduction = config.env === 'production';
+
 const logger = winston.createLogger({
-  level: config.env === 'production' ? 'info' : 'debug',
+  level: isProduction ? 'info' : 'debug',
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.errors({ stack: true }),
@@ -10,10 +12,14 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
+      // In production: structured JSON (no colors) for log aggregators.
+      // In development: human-readable colorized output.
+      format: isProduction
+        ? winston.format.json()
+        : winston.format.combine(
+            winston.format.colorize(),
+            winston.format.simple()
+          ),
     }),
   ],
 });

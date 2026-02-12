@@ -1,5 +1,8 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, ActivityType, ActivityStatus } from '@prisma/client';
 import { prisma } from '../config/database';
+
+const VALID_ACTIVITY_TYPES = new Set<string>(Object.values(ActivityType));
+const VALID_ACTIVITY_STATUSES = new Set<string>(Object.values(ActivityStatus));
 
 export interface ActivityFilters {
   type?: string;
@@ -19,8 +22,8 @@ export const getActivities = async (organizationId: string, filters: ActivityFil
 
   const where: Prisma.ActivityWhereInput = {
     organizationId,
-    ...(type && { type: type as any }),
-    ...(status && { status: status as any }),
+    ...(type && VALID_ACTIVITY_TYPES.has(type) && { type: type as ActivityType }),
+    ...(status && VALID_ACTIVITY_STATUSES.has(status) && { status: status as ActivityStatus }),
     ...(userId && { userId }),
     ...(contactId && { contactId }),
     ...(companyId && { companyId }),

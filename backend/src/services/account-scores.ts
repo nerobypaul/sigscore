@@ -1,4 +1,4 @@
-import { ScoreTier, ScoreTrend } from '@prisma/client';
+import { Prisma, ScoreTier, ScoreTrend } from '@prisma/client';
 import { prisma } from '../config/database';
 
 interface ScoreFactor {
@@ -172,7 +172,7 @@ export const computeAccountScore = async (organizationId: string, accountId: str
       account: { connect: { id: accountId } },
       score: totalScore,
       tier,
-      factors: factors as any,
+      factors: factors as unknown as Prisma.InputJsonValue,
       signalCount: totalSignals,
       userCount,
       lastSignalAt: lastSignal?.timestamp || null,
@@ -182,7 +182,7 @@ export const computeAccountScore = async (organizationId: string, accountId: str
     update: {
       score: totalScore,
       tier,
-      factors: factors as any,
+      factors: factors as unknown as Prisma.InputJsonValue,
       signalCount: totalSignals,
       userCount,
       lastSignalAt: lastSignal?.timestamp || null,

@@ -123,11 +123,36 @@ export const refresh = async (req: Request, res: Response, next: NextFunction): 
       where: { id: decoded.userId },
     });
 
-    if (!user || user.refreshToken !== hashToken(refreshToken)) {
+    if (!user) {
       res.status(401).json({ error: 'Invalid refresh token' });
       return;
     }
 
+    const incomingHash = hashToken(refreshToken);
+
+    // ---- Refresh-token reuse detection ----
+    // If the user has no stored token (already logged out / invalidated) but
+    // the JWT signature is valid, someone is replaying a revoked token.
+    // If the stored hash does not match the incoming token, the legitimate
+    // token was already rotated — this is a reuse signal indicating potential
+    // token theft. Invalidate all sessions for this user as a safety measure.
+    if (!user.refreshToken || user.refreshToken !== incomingHash) {
+      // Nuke the stored refresh token so the real user must re-authenticate.
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { refreshToken: null },
+      });
+
+      logger.warn(
+        `Refresh token reuse detected for user ${user.id} (${user.email}). ` +
+        'All sessions invalidated — possible token theft.'
+      );
+
+      res.status(401).json({ error: 'Invalid refresh token' });
+      return;
+    }
+
+    // Token is valid — rotate it.
     const accessToken = generateAccessToken(user.id, user.email, user.role);
     const newRefreshToken = generateRefreshToken(user.id);
 

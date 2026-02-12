@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
 
@@ -81,7 +82,7 @@ export const dispatchWebhookEvent = async (
         data: {
           endpoint: { connect: { id: endpoint.id } },
           event,
-          payload: payload as any,
+          payload: payload as unknown as Prisma.InputJsonValue,
           statusCode: response.status,
           success: response.ok,
           attempts: 1,
@@ -95,7 +96,7 @@ export const dispatchWebhookEvent = async (
         data: {
           endpoint: { connect: { id: endpoint.id } },
           event,
-          payload: payload as any,
+          payload: payload as unknown as Prisma.InputJsonValue,
           response: message,
           success: false,
           attempts: 1,

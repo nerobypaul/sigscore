@@ -1,5 +1,7 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, DealStage } from '@prisma/client';
 import { prisma } from '../config/database';
+
+const VALID_DEAL_STAGES = new Set<string>(Object.values(DealStage));
 
 export interface DealFilters {
   stage?: string;
@@ -16,7 +18,7 @@ export const getDeals = async (organizationId: string, filters: DealFilters) => 
 
   const where: Prisma.DealWhereInput = {
     organizationId,
-    ...(stage && { stage: stage as any }),
+    ...(stage && VALID_DEAL_STAGES.has(stage) && { stage: stage as DealStage }),
     ...(ownerId && { ownerId }),
     ...(companyId && { companyId }),
   };

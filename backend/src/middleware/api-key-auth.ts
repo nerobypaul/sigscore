@@ -54,8 +54,8 @@ export const apiKeyAuth = async (
     }
 
     req.organizationId = apiKey.organizationId;
-    (req as any).apiKeyAuth = true;
-    (req as any).apiKeyScopes = apiKey.scopes;
+    req.apiKeyAuth = true;
+    req.apiKeyScopes = apiKey.scopes;
 
     next();
   } catch (error) {
@@ -73,12 +73,12 @@ export const apiKeyAuth = async (
 export const requireScope = (scope: string) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     // If not API key auth, let it through (JWT users have full access)
-    if (!(req as any).apiKeyAuth) {
+    if (!req.apiKeyAuth) {
       next();
       return;
     }
 
-    const scopes: string[] = (req as any).apiKeyScopes || [];
+    const scopes: string[] = req.apiKeyScopes || [];
 
     if (!scopes.includes(scope) && !scopes.includes('*')) {
       res.status(403).json({

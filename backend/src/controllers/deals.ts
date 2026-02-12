@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as dealService from '../services/deals';
 import { logger } from '../utils/logger';
+import { parsePageInt } from '../utils/pagination';
 
 export const getDeals = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -10,8 +11,8 @@ export const getDeals = async (req: Request, res: Response, next: NextFunction):
       stage: req.query.stage as string,
       ownerId: req.query.ownerId as string,
       companyId: req.query.companyId as string,
-      page: req.query.page ? parseInt(req.query.page as string) : undefined,
-      limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
+      page: parsePageInt(req.query.page),
+      limit: parsePageInt(req.query.limit),
     };
 
     const result = await dealService.getDeals(organizationId, filters);
