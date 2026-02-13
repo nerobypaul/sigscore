@@ -1,0 +1,56 @@
+# Dependencies (each Dockerfile copies what it needs)
+node_modules
+**/node_modules
+
+# Build output
+backend/dist
+frontend/dist
+
+# Environment files (never bake secrets into images)
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+
+# IDE / Editor
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test artifacts
+coverage/
+**/__tests__/
+**/*.test.ts
+**/*.spec.ts
+
+# Documentation (not needed in images)
+*.md
+LICENSE
+docs/
+
+# Claude / workflow files
+CLAUDE.md
+claude-flow-md/
+.claude-flow/
+nero.sh
+.changelog/
+
+# Docker files themselves
+docker-compose*.yml
+.dockerignore
+
+# SDK package (not needed for backend/frontend images)
+packages/

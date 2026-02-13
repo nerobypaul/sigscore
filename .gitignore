@@ -42,8 +42,8 @@ coverage/
 *.seed
 *.pid.lock
 
-# Prisma
-backend/prisma/migrations/*_*
+# Prisma — generated client (tracked via prisma generate)
+backend/node_modules/.prisma/
 
 # Docker
 .docker/

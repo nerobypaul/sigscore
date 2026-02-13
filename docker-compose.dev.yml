@@ -1,0 +1,84 @@
+# ============================================================
+# DevSignal CRM — Docker Compose (Development Override)
+# ============================================================
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# This overrides the production compose with:
+#   - Source code volume mounts for hot-reload
+#   - npm run dev instead of built images
+#   - Automatic prisma migrate on backend start
+# ============================================================
+
+services:
+  # ---- PostgreSQL (inherit from base) ----
+  postgres:
+    ports:
+      - "5432:5432"
+
+  # ---- Redis (inherit from base) ----
+  redis:
+    ports:
+      - "6379:6379"
+
+  # ---- Backend (dev mode with hot-reload) ----
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: builder
+    container_name: devsignal-backend-dev
+    ports:
+      - "3001:3000"
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      DATABASE_URL: "postgresql://devsignal:devsignal_dev_pw@postgres:5432/devsignal?schema=public"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      JWT_SECRET: dev-jwt-secret-not-for-production
+      JWT_REFRESH_SECRET: dev-jwt-refresh-secret-not-for-production
+      CORS_ORIGIN: "http://localhost:5173"
+      FRONTEND_URL: "http://localhost:5173"
+      API_URL: "http://localhost:3001"
+    volumes:
+      - ./backend/src:/app/backend/src
+      - ./backend/prisma:/app/backend/prisma
+    working_dir: /app/backend
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        npx prisma generate &&
+        npx tsx watch src/index.ts
+      "
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ---- Frontend (Vite dev server with HMR) ----
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: builder
+    container_name: devsignal-frontend-dev
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: "http://localhost:3001"
+    volumes:
+      - ./frontend/src:/app/frontend/src
+      - ./frontend/index.html:/app/frontend/index.html
+      - ./frontend/vite.config.ts:/app/frontend/vite.config.ts
+      - ./frontend/tailwind.config.js:/app/frontend/tailwind.config.js
+      - ./frontend/postcss.config.js:/app/frontend/postcss.config.js
+      - ./frontend/tsconfig.json:/app/frontend/tsconfig.json
+      - ./frontend/tsconfig.node.json:/app/frontend/tsconfig.node.json
+    working_dir: /app/frontend
+    command: npx vite --host 0.0.0.0
+    depends_on:
+      backend:
+        condition: service_healthy

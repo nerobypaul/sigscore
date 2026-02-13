@@ -1,62 +1,121 @@
-version: '3.8'
+# ============================================================
+# DevSignal CRM — Docker Compose (Production)
+# ============================================================
+# Usage:
+#   cp .env.example .env   # fill in real secrets
+#   docker compose up -d --build
+# ============================================================
 
 services:
+  # ---- PostgreSQL 16 ----
   postgres:
     image: postgres:16-alpine
-    container_name: crm-postgres
-    environment:
-      POSTGRES_USER: crm_user
-      POSTGRES_PASSWORD: crm_password
-      POSTGRES_DB: crm_db
+    container_name: devsignal-postgres
+    restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-devsignal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devsignal_dev_pw}
+      POSTGRES_DB: ${POSTGRES_DB:-devsignal}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - devsignal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U crm_user -d crm_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-devsignal} -d ${POSTGRES_DB:-devsignal}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
+  # ---- Redis 7 (BullMQ, caching) ----
   redis:
     image: redis:7-alpine
-    container_name: crm-redis
-    command: redis-server --appendonly yes
+    container_name: devsignal-redis
+    restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
+    networks:
+      - devsignal
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 5s
 
+  # ---- Backend API ----
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: crm-backend
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: devsignal-backend
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    ports:
+      - "${API_PORT:-3001}:3000"
     environment:
-      DATABASE_URL: postgresql://crm_user:crm_password@postgres:5432/crm_db
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-devsignal}:${POSTGRES_PASSWORD:-devsignal_dev_pw}@postgres:5432/${POSTGRES_DB:-devsignal}?schema=public"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-in-production-too}
-      NODE_ENV: development
-      PORT: 3000
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      API_URL: ${API_URL:-http://localhost:3001}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-5-20250929}
+      OAUTH_GOOGLE_CLIENT_ID: ${OAUTH_GOOGLE_CLIENT_ID:-}
+      OAUTH_GOOGLE_CLIENT_SECRET: ${OAUTH_GOOGLE_CLIENT_SECRET:-}
+      OAUTH_GOOGLE_CALLBACK_URL: ${OAUTH_GOOGLE_CALLBACK_URL:-}
+      OAUTH_GITHUB_CLIENT_ID: ${OAUTH_GITHUB_CLIENT_ID:-}
+      OAUTH_GITHUB_CLIENT_SECRET: ${OAUTH_GITHUB_CLIENT_SECRET:-}
+      OAUTH_GITHUB_CALLBACK_URL: ${OAUTH_GITHUB_CALLBACK_URL:-}
+    networks:
+      - devsignal
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ---- Frontend (nginx) ----
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3001}
+    container_name: devsignal-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
     ports:
-      - "3000:3000"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-    command: sh -c "npx prisma migrate deploy && npm run dev"
+      - "${FRONTEND_PORT:-3000}:80"
+    networks:
+      - devsignal
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
+
+networks:
+  devsignal:
+    driver: bridge
