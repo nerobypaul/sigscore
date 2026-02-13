@@ -25,6 +25,12 @@ export default function Companies() {
   const [showCreate, setShowCreate] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
+  // Bulk selection state
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<'delete' | null>(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   const fetchCompanies = useCallback(async () => {
     setLoading(true);
     try {
@@ -44,6 +50,11 @@ export default function Companies() {
     fetchCompanies();
   }, [fetchCompanies]);
 
+  // Clear selection on page/search change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [page, search]);
+
   // Debounced search
   const [searchInput, setSearchInput] = useState('');
   useEffect(() => {
@@ -53,6 +64,54 @@ export default function Companies() {
     }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allOnPageSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(companies.map((c) => c.id)));
+    }
+  };
+
+  const allOnPageSelected =
+    companies.length > 0 && companies.every((c) => selectedIds.has(c.id));
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  // --- Bulk actions ---
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      const { data } = await api.post('/bulk/companies/delete', {
+        ids: Array.from(selectedIds),
+      });
+      toast.success(
+        `Deleted ${data.deleted} company${data.deleted !== 1 ? 'ies' : 'y'}`
+      );
+      setSelectedIds(new Set());
+      setBulkAction(null);
+      setSelectMode(false);
+      fetchCompanies();
+    } catch {
+      toast.error('Failed to delete companies');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
@@ -65,11 +124,50 @@ export default function Companies() {
         </div>
         <div className="flex items-center gap-3">
           <button
+            onClick={() => {
+              if (selectMode) {
+                exitSelectMode();
+              } else {
+                setSelectMode(true);
+              }
+            }}
+            className={`border px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${
+              selectMode
+                ? 'border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            {selectMode ? 'Exit Select' : 'Select'}
+          </button>
+          <button
             onClick={() => setShowImport(true)}
             className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+              />
             </svg>
             Import CSV
           </button>
@@ -93,6 +191,51 @@ export default function Companies() {
         />
       </div>
 
+      {/* Bulk action toolbar */}
+      {selectMode && selectedIds.size > 0 && (
+        <div className="mb-4 flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
+          <span className="text-sm font-medium text-indigo-900">
+            {selectedIds.size} selected
+          </span>
+          <div className="h-4 w-px bg-indigo-300" />
+          <button
+            onClick={toggleSelectAll}
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+          >
+            {allOnPageSelected ? 'Deselect all' : 'Select all on page'}
+          </button>
+          <div className="h-4 w-px bg-indigo-300" />
+          <button
+            onClick={() => setBulkAction('delete')}
+            disabled={bulkLoading}
+            className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+          >
+            Delete
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="ml-auto text-sm text-gray-500 hover:text-gray-700"
+          >
+            Clear selection
+          </button>
+        </div>
+      )}
+
+      {/* Select mode hint (when in select mode but nothing selected) */}
+      {selectMode && selectedIds.size === 0 && !loading && companies.length > 0 && (
+        <div className="mb-4 flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+          <span className="text-sm text-gray-600">
+            Click on cards to select companies for bulk actions.
+          </span>
+          <button
+            onClick={toggleSelectAll}
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+          >
+            Select all on page
+          </button>
+        </div>
+      )}
+
       {/* Grid */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
@@ -101,14 +244,26 @@ export default function Companies() {
       ) : companies.length === 0 ? (
         search ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <p className="text-gray-400 text-sm">No companies match your search</p>
+            <p className="text-gray-400 text-sm">
+              No companies match your search
+            </p>
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <EmptyState
               icon={
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5M3.75 3v18m16.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                <svg
+                  className="w-7 h-7"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M2.25 21h19.5M3.75 3v18m16.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
+                  />
                 </svg>
               }
               title="No companies yet"
@@ -121,7 +276,13 @@ export default function Companies() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {companies.map((company) => (
-            <CompanyCard key={company.id} company={company} />
+            <CompanyCard
+              key={company.id}
+              company={company}
+              selectMode={selectMode}
+              selected={selectedIds.has(company.id)}
+              onToggleSelect={() => toggleSelect(company.id)}
+            />
           ))}
         </div>
       )}
@@ -147,6 +308,37 @@ export default function Companies() {
             >
               Next
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {bulkAction === 'delete' && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Delete companies?
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              This will permanently delete {selectedIds.size} company
+              {selectedIds.size !== 1 ? 'ies' : 'y'}. This action cannot be
+              undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setBulkAction(null)}
+                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkLoading}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {bulkLoading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -178,11 +370,38 @@ export default function Companies() {
   );
 }
 
-function CompanyCard({ company }: { company: Company }) {
-  return (
-    <Link to={`/companies/${company.id}`} className="block bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow">
+function CompanyCard({
+  company,
+  selectMode,
+  selected,
+  onToggleSelect,
+}: {
+  company: Company;
+  selectMode: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
+}) {
+  const cardContent = (
+    <>
+      {/* Checkbox overlay in select mode */}
+      {selectMode && (
+        <div className="absolute top-3 left-3 z-10">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            onClick={(e) => e.stopPropagation()}
+            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+          />
+        </div>
+      )}
+
       <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-bold flex-shrink-0">
+        <div
+          className={`w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+            selectMode ? 'ml-6' : ''
+          }`}
+        >
           {company.name[0]?.toUpperCase()}
         </div>
         {company.size && (
@@ -201,13 +420,53 @@ function CompanyCard({ company }: { company: Company }) {
       )}
 
       {company.description && (
-        <p className="text-sm text-gray-500 mt-2 line-clamp-2">{company.description}</p>
+        <p className="text-sm text-gray-500 mt-2 line-clamp-2">
+          {company.description}
+        </p>
       )}
 
       <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4 text-xs text-gray-400">
-        {company.website && <span className="truncate">{company.website}</span>}
-        <span className="ml-auto">{new Date(company.createdAt).toLocaleDateString()}</span>
+        {company.website && (
+          <span className="truncate">{company.website}</span>
+        )}
+        <span className="ml-auto">
+          {new Date(company.createdAt).toLocaleDateString()}
+        </span>
       </div>
+    </>
+  );
+
+  const baseClasses =
+    'relative block bg-white rounded-xl shadow-sm border border-gray-200 p-5 transition-all';
+  const selectedClasses = selected ? ' ring-2 ring-indigo-500' : '';
+
+  if (selectMode) {
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onToggleSelect}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggleSelect();
+          }
+        }}
+        className={`${baseClasses}${selectedClasses} cursor-pointer hover:shadow-md ${
+          selected ? 'bg-indigo-50/30' : ''
+        }`}
+      >
+        {cardContent}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={`/companies/${company.id}`}
+      className={`${baseClasses} hover:shadow-md`}
+    >
+      {cardContent}
     </Link>
   );
 }

@@ -18,6 +18,11 @@ export default function Deals() {
   const [viewMode, setViewMode] = useState<ViewMode>('pipeline');
   const [showCreate, setShowCreate] = useState(false);
 
+  // Bulk selection state (list view only)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   const fetchDeals = useCallback(async () => {
     setLoading(true);
     try {
@@ -34,6 +39,11 @@ export default function Deals() {
   useEffect(() => {
     fetchDeals();
   }, [fetchDeals]);
+
+  // Clear selection when switching views
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [viewMode]);
 
   // Real-time updates via WebSocket
   const handleWSMessage = useCallback(
@@ -66,6 +76,45 @@ export default function Deals() {
       toast.error('Failed to update deal stage');
       // Revert on failure by refetching
       fetchDeals();
+    }
+  };
+
+  // Bulk selection helpers
+  const allSelected = deals.length > 0 && deals.every((d) => selectedIds.has(d.id));
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(deals.map((d) => d.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Bulk delete handler
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      const { data } = await api.post('/bulk/deals/delete', {
+        ids: Array.from(selectedIds),
+      });
+      toast.success(`Deleted ${data.deleted} deal${data.deleted !== 1 ? 's' : ''}`);
+      setSelectedIds(new Set());
+      setShowBulkDelete(false);
+      fetchDeals();
+    } catch {
+      toast.error('Failed to delete deals');
+    } finally {
+      setBulkLoading(false);
     }
   };
 
@@ -134,7 +183,16 @@ export default function Deals() {
       ) : viewMode === 'pipeline' ? (
         <PipelineView dealsByStage={dealsByStage} onStageChange={handleStageChange} />
       ) : (
-        <ListView deals={deals} />
+        <ListView
+          deals={deals}
+          selectedIds={selectedIds}
+          toggleSelect={toggleSelect}
+          toggleSelectAll={toggleSelectAll}
+          allSelected={allSelected}
+          bulkLoading={bulkLoading}
+          onBulkDelete={() => setShowBulkDelete(true)}
+          onClearSelection={() => setSelectedIds(new Set())}
+        />
       )}
 
       {showCreate && (
@@ -146,6 +204,33 @@ export default function Deals() {
             toast.success('Deal created successfully');
           }}
         />
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete deals?</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              This will permanently delete {selectedIds.size} deal{selectedIds.size !== 1 ? 's' : ''}. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowBulkDelete(false)}
+                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkLoading}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {bulkLoading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -298,54 +383,118 @@ function DealCard({
   );
 }
 
-function ListView({ deals }: { deals: Deal[] }) {
+function ListView({
+  deals,
+  selectedIds,
+  toggleSelect,
+  toggleSelectAll,
+  allSelected,
+  bulkLoading,
+  onBulkDelete,
+  onClearSelection,
+}: {
+  deals: Deal[];
+  selectedIds: Set<string>;
+  toggleSelect: (id: string) => void;
+  toggleSelectAll: () => void;
+  allSelected: boolean;
+  bulkLoading: boolean;
+  onBulkDelete: () => void;
+  onClearSelection: () => void;
+}) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-1">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="text-left py-3 px-4 font-semibold text-gray-600">Deal</th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-600">Amount</th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-600">Stage</th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-600">Contact</th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-600">Company</th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-600">Close Date</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {deals.map((deal) => (
-              <tr key={deal.id} className="hover:bg-gray-50 transition-colors">
-                <td className="py-3 px-4 font-medium text-gray-900">
-                  <Link to={`/deals/${deal.id}`} className="hover:text-indigo-600 transition-colors">{deal.title}</Link>
-                </td>
-                <td className="py-3 px-4 text-gray-700">
-                  {deal.amount != null ? `$${deal.amount.toLocaleString()}` : '--'}
-                </td>
-                <td className="py-3 px-4">
-                  <span
-                    className={`text-xs font-medium px-2 py-1 rounded-full ${STAGE_COLORS[deal.stage]}`}
-                  >
-                    {STAGE_LABELS[deal.stage]}
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-gray-600">
-                  {deal.contact
-                    ? `${deal.contact.firstName} ${deal.contact.lastName}`
-                    : '--'}
-                </td>
-                <td className="py-3 px-4 text-gray-600">
-                  {deal.company?.name || '--'}
-                </td>
-                <td className="py-3 px-4 text-gray-500">
-                  {deal.expectedCloseDate
-                    ? new Date(deal.expectedCloseDate).toLocaleDateString()
-                    : '--'}
-                </td>
+    <div className="flex-1 flex flex-col gap-4">
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
+          <span className="text-sm font-medium text-indigo-900">
+            {selectedIds.size} selected
+          </span>
+          <div className="h-4 w-px bg-indigo-300" />
+          <button
+            onClick={onBulkDelete}
+            disabled={bulkLoading}
+            className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+          >
+            Delete
+          </button>
+          <button
+            onClick={onClearSelection}
+            className="ml-auto text-sm text-gray-500 hover:text-gray-700"
+          >
+            Clear selection
+          </button>
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-1">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="py-3 px-4 w-10">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                </th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-600">Deal</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-600">Amount</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-600">Stage</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-600">Contact</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-600">Company</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-600">Close Date</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {deals.map((deal) => (
+                <tr
+                  key={deal.id}
+                  className={`hover:bg-gray-50 transition-colors ${
+                    selectedIds.has(deal.id) ? 'bg-indigo-50/50' : ''
+                  }`}
+                >
+                  <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(deal.id)}
+                      onChange={() => toggleSelect(deal.id)}
+                      className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                  </td>
+                  <td className="py-3 px-4 font-medium text-gray-900">
+                    <Link to={`/deals/${deal.id}`} className="hover:text-indigo-600 transition-colors">{deal.title}</Link>
+                  </td>
+                  <td className="py-3 px-4 text-gray-700">
+                    {deal.amount != null ? `$${deal.amount.toLocaleString()}` : '--'}
+                  </td>
+                  <td className="py-3 px-4">
+                    <span
+                      className={`text-xs font-medium px-2 py-1 rounded-full ${STAGE_COLORS[deal.stage]}`}
+                    >
+                      {STAGE_LABELS[deal.stage]}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-gray-600">
+                    {deal.contact
+                      ? `${deal.contact.firstName} ${deal.contact.lastName}`
+                      : '--'}
+                  </td>
+                  <td className="py-3 px-4 text-gray-600">
+                    {deal.company?.name || '--'}
+                  </td>
+                  <td className="py-3 px-4 text-gray-500">
+                    {deal.expectedCloseDate
+                      ? new Date(deal.expectedCloseDate).toLocaleDateString()
+                      : '--'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -18,6 +18,12 @@ export default function Contacts() {
   const [showCreate, setShowCreate] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<'delete' | 'tag' | null>(null);
+  const [bulkTagName, setBulkTagName] = useState('');
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   const fetchContacts = useCallback(async () => {
     setLoading(true);
     try {
@@ -37,6 +43,11 @@ export default function Contacts() {
     fetchContacts();
   }, [fetchContacts]);
 
+  // Clear selection on page/search change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [page, search]);
+
   // Debounced search
   const [searchInput, setSearchInput] = useState('');
   useEffect(() => {
@@ -46,6 +57,102 @@ export default function Contacts() {
     }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
+
+  const allOnPageSelected = contacts.length > 0 && contacts.every((c) => selectedIds.has(c.id));
+
+  const toggleSelectAll = () => {
+    if (allOnPageSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(contacts.map((c) => c.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // --- Bulk actions ---
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      const { data } = await api.post('/bulk/contacts/delete', {
+        ids: Array.from(selectedIds),
+      });
+      toast.success(`Deleted ${data.deleted} contact${data.deleted !== 1 ? 's' : ''}`);
+      setSelectedIds(new Set());
+      setBulkAction(null);
+      fetchContacts();
+    } catch {
+      toast.error('Failed to delete contacts');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkTag = async () => {
+    if (selectedIds.size === 0 || !bulkTagName.trim()) return;
+    setBulkLoading(true);
+    try {
+      const { data } = await api.post('/bulk/contacts/tag', {
+        ids: Array.from(selectedIds),
+        tagName: bulkTagName.trim(),
+      });
+      toast.success(`Tagged ${data.tagged} contact${data.tagged !== 1 ? 's' : ''}`);
+      setSelectedIds(new Set());
+      setBulkAction(null);
+      setBulkTagName('');
+      fetchContacts();
+    } catch {
+      toast.error('Failed to tag contacts');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    setBulkLoading(true);
+    try {
+      const payload: { ids?: string[]; filters?: { search?: string } } =
+        selectedIds.size > 0
+          ? { ids: Array.from(selectedIds) }
+          : search
+            ? { filters: { search } }
+            : {};
+
+      const { data } = await api.post('/bulk/contacts/export', payload, {
+        responseType: 'blob',
+      });
+
+      // Trigger download
+      const blob = new Blob([data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `contacts-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success(
+        selectedIds.size > 0
+          ? `Exported ${selectedIds.size} contact${selectedIds.size !== 1 ? 's' : ''}`
+          : 'Contacts exported'
+      );
+    } catch {
+      toast.error('Failed to export contacts');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
@@ -57,6 +164,16 @@ export default function Contacts() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleExport}
+            disabled={bulkLoading}
+            className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Export CSV
+          </button>
           <button
             onClick={() => setShowImport(true)}
             className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"
@@ -85,6 +202,43 @@ export default function Contacts() {
           className="w-full max-w-md px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
         />
       </div>
+
+      {/* Bulk action toolbar */}
+      {selectedIds.size > 0 && (
+        <div className="mb-4 flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
+          <span className="text-sm font-medium text-indigo-900">
+            {selectedIds.size} selected
+          </span>
+          <div className="h-4 w-px bg-indigo-300" />
+          <button
+            onClick={() => setBulkAction('delete')}
+            disabled={bulkLoading}
+            className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+          >
+            Delete
+          </button>
+          <button
+            onClick={() => setBulkAction('tag')}
+            disabled={bulkLoading}
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+          >
+            Add Tag
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={bulkLoading}
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+          >
+            Export Selected
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="ml-auto text-sm text-gray-500 hover:text-gray-700"
+          >
+            Clear selection
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -116,6 +270,14 @@ export default function Contacts() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="py-3 px-4 w-10">
+                      <input
+                        type="checkbox"
+                        checked={allOnPageSelected}
+                        onChange={toggleSelectAll}
+                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                    </th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-600">Name</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-600">Email</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-600">Title</th>
@@ -127,10 +289,19 @@ export default function Contacts() {
                   {contacts.map((contact) => (
                     <tr
                       key={contact.id}
-                      onClick={() => navigate(`/contacts/${contact.id}`)}
-                      className="hover:bg-gray-50 cursor-pointer transition-colors"
+                      className={`hover:bg-gray-50 cursor-pointer transition-colors ${
+                        selectedIds.has(contact.id) ? 'bg-indigo-50/50' : ''
+                      }`}
                     >
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(contact.id)}
+                          onChange={() => toggleSelect(contact.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                      </td>
+                      <td className="py-3 px-4" onClick={() => navigate(`/contacts/${contact.id}`)}>
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
                             {contact.firstName?.[0]}
@@ -141,8 +312,8 @@ export default function Contacts() {
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-gray-600">{contact.email || '--'}</td>
-                      <td className="py-3 px-4 text-gray-600">{contact.title || '--'}</td>
+                      <td className="py-3 px-4 text-gray-600" onClick={() => navigate(`/contacts/${contact.id}`)}>{contact.email || '--'}</td>
+                      <td className="py-3 px-4 text-gray-600" onClick={() => navigate(`/contacts/${contact.id}`)}>{contact.title || '--'}</td>
                       <td className="py-3 px-4">
                         {contact.company ? (
                           <Link
@@ -156,7 +327,7 @@ export default function Contacts() {
                           <span className="text-gray-400">--</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-gray-500">
+                      <td className="py-3 px-4 text-gray-500" onClick={() => navigate(`/contacts/${contact.id}`)}>
                         {new Date(contact.createdAt).toLocaleDateString()}
                       </td>
                     </tr>
@@ -192,6 +363,74 @@ export default function Contacts() {
           </>
         )}
       </div>
+
+      {/* Bulk Delete Confirmation Modal */}
+      {bulkAction === 'delete' && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete contacts?</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              This will permanently delete {selectedIds.size} contact{selectedIds.size !== 1 ? 's' : ''}. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setBulkAction(null)}
+                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkLoading}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {bulkLoading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Tag Modal */}
+      {bulkAction === 'tag' && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Add tag</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Apply a tag to {selectedIds.size} selected contact{selectedIds.size !== 1 ? 's' : ''}.
+            </p>
+            <input
+              type="text"
+              placeholder="Tag name..."
+              value={bulkTagName}
+              onChange={(e) => setBulkTagName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && bulkTagName.trim()) handleBulkTag();
+              }}
+              autoFocus
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none mb-6"
+            />
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setBulkAction(null);
+                  setBulkTagName('');
+                }}
+                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkTag}
+                disabled={bulkLoading || !bulkTagName.trim()}
+                className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {bulkLoading ? 'Tagging...' : 'Apply Tag'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create Contact Modal */}
       {showCreate && (
