@@ -18,6 +18,8 @@ import Activities from './pages/Activities';
 import Signals from './pages/Signals';
 import PQADashboard from './pages/PQADashboard';
 import Settings from './pages/Settings';
+import Landing from './pages/Landing';
+import ApiDocs from './pages/ApiDocs';
 import NotFound from './pages/NotFound';
 
 /**
@@ -49,6 +51,8 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public routes */}
+      <Route path="/landing" element={<Landing />} />
+      <Route path="/docs" element={<ApiDocs />} />
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
