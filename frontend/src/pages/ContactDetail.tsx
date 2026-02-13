@@ -1,9 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
-import type { Contact } from '../types';
+import type { Contact, Signal } from '../types';
 import Spinner from '../components/Spinner';
 import { useToast } from '../components/Toast';
+
+function timeAgo(date: string): string {
+  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(date).toLocaleDateString();
+}
 
 export default function ContactDetail() {
   const { id } = useParams<{ id: string }>();
@@ -12,6 +24,7 @@ export default function ContactDetail() {
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [signals, setSignals] = useState<Signal[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -21,7 +34,46 @@ export default function ContactDetail() {
       .then(({ data }) => setContact(data))
       .catch(() => setError('Contact not found'))
       .finally(() => setLoading(false));
+
+    // Fetch signals for this contact
+    api
+      .get('/signals', { params: { actorId: id, limit: 50 } })
+      .then(({ data }) => setSignals(data.signals || []))
+      .catch(() => {});
   }, [id]);
+
+  const timelineItems = useMemo(() => {
+    const items = [
+      ...signals.map((s) => ({
+        id: s.id,
+        kind: 'signal' as const,
+        title: s.type.replace(/_/g, ' '),
+        subtitle: s.account?.name || s.source?.name || '',
+        date: s.timestamp,
+        color: 'bg-amber-100 text-amber-700',
+        icon: 'S',
+      })),
+      ...(contact?.activities || []).map((a) => ({
+        id: a.id,
+        kind: 'activity' as const,
+        title: a.title,
+        subtitle: `${a.type} - ${a.status}`,
+        date: a.createdAt,
+        color: 'bg-blue-100 text-blue-700',
+        icon: a.type[0],
+      })),
+      ...(contact?.deals || []).map((d) => ({
+        id: d.id,
+        kind: 'deal' as const,
+        title: `Deal: ${d.title}`,
+        subtitle: `${d.stage}${d.amount ? ` - $${d.amount.toLocaleString()}` : ''}`,
+        date: d.createdAt,
+        color: 'bg-purple-100 text-purple-700',
+        icon: '$',
+      })),
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return items;
+  }, [signals, contact]);
 
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this contact?')) return;
@@ -132,6 +184,34 @@ export default function ContactDetail() {
 
           {/* AI Enrichment */}
           <AIEnrichment contactId={id!} />
+
+          {/* Timeline */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Timeline</h2>
+            {timelineItems.length === 0 ? (
+              <p className="text-sm text-gray-400 py-4 text-center">No timeline events yet</p>
+            ) : (
+              <div className="relative">
+                <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200" />
+                {timelineItems.map((item) => (
+                  <div key={`${item.kind}-${item.id}`} className="relative flex gap-4 pb-6 last:pb-0">
+                    <div
+                      className={`flex-shrink-0 w-8 h-8 rounded-full ${item.color} flex items-center justify-center z-10 text-xs font-bold`}
+                    >
+                      {item.icon}
+                    </div>
+                    <div className="flex-1 pt-1">
+                      <p className="text-sm font-medium text-gray-900">{item.title}</p>
+                      {item.subtitle && (
+                        <p className="text-xs text-gray-500">{item.subtitle}</p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-1">{timeAgo(item.date)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Sidebar */}

@@ -69,6 +69,7 @@ model Organization {
   webhookEndpoints   WebhookEndpoint[]
   accountBriefs      AccountBrief[]
   apiKeys            ApiKey[]
+  workflows          Workflow[]
 
   @@index([slug])
   @@map("organizations")
@@ -643,4 +644,56 @@ model WebhookDelivery {
 
   @@index([endpointId, createdAt(sort: Desc)])
   @@map("webhook_deliveries")
+}
+
+// ============================================================
+// WORKFLOW AUTOMATION — Signal-driven actions
+// ============================================================
+
+model Workflow {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  name           String
+  description    String?
+  trigger        Json     // { event: "signal_received", filters: { type: "repo_clone" } }
+  conditions     Json?    // [{ field: "score", operator: "gte", value: 80 }]
+  actions        Json     // [{ type: "create_deal", params: { title: "..." } }]
+  enabled        Boolean  @default(true)
+
+  lastTriggeredAt DateTime?
+  runCount       Int      @default(0)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  runs           WorkflowRun[]
+
+  @@index([organizationId, enabled])
+  @@map("workflows")
+}
+
+model WorkflowRun {
+  id          String   @id @default(cuid())
+  workflowId  String
+
+  status      WorkflowRunStatus
+  triggerData Json
+  results     Json?
+  error       String?
+  duration    Int?     // ms
+
+  createdAt   DateTime @default(now())
+
+  workflow    Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId, createdAt(sort: Desc)])
+  @@map("workflow_runs")
+}
+
+enum WorkflowRunStatus {
+  SUCCESS
+  FAILED
+  SKIPPED
 }

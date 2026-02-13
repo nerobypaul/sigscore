@@ -15,9 +15,16 @@ interface DashboardStats {
   hotAccounts: AccountScore[];
 }
 
+interface AnalyticsData {
+  trends: { date: string; count: number }[];
+  distribution: Record<string, number>;
+  topSignals: { type: string; count: number }[];
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
 
   useEffect(() => {
     async function fetchStats() {
@@ -76,6 +83,21 @@ export default function Dashboard() {
     }
 
     fetchStats();
+  }, []);
+
+  // Fetch analytics data independently
+  useEffect(() => {
+    Promise.allSettled([
+      api.get('/analytics/signal-trends', { params: { days: 30 } }),
+      api.get('/analytics/pqa-distribution'),
+      api.get('/analytics/top-signals', { params: { limit: 8 } }),
+    ]).then(([trendsRes, distRes, topRes]) => {
+      setAnalytics({
+        trends: trendsRes.status === 'fulfilled' ? trendsRes.value.data.trends || [] : [],
+        distribution: distRes.status === 'fulfilled' ? distRes.value.data.distribution || {} : {},
+        topSignals: topRes.status === 'fulfilled' ? topRes.value.data.types || [] : [],
+      });
+    });
   }, []);
 
   if (loading) {
@@ -148,6 +170,17 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Analytics Charts */}
+      {analytics && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Signal Trends */}
+          <SignalTrendsChart trends={analytics.trends} />
+
+          {/* PQA Score Distribution */}
+          <PQADistributionChart distribution={analytics.distribution} />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Deal pipeline summary */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -216,6 +249,11 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {/* Top Signal Types */}
+        {analytics && analytics.topSignals.length > 0 && (
+          <TopSignalTypesChart topSignals={analytics.topSignals} />
+        )}
 
         {/* Recent Signal + Activity Feed */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:col-span-2">
@@ -301,6 +339,181 @@ export default function Dashboard() {
       </div>
     </div>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Analytics Chart Components
+// ---------------------------------------------------------------------------
+
+function SignalTrendsChart({ trends }: { trends: { date: string; count: number }[] }) {
+  if (trends.length === 0) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Signal Volume (30d)</h2>
+        <p className="text-sm text-gray-400 py-8 text-center">No signal data available</p>
+      </div>
+    );
+  }
+
+  const maxCount = Math.max(...trends.map((t) => t.count), 1);
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Signal Volume (30d)</h2>
+        <span className="text-xs text-gray-400">
+          Peak: {maxCount} signals
+        </span>
+      </div>
+
+      {/* Y-axis label + chart */}
+      <div className="flex gap-2">
+        <div className="flex flex-col justify-between text-xs text-gray-400 py-0.5 w-8 text-right">
+          <span>{maxCount}</span>
+          <span>{Math.round(maxCount / 2)}</span>
+          <span>0</span>
+        </div>
+        <div className="flex-1">
+          <div className="flex items-end gap-0.5 h-40">
+            {trends.map((item, i) => (
+              <div
+                key={i}
+                className="flex-1 bg-indigo-500 rounded-t min-w-[4px] transition-all hover:bg-indigo-600 cursor-default"
+                style={{ height: `${(item.count / maxCount) * 100}%`, minHeight: item.count > 0 ? '2px' : '0px' }}
+                title={`${formatShortDate(item.date)}: ${item.count} signals`}
+              />
+            ))}
+          </div>
+          {/* X-axis labels */}
+          <div className="flex justify-between mt-2">
+            {trends
+              .filter((_, i) => i % 5 === 0 || i === trends.length - 1)
+              .map((item, i) => (
+                <span key={i} className="text-xs text-gray-400">
+                  {formatShortDate(item.date)}
+                </span>
+              ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PQADistributionChart({ distribution }: { distribution: Record<string, number> }) {
+  const tiers = ['HOT', 'WARM', 'COLD', 'INACTIVE'] as const;
+  const tierColors: Record<string, string> = {
+    HOT: 'bg-red-500',
+    WARM: 'bg-orange-500',
+    COLD: 'bg-blue-500',
+    INACTIVE: 'bg-gray-400',
+  };
+  const tierBgColors: Record<string, string> = {
+    HOT: 'bg-red-50',
+    WARM: 'bg-orange-50',
+    COLD: 'bg-blue-50',
+    INACTIVE: 'bg-gray-50',
+  };
+  const tierTextColors: Record<string, string> = {
+    HOT: 'text-red-700',
+    WARM: 'text-orange-700',
+    COLD: 'text-blue-700',
+    INACTIVE: 'text-gray-500',
+  };
+
+  const total = Object.values(distribution).reduce((sum, v) => sum + v, 0);
+  const maxCount = Math.max(...Object.values(distribution), 1);
+
+  if (total === 0) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Health Distribution</h2>
+        <p className="text-sm text-gray-400 py-8 text-center">No account scores yet</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Account Health Distribution</h2>
+        <span className="text-xs text-gray-400">{total} total accounts</span>
+      </div>
+      <div className="space-y-3">
+        {tiers.map((tier) => {
+          const count = distribution[tier] || 0;
+          const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+          const barWidth = maxCount > 0 ? (count / maxCount) * 100 : 0;
+
+          return (
+            <div key={tier} className={`rounded-lg p-3 ${tierBgColors[tier]}`}>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className={`text-sm font-semibold ${tierTextColors[tier]}`}>{tier}</span>
+                <span className={`text-sm font-medium ${tierTextColors[tier]}`}>
+                  {count} <span className="text-xs font-normal opacity-70">({pct}%)</span>
+                </span>
+              </div>
+              <div className="w-full h-2 bg-white/60 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${tierColors[tier]}`}
+                  style={{ width: `${barWidth}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TopSignalTypesChart({ topSignals }: { topSignals: { type: string; count: number }[] }) {
+  if (topSignals.length === 0) return null;
+
+  const maxCount = Math.max(...topSignals.map((s) => s.count), 1);
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:col-span-2">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Top Signals (This Month)</h2>
+        <Link to="/signals" className="text-sm text-indigo-600 hover:text-indigo-500">
+          View all
+        </Link>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {topSignals.map((signal) => {
+          const barWidth = (signal.count / maxCount) * 100;
+          return (
+            <div key={signal.type} className="flex items-center gap-3">
+              <div className="w-28 flex-shrink-0">
+                <span className="text-sm font-medium text-gray-700 truncate block">
+                  {signal.type.replace(/_/g, ' ')}
+                </span>
+              </div>
+              <div className="flex-1 flex items-center gap-2">
+                <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-500 rounded-full transition-all"
+                    style={{ width: `${barWidth}%` }}
+                  />
+                </div>
+                <span className="text-xs font-semibold text-gray-600 w-10 text-right">{signal.count}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatShortDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 function ActivityTypeBadge({ type }: { type: string }) {

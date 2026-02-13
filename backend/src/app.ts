@@ -25,6 +25,8 @@ import slackSettingsRoutes from './routes/slack-settings';
 import searchRoutes from './routes/search';
 import usageRoutes from './routes/usage';
 import billingRoutes, { billingWebhookRouter } from './routes/billing';
+import analyticsRoutes from './routes/analytics';
+import workflowRoutes from './routes/workflows';
 
 const app = express();
 
@@ -131,6 +133,10 @@ app.use('/api/v1/search', searchRoutes);
 // API routes — Usage & Billing
 app.use('/api/v1/usage', usageRoutes);
 app.use('/api/v1/billing', billingRoutes);
+
+// API routes — Analytics & Workflows
+app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/workflows', workflowRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);
