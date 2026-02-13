@@ -28,6 +28,7 @@ import billingRoutes, { billingWebhookRouter } from './routes/billing';
 import analyticsRoutes from './routes/analytics';
 import workflowRoutes from './routes/workflows';
 import connectorRoutes from './routes/connectors';
+import bulkRoutes from './routes/bulk';
 
 const app = express();
 
@@ -141,6 +142,9 @@ app.use('/api/v1/workflows', workflowRoutes);
 
 // API routes — Connectors
 app.use('/api/v1/connectors', connectorRoutes);
+
+// API routes — Bulk Operations & CSV Export
+app.use('/api/v1/bulk', bulkRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);

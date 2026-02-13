@@ -63,6 +63,7 @@ const typeDefs = gql`
   enum SignalSourceType {
     GITHUB
     NPM
+    PYPI
     WEBSITE
     DOCS
     PRODUCT_API
