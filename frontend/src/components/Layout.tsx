@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import GlobalSearch from './GlobalSearch';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: DashboardIcon },
@@ -60,6 +61,11 @@ export default function Layout() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+        </div>
+
+        {/* Global Search */}
+        <div className="px-3 pt-3 pb-1">
+          <GlobalSearch />
         </div>
 
         {/* Navigation */}

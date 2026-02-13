@@ -22,6 +22,7 @@ import customObjectRoutes from './routes/custom-objects';
 import aiRoutes from './routes/ai';
 import csvImportRoutes from './routes/csv-import';
 import slackSettingsRoutes from './routes/slack-settings';
+import searchRoutes from './routes/search';
 
 const app = express();
 
@@ -117,6 +118,9 @@ app.use('/api/v1/import', csvImportRoutes);
 
 // API routes — Settings (Slack, etc.)
 app.use('/api/v1/settings', slackSettingsRoutes);
+
+// API routes — Search
+app.use('/api/v1/search', searchRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);

@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard';
 import Contacts from './pages/Contacts';
 import ContactDetail from './pages/ContactDetail';
 import Companies from './pages/Companies';
+import CompanyDetail from './pages/CompanyDetail';
 import Deals from './pages/Deals';
 import Activities from './pages/Activities';
 import Signals from './pages/Signals';
@@ -81,6 +82,7 @@ function AppRoutes() {
         <Route path="/contacts" element={<Contacts />} />
         <Route path="/contacts/:id" element={<ContactDetail />} />
         <Route path="/companies" element={<Companies />} />
+        <Route path="/companies/:id" element={<CompanyDetail />} />
         <Route path="/deals" element={<Deals />} />
         <Route path="/activities" element={<Activities />} />
         <Route path="/signals" element={<Signals />} />

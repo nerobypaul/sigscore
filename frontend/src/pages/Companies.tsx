@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import type { Company, Pagination } from '../types';
 import Spinner from '../components/Spinner';
@@ -179,7 +180,7 @@ export default function Companies() {
 
 function CompanyCard({ company }: { company: Company }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow">
+    <Link to={`/companies/${company.id}`} className="block bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-bold flex-shrink-0">
           {company.name[0]?.toUpperCase()}
@@ -207,7 +208,7 @@ function CompanyCard({ company }: { company: Company }) {
         {company.website && <span className="truncate">{company.website}</span>}
         <span className="ml-auto">{new Date(company.createdAt).toLocaleDateString()}</span>
       </div>
-    </div>
+    </Link>
   );
 }
 
