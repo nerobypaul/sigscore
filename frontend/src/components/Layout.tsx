@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import GlobalSearch from './GlobalSearch';
+import NotificationBell from './NotificationBell';
+import KeyboardShortcuts from './KeyboardShortcuts';
+import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: DashboardIcon },
@@ -19,6 +22,13 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  const toggleShortcuts = useCallback(() => {
+    setShowShortcuts((prev) => !prev);
+  }, []);
+
+  useKeyboardShortcuts(toggleShortcuts);
 
   const handleLogout = async () => {
     await logout();
@@ -50,18 +60,21 @@ export default function Layout() {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Logo */}
+        {/* Logo + Notifications */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-gray-800">
           <span className="text-xl font-bold tracking-tight">Headless CRM</span>
-          {/* Close button (mobile only) */}
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-gray-400 hover:text-white"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            {/* Close button (mobile only) */}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden text-gray-400 hover:text-white"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Global Search */}
@@ -123,6 +136,15 @@ export default function Layout() {
           </div>
         </nav>
 
+        {/* Keyboard shortcuts hint */}
+        <button
+          onClick={toggleShortcuts}
+          className="mx-3 mb-2 flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:text-gray-300 hover:bg-gray-800/50 transition-colors"
+        >
+          <kbd className="px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded text-[10px] font-mono">?</kbd>
+          <span>Keyboard shortcuts</span>
+        </button>
+
         {/* User section */}
         <div className="p-4 border-t border-gray-800">
           <div className="flex items-center gap-3">
@@ -158,7 +180,7 @@ export default function Layout() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
-          <span className="text-sm font-semibold text-gray-900">
+          <span className="flex-1 text-sm font-semibold text-gray-900">
             {location.pathname === '/settings'
               ? 'Settings'
               : location.pathname === '/billing'
@@ -171,12 +193,20 @@ export default function Layout() {
                     : location.pathname.startsWith(item.to)
                 )?.label ?? 'Headless CRM'}
           </span>
+          <div className="[&_button]:text-gray-600 [&_button]:hover:text-gray-900 [&_button]:hover:bg-gray-100">
+            <NotificationBell />
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>
       </div>
+
+      {/* Keyboard shortcuts modal */}
+      {showShortcuts && (
+        <KeyboardShortcuts onClose={() => setShowShortcuts(false)} />
+      )}
     </div>
   );
 }

@@ -29,6 +29,7 @@ import analyticsRoutes from './routes/analytics';
 import workflowRoutes from './routes/workflows';
 import connectorRoutes from './routes/connectors';
 import bulkRoutes from './routes/bulk';
+import notificationRoutes from './routes/notifications';
 
 const app = express();
 
@@ -145,6 +146,9 @@ app.use('/api/v1/connectors', connectorRoutes);
 
 // API routes — Bulk Operations & CSV Export
 app.use('/api/v1/bulk', bulkRoutes);
+
+// API routes — Notifications
+app.use('/api/v1/notifications', notificationRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);

@@ -34,6 +34,7 @@ model User {
   organizations UserOrganization[]
   activities    Activity[]
   dealsOwned    Deal[]
+  notifications Notification[]
 
   @@index([email])
   @@map("users")
@@ -70,6 +71,7 @@ model Organization {
   accountBriefs      AccountBrief[]
   apiKeys            ApiKey[]
   workflows          Workflow[]
+  notifications      Notification[]
 
   @@index([slug])
   @@map("organizations")
@@ -697,4 +699,28 @@ enum WorkflowRunStatus {
   SUCCESS
   FAILED
   SKIPPED
+}
+
+// ============================================================
+// IN-APP NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  type           String   // e.g., "deal_stage_changed", "workflow_completed", "contact_created", "score_changed"
+  title          String
+  body           String?
+  entityType     String?  // "contact", "company", "deal", "workflow"
+  entityId       String?
+  read           Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
+  @@index([organizationId])
+  @@map("notifications")
 }
