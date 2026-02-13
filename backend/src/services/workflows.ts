@@ -3,6 +3,7 @@ import { prisma } from '../config/database';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { getSlackWebhookUrl } from './slack-notifications';
+import { notifyOrgUsers } from './notifications';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -479,5 +480,16 @@ export const processEvent = async (
     logger.info(
       `Workflow ${workflow.id} "${workflow.name}" completed: ${failed ? 'FAILED' : 'SUCCESS'} (${duration}ms)`,
     );
+
+    // Notify org users when a workflow fails
+    if (failed) {
+      notifyOrgUsers(organizationId, {
+        type: 'workflow_failed',
+        title: `Workflow "${workflow.name}" failed`,
+        body: errorMessage || 'An action in this workflow encountered an error',
+        entityType: 'workflow',
+        entityId: workflow.id,
+      }).catch((err) => logger.error('Workflow failure notification error:', err));
+    }
   }
 };

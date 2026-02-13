@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as dealService from '../services/deals';
 import { processEvent } from '../services/workflows';
+import { notifyOrgUsers } from '../services/notifications';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
 
@@ -47,6 +48,16 @@ export const createDeal = async (req: Request, res: Response, next: NextFunction
     const deal = await dealService.createDeal(organizationId, req.body);
     logger.info(`Deal created: ${deal.id}`);
 
+    // Notify org users of new deal (fire-and-forget)
+    notifyOrgUsers(organizationId, {
+      type: 'deal_created',
+      title: `New deal: ${deal.title}`,
+      body: deal.amount ? `$${Number(deal.amount).toLocaleString()}` : undefined,
+      entityType: 'deal',
+      entityId: deal.id,
+      excludeUserId: req.user?.id,
+    }).catch((err) => logger.error('Notification error:', err));
+
     res.status(201).json(deal);
   } catch (error) {
     next(error);
@@ -76,6 +87,16 @@ export const updateDeal = async (req: Request, res: Response, next: NextFunction
         companyId: deal.companyId,
         contactId: deal.contactId,
       }).catch((err) => logger.error('Workflow processing error:', err));
+
+      // Notify org users of stage change (fire-and-forget)
+      notifyOrgUsers(organizationId, {
+        type: 'deal_stage_changed',
+        title: `Deal "${deal.title}" moved to ${deal.stage}`,
+        body: deal.amount ? `$${Number(deal.amount).toLocaleString()}` : undefined,
+        entityType: 'deal',
+        entityId: deal.id,
+        excludeUserId: req.user?.id,
+      }).catch((err) => logger.error('Notification error:', err));
     }
 
     res.json(deal);
