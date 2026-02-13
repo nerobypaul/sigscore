@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as dealService from '../services/deals';
+import { processEvent } from '../services/workflows';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
 
@@ -57,8 +58,25 @@ export const updateDeal = async (req: Request, res: Response, next: NextFunction
     const { id } = req.params;
     const organizationId = req.organizationId!;
 
+    // Capture old stage before update for workflow trigger
+    const oldDeal = await dealService.getDealById(id, organizationId);
+    const oldStage = oldDeal?.stage;
+
     const deal = await dealService.updateDeal(id, organizationId, req.body);
     logger.info(`Deal updated: ${deal.id}`);
+
+    // Trigger workflow if stage changed (fire-and-forget)
+    if (oldStage && deal.stage !== oldStage) {
+      processEvent(organizationId, 'deal_stage_changed', {
+        dealId: deal.id,
+        oldStage,
+        newStage: deal.stage,
+        title: deal.title,
+        amount: deal.amount,
+        companyId: deal.companyId,
+        contactId: deal.contactId,
+      }).catch((err) => logger.error('Workflow processing error:', err));
+    }
 
     res.json(deal);
   } catch (error) {

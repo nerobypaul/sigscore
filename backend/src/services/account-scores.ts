@@ -2,6 +2,7 @@ import { Prisma, ScoreTier, ScoreTrend } from '@prisma/client';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
 import { notifyTierChange } from './slack-notifications';
+import { processEvent } from './workflows';
 
 interface ScoreFactor {
   name: string;
@@ -202,6 +203,18 @@ export const computeAccountScore = async (organizationId: string, accountId: str
     const accountName = score.account?.name || 'Unknown';
     notifyTierChange(organizationId, accountName, oldTier, tier, totalScore, totalSignals, userCount)
       .catch((err) => logger.error('Slack tier notification failed', { err }));
+
+    // Trigger workflow for score/tier change (fire-and-forget)
+    processEvent(organizationId, 'score_changed', {
+      accountId,
+      accountName,
+      oldTier,
+      newTier: tier,
+      oldScore: existingScore?.score ?? null,
+      newScore: totalScore,
+      signalCount: totalSignals,
+      userCount,
+    }).catch((err) => logger.error('Workflow processing error:', err));
   }
 
   return score;

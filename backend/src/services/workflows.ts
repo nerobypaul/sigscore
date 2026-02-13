@@ -2,6 +2,7 @@ import { Prisma, WorkflowRunStatus } from '@prisma/client';
 import { prisma } from '../config/database';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { getSlackWebhookUrl } from './slack-notifications';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -265,30 +266,101 @@ export const executeAction = async (
 
     case 'send_webhook': {
       const url = action.params.url as string;
-      logger.info(`Workflow action: send_webhook to ${url} (placeholder)`, {
-        organizationId,
-        payload: action.params.payload ?? context,
-      });
-      return { type: 'send_webhook', url, status: 'placeholder' };
+      if (!url) throw new Error('send_webhook requires a url param');
+      const payload = (action.params.payload as Record<string, unknown>) ?? context;
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(10000),
+        });
+        logger.info(`Workflow action: send_webhook to ${url} — ${response.status}`);
+        return { type: 'send_webhook', url, statusCode: response.status, success: response.ok };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.error(`Workflow action: send_webhook to ${url} failed: ${msg}`);
+        return { type: 'send_webhook', url, success: false, error: msg };
+      }
     }
 
     case 'send_slack': {
-      const channel = action.params.channel as string;
-      const message = action.params.message as string;
-      logger.info(`Workflow action: send_slack to #${channel} (placeholder)`, {
-        organizationId,
-        message,
-      });
-      return { type: 'send_slack', channel, status: 'placeholder' };
+      const message = (action.params.message as string) || 'Workflow notification from DevSignal';
+      const webhookUrl = await getSlackWebhookUrl(organizationId);
+      if (!webhookUrl) {
+        logger.warn('Workflow action: send_slack skipped — no Slack webhook configured');
+        return { type: 'send_slack', status: 'skipped', reason: 'no_webhook_configured' };
+      }
+      try {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: message,
+            blocks: [
+              {
+                type: 'section',
+                text: { type: 'mrkdwn', text: message },
+              },
+              {
+                type: 'context',
+                elements: [
+                  { type: 'mrkdwn', text: `DevSignal Workflow \u2022 ${new Date().toISOString().split('T')[0]}` },
+                ],
+              },
+            ],
+          }),
+          signal: AbortSignal.timeout(10000),
+        });
+        logger.info(`Workflow action: send_slack — ${response.status}`);
+        return { type: 'send_slack', success: response.ok };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.error(`Workflow action: send_slack failed: ${msg}`);
+        return { type: 'send_slack', success: false, error: msg };
+      }
     }
 
     case 'add_tag': {
       const tagName = action.params.tag as string;
-      logger.info(`Workflow action: add_tag "${tagName}" (placeholder)`, {
-        organizationId,
-        context,
+      if (!tagName) throw new Error('add_tag requires a tag param');
+
+      // Find or create the tag
+      const tag = await prisma.tag.upsert({
+        where: { organizationId_name: { organizationId, name: tagName } },
+        create: { name: tagName, organization: { connect: { id: organizationId } } },
+        update: {},
       });
-      return { type: 'add_tag', tag: tagName, status: 'placeholder' };
+
+      // Attach to entity based on context
+      const contactId = context.contactId as string | undefined;
+      const companyId = context.accountId as string | undefined;
+      const dealId = context.dealId as string | undefined;
+
+      if (contactId) {
+        await prisma.contactTag.upsert({
+          where: { contactId_tagId: { contactId, tagId: tag.id } },
+          create: { contactId, tagId: tag.id },
+          update: {},
+        });
+      }
+      if (companyId) {
+        await prisma.companyTag.upsert({
+          where: { companyId_tagId: { companyId, tagId: tag.id } },
+          create: { companyId, tagId: tag.id },
+          update: {},
+        });
+      }
+      if (dealId) {
+        await prisma.dealTag.upsert({
+          where: { dealId_tagId: { dealId, tagId: tag.id } },
+          create: { dealId, tagId: tag.id },
+          update: {},
+        });
+      }
+
+      logger.info(`Workflow action: add_tag "${tagName}" to ${contactId ? 'contact' : companyId ? 'company' : dealId ? 'deal' : 'nothing'}`);
+      return { type: 'add_tag', tag: tagName, tagId: tag.id, attached: !!(contactId || companyId || dealId) };
     }
 
     case 'log': {

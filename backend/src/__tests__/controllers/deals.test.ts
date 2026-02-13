@@ -2,6 +2,9 @@ import '../setup';
 import { mockRequest, mockResponse, mockNext, testData } from '../helpers';
 
 jest.mock('../../services/deals');
+jest.mock('../../services/workflows', () => ({
+  processEvent: jest.fn().mockResolvedValue(undefined),
+}));
 
 import {
   getDeals,
@@ -206,7 +209,9 @@ describe('Deals Controller', () => {
     };
 
     it('should update a deal and return the result', async () => {
+      const oldDeal = testData.deal({ stage: 'IDENTIFIED' });
       const updated = testData.deal({ ...updateBody });
+      mockedService.getDealById.mockResolvedValue(oldDeal);
       mockedService.updateDeal.mockResolvedValue(updated);
 
       const req = mockRequest({
@@ -219,12 +224,14 @@ describe('Deals Controller', () => {
 
       await updateDeal(req, res, next);
 
+      expect(mockedService.getDealById).toHaveBeenCalledWith('deal-1', orgId);
       expect(mockedService.updateDeal).toHaveBeenCalledWith('deal-1', orgId, updateBody);
       expect(res.json).toHaveBeenCalledWith(updated);
     });
 
     it('should call next(error) on service failure', async () => {
       const err = new Error('Not found');
+      mockedService.getDealById.mockResolvedValue(testData.deal());
       mockedService.updateDeal.mockRejectedValue(err);
 
       const req = mockRequest({

@@ -127,7 +127,7 @@ async function sendSlackMessage(webhookUrl: string, message: SlackMessage): Prom
 }
 
 // Get Slack webhook URL from organization settings
-async function getSlackWebhookUrl(organizationId: string): Promise<string | null> {
+export async function getSlackWebhookUrl(organizationId: string): Promise<string | null> {
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
     select: { settings: true },
