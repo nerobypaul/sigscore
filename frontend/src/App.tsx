@@ -18,6 +18,7 @@ import Activities from './pages/Activities';
 import Signals from './pages/Signals';
 import PQADashboard from './pages/PQADashboard';
 import Settings from './pages/Settings';
+import Billing from './pages/Billing';
 import Landing from './pages/Landing';
 import ApiDocs from './pages/ApiDocs';
 import NotFound from './pages/NotFound';
@@ -92,6 +93,7 @@ function AppRoutes() {
         <Route path="/signals" element={<Signals />} />
         <Route path="/scores" element={<PQADashboard />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/billing" element={<Billing />} />
       </Route>
 
       {/* 404 catch-all */}

@@ -23,6 +23,8 @@ import aiRoutes from './routes/ai';
 import csvImportRoutes from './routes/csv-import';
 import slackSettingsRoutes from './routes/slack-settings';
 import searchRoutes from './routes/search';
+import usageRoutes from './routes/usage';
+import billingRoutes, { billingWebhookRouter } from './routes/billing';
 
 const app = express();
 
@@ -61,6 +63,10 @@ const signalLimiter = rateLimit({
   message: 'Signal ingest rate limit exceeded.',
 });
 app.use('/api/v1/signals', signalLimiter);
+
+// Stripe webhook — must be mounted BEFORE express.json() so the raw body
+// is available for signature verification.
+app.use('/api/v1/billing/webhook', billingWebhookRouter);
 
 // Body parsing
 app.use(express.json({ limit: '5mb' }));
@@ -121,6 +127,10 @@ app.use('/api/v1/settings', slackSettingsRoutes);
 
 // API routes — Search
 app.use('/api/v1/search', searchRoutes);
+
+// API routes — Usage & Billing
+app.use('/api/v1/usage', usageRoutes);
+app.use('/api/v1/billing', billingRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);

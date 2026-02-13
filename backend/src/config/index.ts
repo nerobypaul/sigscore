@@ -59,6 +59,13 @@ export const config = {
     model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929',
   },
 
+  stripe: {
+    secretKey: requireEnv('STRIPE_SECRET_KEY', 'sk_test_placeholder'),
+    webhookSecret: requireEnv('STRIPE_WEBHOOK_SECRET', 'whsec_test_placeholder'),
+    pricePro: process.env.STRIPE_PRICE_PRO || 'price_pro_placeholder',
+    priceScale: process.env.STRIPE_PRICE_SCALE || 'price_scale_placeholder',
+  },
+
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
     max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),

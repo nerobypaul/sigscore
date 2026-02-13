@@ -10,6 +10,7 @@ import {
   getTopAccounts,
 } from '../controllers/signals';
 import { authenticate, requireOrganization } from '../middleware/auth';
+import { enforceSignalLimit } from '../middleware/usage-limits';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
 
@@ -87,7 +88,7 @@ const ingestBatchSchema = z.object({
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', validate(ingestSignalSchema), ingestSignal);
+router.post('/', enforceSignalLimit, validate(ingestSignalSchema), ingestSignal);
 
 /**
  * @openapi
@@ -141,7 +142,7 @@ router.post('/', validate(ingestSignalSchema), ingestSignal);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/batch', validate(ingestBatchSchema), ingestSignalBatch);
+router.post('/batch', enforceSignalLimit, validate(ingestBatchSchema), ingestSignalBatch);
 
 /**
  * @openapi

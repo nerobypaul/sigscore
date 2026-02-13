@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getContacts, getContact, createContact, updateContact, deleteContact } from '../controllers/contacts';
 import { authenticate, requireOrganization } from '../middleware/auth';
+import { enforceContactLimit } from '../middleware/usage-limits';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
 
@@ -236,7 +237,7 @@ router.get('/:id', getContact);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', validate(createContactSchema), createContact);
+router.post('/', enforceContactLimit, validate(createContactSchema), createContact);
 
 /**
  * @openapi
