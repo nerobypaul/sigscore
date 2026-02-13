@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import { useWebSocket } from '../lib/useWebSocket';
 import type { WebSocketMessage } from '../lib/useWebSocket';
@@ -239,7 +240,7 @@ function DealCard({
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:shadow-md transition-shadow relative">
       <div className="flex items-start justify-between mb-1">
-        <h3 className="text-sm font-medium text-gray-900 leading-tight">{deal.title}</h3>
+        <Link to={`/deals/${deal.id}`} className="text-sm font-medium text-gray-900 leading-tight hover:text-indigo-600 transition-colors">{deal.title}</Link>
         <button
           onClick={() => setShowStageMenu(!showStageMenu)}
           className="text-gray-400 hover:text-gray-600 ml-2 flex-shrink-0"
@@ -315,7 +316,9 @@ function ListView({ deals }: { deals: Deal[] }) {
           <tbody className="divide-y divide-gray-100">
             {deals.map((deal) => (
               <tr key={deal.id} className="hover:bg-gray-50 transition-colors">
-                <td className="py-3 px-4 font-medium text-gray-900">{deal.title}</td>
+                <td className="py-3 px-4 font-medium text-gray-900">
+                  <Link to={`/deals/${deal.id}`} className="hover:text-indigo-600 transition-colors">{deal.title}</Link>
+                </td>
                 <td className="py-3 px-4 text-gray-700">
                   {deal.amount != null ? `$${deal.amount.toLocaleString()}` : '--'}
                 </td>

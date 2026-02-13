@@ -20,6 +20,7 @@ import PQADashboard from './pages/PQADashboard';
 import Settings from './pages/Settings';
 import Billing from './pages/Billing';
 import Workflows from './pages/Workflows';
+import DealDetail from './pages/DealDetail';
 import Landing from './pages/Landing';
 import ApiDocs from './pages/ApiDocs';
 import NotFound from './pages/NotFound';
@@ -90,6 +91,7 @@ function AppRoutes() {
         <Route path="/companies" element={<Companies />} />
         <Route path="/companies/:id" element={<CompanyDetail />} />
         <Route path="/deals" element={<Deals />} />
+        <Route path="/deals/:id" element={<DealDetail />} />
         <Route path="/activities" element={<Activities />} />
         <Route path="/signals" element={<Signals />} />
         <Route path="/scores" element={<PQADashboard />} />
