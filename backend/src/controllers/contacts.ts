@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as contactService from '../services/contacts';
+import { processEvent } from '../services/workflows';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
 
@@ -44,6 +45,15 @@ export const createContact = async (req: Request, res: Response, next: NextFunct
 
     const contact = await contactService.createContact(organizationId, req.body);
     logger.info(`Contact created: ${contact.id}`);
+
+    // Trigger workflow automations (fire-and-forget)
+    processEvent(organizationId, 'contact_created', {
+      contactId: contact.id,
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+      email: contact.email,
+      companyId: contact.companyId,
+    }).catch((err) => logger.error('Workflow processing error:', err));
 
     res.status(201).json(contact);
   } catch (error) {
