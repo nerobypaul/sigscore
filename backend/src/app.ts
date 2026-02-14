@@ -87,7 +87,7 @@ app.get('/health', async (_req, res) => {
     await prisma.$queryRaw`SELECT 1`;
     res.json({
       status: 'ok',
-      service: 'devsignal-crm',
+      service: 'devsignal',
       timestamp: new Date().toISOString(),
       version: '0.2.0',
       db: 'connected',
@@ -96,7 +96,7 @@ app.get('/health', async (_req, res) => {
     const message = error instanceof Error ? error.message : 'Unknown error';
     res.status(503).json({
       status: 'degraded',
-      service: 'devsignal-crm',
+      service: 'devsignal',
       timestamp: new Date().toISOString(),
       version: '0.2.0',
       db: 'disconnected',
@@ -181,10 +181,10 @@ app.get('/api/openapi.json', (_req, res) => {
 
 // Swagger UI at /api-docs (primary) and /api/docs (legacy)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: 'DevSignal CRM API Docs',
+  customSiteTitle: 'DevSignal API Docs',
 }));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: 'DevSignal CRM API Docs',
+  customSiteTitle: 'DevSignal API Docs',
 }));
 
 // 404 handler

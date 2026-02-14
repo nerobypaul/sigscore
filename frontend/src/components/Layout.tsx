@@ -62,7 +62,7 @@ export default function Layout() {
       >
         {/* Logo + Notifications */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-gray-800">
-          <span className="text-xl font-bold tracking-tight">Headless CRM</span>
+          <span className="text-xl font-bold tracking-tight">DevSignal</span>
           <div className="flex items-center gap-1">
             <NotificationBell />
             {/* Close button (mobile only) */}
@@ -223,7 +223,7 @@ export default function Layout() {
                   item.to === '/'
                     ? location.pathname === '/'
                     : location.pathname.startsWith(item.to)
-                )?.label ?? 'Headless CRM'}
+                )?.label ?? 'DevSignal'}
           </span>
           <div className="[&_button]:text-gray-600 [&_button]:hover:text-gray-900 [&_button]:hover:bg-gray-100">
             <NotificationBell />

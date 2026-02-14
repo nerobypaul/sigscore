@@ -5,10 +5,10 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.3',
     info: {
-      title: 'DevSignal CRM API',
+      title: 'DevSignal API',
       version: '0.2.0',
       description:
-        'AI-first headless CRM for DevTool companies. Provides core CRM operations (contacts, companies, deals, activities), a signal engine for product-led growth analytics, PQA scoring, webhook delivery, and API key management.',
+        'Developer Pipeline Intelligence platform for DevTool companies. Provides core operations (contacts, companies, deals, activities), a signal engine for product-led growth analytics, PQA scoring, webhook delivery, and API key management.',
       contact: {
         name: 'DevSignal Team',
       },
@@ -676,8 +676,8 @@ const options: swaggerJsdoc.Options = {
     },
     tags: [
       { name: 'Auth', description: 'Authentication and user management' },
-      { name: 'Contacts', description: 'CRM contact management' },
-      { name: 'Companies', description: 'CRM company/account management' },
+      { name: 'Contacts', description: 'Contact management' },
+      { name: 'Companies', description: 'Company/account management' },
       { name: 'Deals', description: 'PLG-native deal pipeline management' },
       { name: 'Activities', description: 'Tasks, calls, meetings, emails, and notes' },
       { name: 'API Keys', description: 'API key creation and management (JWT auth only)' },
