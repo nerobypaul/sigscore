@@ -3,6 +3,7 @@ import { prisma } from '../config/database';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { enqueueEmailSend } from '../jobs/producers';
+import { sendEmail } from './email-sender';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -616,21 +617,30 @@ export async function processEmailStep(enrollmentId: string, stepId: string) {
   });
 
   try {
-    // NOTE: Email provider integration is a future step (Resend/SendGrid).
-    // For now, log the rendered email and mark as sent.
-    logger.info('Email send (provider not configured):', {
-      sendId: send.id,
+    const fromName = enrollment.sequence.fromName || 'DevSignal';
+    const fromEmail = enrollment.sequence.fromEmail || 'notifications@devsignal.dev';
+    const fromAddress = `${fromName} <${fromEmail}>`;
+
+    if (!contact.email) {
+      throw new Error(`Contact ${contact.id} has no email address`);
+    }
+
+    const result = await sendEmail({
       to: contact.email,
-      from: enrollment.sequence.fromEmail || 'noreply@devsignal.io',
-      fromName: enrollment.sequence.fromName || 'DevSignal',
+      from: fromAddress,
       subject: renderedSubject,
-      bodyPreview: renderedBody.substring(0, 200),
+      html: renderedBody,
+      replyTo: enrollment.sequence.replyTo || undefined,
     });
 
-    // Update send status to sent
+    // Update send status to sent with provider message ID
     await prisma.emailSend.update({
       where: { id: send.id },
-      data: { status: 'sent', sentAt: new Date() },
+      data: {
+        status: 'sent',
+        sentAt: new Date(),
+        ...(result.id && { messageId: result.id }),
+      },
     });
 
     // Advance enrollment step

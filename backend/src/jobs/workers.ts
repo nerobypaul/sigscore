@@ -19,10 +19,12 @@ import {
   EnrichmentJobData,
   SignalSyncJobData,
   WorkflowExecutionJobData,
+  EmailSendJobData,
   HubSpotSyncJobData,
   DiscordSyncJobData,
   SalesforceSyncJobData,
 } from './queue';
+import { processEmailStep } from '../services/email-sequences';
 
 // ---------------------------------------------------------------------------
 // Worker references (populated by startWorkers, drained by stopWorkers)
@@ -332,6 +334,32 @@ function createSalesforceSyncWorker(): Worker<SalesforceSyncJobData> {
 }
 
 // ---------------------------------------------------------------------------
+// Email Send Worker
+// ---------------------------------------------------------------------------
+function createEmailSendWorker(): Worker<EmailSendJobData> {
+  return new Worker<EmailSendJobData>(
+    QUEUE_NAMES.EMAIL_SEND,
+    async (job: Job<EmailSendJobData>) => {
+      const { enrollmentId, stepId } = job.data;
+      logger.info('Email send started', {
+        jobId: job.id,
+        enrollmentId,
+        stepId,
+        attempt: job.attemptsMade + 1,
+      });
+
+      await processEmailStep(enrollmentId, stepId);
+
+      logger.info('Email send completed', { jobId: job.id, enrollmentId, stepId });
+    },
+    {
+      connection: bullConnection,
+      concurrency: 5,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Lifecycle helpers
 // ---------------------------------------------------------------------------
 function attachLogging(worker: Worker): void {
@@ -365,11 +393,12 @@ export const startWorkers = (): void => {
   const enrichmentWorker = createEnrichmentWorker();
   const signalSyncWorker = createSignalSyncWorker();
   const workflowWorker = createWorkflowExecutionWorker();
+  const emailSendWorker = createEmailSendWorker();
   const hubspotSyncWorker = createHubSpotSyncWorker();
   const discordSyncWorker = createDiscordSyncWorker();
   const salesforceSyncWorker = createSalesforceSyncWorker();
 
-  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker].forEach((w) => {
+  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker].forEach((w) => {
     attachLogging(w);
     workers.push(w);
   });

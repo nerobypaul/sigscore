@@ -66,8 +66,17 @@ export const config = {
     priceScale: process.env.STRIPE_PRICE_SCALE || 'price_scale_placeholder',
   },
 
+  email: {
+    resendApiKey: process.env.RESEND_API_KEY || '',
+    fromAddress: process.env.EMAIL_FROM || 'DevSignal <notifications@devsignal.dev>',
+  },
+
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
     max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
+  },
+
+  sentry: {
+    dsn: process.env.SENTRY_DSN || '',
   },
 };
