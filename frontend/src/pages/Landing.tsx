@@ -226,6 +226,7 @@ export default function Landing() {
               <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
               <Link to="/use-cases" className="hover:text-white transition-colors">Use Cases</Link>
               <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
+              <Link to="/developers" className="hover:text-white transition-colors">Developers</Link>
             </div>
             <div className="flex items-center gap-3">
               <Link
@@ -679,6 +680,7 @@ export default function Landing() {
               <a href="#features" className="hover:text-gray-300 transition-colors">Features</a>
               <Link to="/use-cases" className="hover:text-gray-300 transition-colors">Use Cases</Link>
               <Link to="/pricing" className="hover:text-gray-300 transition-colors">Pricing</Link>
+              <Link to="/developers" className="hover:text-gray-300 transition-colors">Developers</Link>
               <Link to="/login" className="hover:text-gray-300 transition-colors">Sign in</Link>
             </div>
             <p className="text-xs text-gray-600">
