@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { broadcastSignalCreated } from './websocket';
+import { resolveSignalIdentity } from './identity-resolution';
 
 export interface SignalInput {
   sourceId: string;
@@ -25,37 +26,21 @@ export interface SignalFilters {
 }
 
 export const ingestSignal = async (organizationId: string, data: SignalInput) => {
-  // Try to resolve account from actor's contact if actorId provided
-  let accountId = data.accountId;
-  if (!accountId && data.actorId) {
-    const contact = await prisma.contact.findFirst({
-      where: { id: data.actorId, organizationId },
-      select: { companyId: true },
-    });
-    if (contact?.companyId) {
-      accountId = contact.companyId;
-    }
-  }
-
-  // Try to resolve via anonymousId (email domain matching)
-  if (!accountId && data.anonymousId && data.anonymousId.includes('@')) {
-    const domain = data.anonymousId.split('@')[1];
-    const company = await prisma.company.findFirst({
-      where: { organizationId, domain },
-      select: { id: true },
-    });
-    if (company) {
-      accountId = company.id;
-    }
-  }
+  // Run identity resolution engine for comprehensive actor/account matching
+  const resolved = await resolveSignalIdentity(organizationId, {
+    actorId: data.actorId,
+    accountId: data.accountId,
+    anonymousId: data.anonymousId,
+    metadata: data.metadata,
+  });
 
   const signal = await prisma.signal.create({
     data: {
       organizationId,
       sourceId: data.sourceId,
       type: data.type,
-      actorId: data.actorId || null,
-      accountId: accountId || null,
+      actorId: resolved.actorId,
+      accountId: resolved.accountId,
       anonymousId: data.anonymousId || null,
       metadata: data.metadata as Prisma.InputJsonValue,
       idempotencyKey: data.idempotencyKey || null,
@@ -80,38 +65,29 @@ export const ingestSignalBatch = async (organizationId: string, signals: SignalI
     const created = await prisma.$transaction(async (tx) => {
       const txResults = [];
 
-      for (const data of signals) {
-        // Resolve account from actor's contact if actorId provided
-        let accountId = data.accountId;
-        if (!accountId && data.actorId) {
-          const contact = await tx.contact.findFirst({
-            where: { id: data.actorId, organizationId },
-            select: { companyId: true },
-          });
-          if (contact?.companyId) {
-            accountId = contact.companyId;
-          }
-        }
+      // Pre-resolve identities outside transaction for each signal
+      const resolvedList = await Promise.all(
+        signals.map((data) =>
+          resolveSignalIdentity(organizationId, {
+            actorId: data.actorId,
+            accountId: data.accountId,
+            anonymousId: data.anonymousId,
+            metadata: data.metadata,
+          }),
+        ),
+      );
 
-        // Resolve via anonymousId (email domain matching)
-        if (!accountId && data.anonymousId && data.anonymousId.includes('@')) {
-          const domain = data.anonymousId.split('@')[1];
-          const company = await tx.company.findFirst({
-            where: { organizationId, domain },
-            select: { id: true },
-          });
-          if (company) {
-            accountId = company.id;
-          }
-        }
+      for (let idx = 0; idx < signals.length; idx++) {
+        const data = signals[idx];
+        const resolved = resolvedList[idx];
 
         const signal = await tx.signal.create({
           data: {
             organizationId,
             sourceId: data.sourceId,
             type: data.type,
-            actorId: data.actorId || null,
-            accountId: accountId || null,
+            actorId: resolved.actorId,
+            accountId: resolved.accountId,
             anonymousId: data.anonymousId || null,
             metadata: data.metadata as Prisma.InputJsonValue,
             idempotencyKey: data.idempotencyKey || null,

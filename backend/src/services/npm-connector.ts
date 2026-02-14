@@ -1,6 +1,10 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
+import {
+  resolveNpmMaintainer,
+  extractCompanyDomain as irExtractCompanyDomain,
+} from './identity-resolution';
 
 const NPM_DOWNLOADS_API = 'https://api.npmjs.org/downloads/point/last-week';
 const NPM_REGISTRY_API = 'https://registry.npmjs.org';
@@ -71,38 +75,7 @@ async function fetchRegistryMetadata(packageName: string): Promise<NpmRegistryRe
   return response.json() as Promise<NpmRegistryResponse>;
 }
 
-/**
- * Extracts a domain from an email address.
- * Filters out generic email providers that cannot be meaningfully matched to companies.
- */
-function extractCompanyDomain(email: string): string | null {
-  const parts = email.split('@');
-  if (parts.length !== 2) return null;
-
-  const domain = parts[1].toLowerCase();
-
-  const genericProviders = new Set([
-    'gmail.com',
-    'yahoo.com',
-    'hotmail.com',
-    'outlook.com',
-    'protonmail.com',
-    'icloud.com',
-    'live.com',
-    'aol.com',
-    'mail.com',
-    'zoho.com',
-    'fastmail.com',
-    'pm.me',
-    'proton.me',
-    'hey.com',
-    'tutanota.com',
-  ]);
-
-  if (genericProviders.has(domain)) return null;
-
-  return domain;
-}
+// extractCompanyDomain now provided by identity-resolution service (irExtractCompanyDomain)
 
 /**
  * Syncs download data for a single npm signal source.
@@ -155,21 +128,40 @@ export async function syncNpmSource(
         });
       }
 
-      // Attempt company domain matching from maintainer emails
+      // Use identity resolution engine for maintainer -> company matching
       let accountId: string | null = null;
       if (registryData?.maintainers) {
         for (const maintainer of registryData.maintainers) {
-          if (!maintainer.email) continue;
-          const domain = extractCompanyDomain(maintainer.email);
-          if (!domain) continue;
-
-          const company = await prisma.company.findFirst({
-            where: { organizationId, domain },
-            select: { id: true },
-          });
-          if (company) {
-            accountId = company.id;
-            break;
+          if (!maintainer.email && !maintainer.name) continue;
+          try {
+            const resolved = await resolveNpmMaintainer(
+              organizationId,
+              maintainer.name,
+              maintainer.email,
+            );
+            if (resolved.accountId) {
+              accountId = resolved.accountId;
+              break;
+            }
+          } catch (resolveErr) {
+            logger.debug('npm maintainer identity resolution failed', {
+              maintainer: maintainer.name,
+              error: resolveErr,
+            });
+            // Fall back to basic domain matching
+            if (maintainer.email) {
+              const domain = irExtractCompanyDomain(maintainer.email);
+              if (domain) {
+                const company = await prisma.company.findFirst({
+                  where: { organizationId, domain },
+                  select: { id: true },
+                });
+                if (company) {
+                  accountId = company.id;
+                  break;
+                }
+              }
+            }
           }
         }
       }

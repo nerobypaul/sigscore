@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
+import { resolveGitHubActor } from './identity-resolution';
 
 // Map GitHub event types to DevSignal signal types
 const EVENT_MAP: Record<string, string> = {
@@ -156,29 +157,30 @@ export async function processGitHubWebhook(
     return { processed: false };
   }
 
-  // Try to resolve actor by GitHub username
+  // Use identity resolution engine for comprehensive actor/account matching
   let actorId: string | undefined;
   let accountId: string | undefined;
 
   if (parsed.actorGithub && parsed.actorGithub !== 'unknown') {
     try {
-      const contact = await prisma.contact.findFirst({
-        where: { organizationId, github: parsed.actorGithub },
-        select: { id: true, companyId: true },
-      });
-      if (contact) {
-        actorId = contact.id;
-        accountId = contact.companyId || undefined;
-      }
+      const resolved = await resolveGitHubActor(
+        organizationId,
+        parsed.actorGithub,
+        parsed.actorEmail,
+        undefined, // company field not available from webhook payload
+        parsed.metadata.sender_avatar as string | undefined,
+      );
+      actorId = resolved.actorId || undefined;
+      accountId = resolved.accountId || undefined;
     } catch (err) {
-      logger.warn('Failed to resolve GitHub actor', {
+      logger.warn('Identity resolution failed for GitHub actor', {
         github: parsed.actorGithub,
         error: err,
       });
     }
   }
 
-  // Try to resolve account by GitHub org if not already resolved via actor
+  // Fall back to GitHub org lookup if identity resolution didn't resolve account
   if (!accountId && parsed.accountGithubOrg) {
     try {
       const company = await prisma.company.findFirst({

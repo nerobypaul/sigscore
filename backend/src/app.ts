@@ -43,6 +43,9 @@ import crmImportRoutes from './routes/crm-import';
 import hubspotSyncRoutes from './routes/hubspot-sync';
 import githubOnboardingRoutes from './routes/github-onboarding';
 import playbookRoutes from './routes/playbooks';
+import scoringRoutes from './routes/scoring';
+import identityRoutes from './routes/identity';
+import discordConnectorRoutes from './routes/discord-connector';
 
 const app = express();
 
@@ -158,6 +161,7 @@ app.use('/api/v1/workflows', workflowRoutes);
 
 // API routes — Connectors
 app.use('/api/v1/connectors', connectorRoutes);
+app.use('/api/v1/connectors/discord', discordConnectorRoutes);
 
 // API routes — Bulk Operations & CSV Export
 app.use('/api/v1/bulk', bulkRoutes);
@@ -197,6 +201,12 @@ app.use('/api/v1/integrations', hubspotSyncRoutes);
 
 // API routes — Playbooks
 app.use('/api/v1/playbooks', playbookRoutes);
+
+// API routes — Scoring Rules (no-code lead scoring builder)
+app.use('/api/v1/scoring', scoringRoutes);
+
+// API routes — Identity Resolution
+app.use('/api/v1/identity', identityRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);

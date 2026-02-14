@@ -182,6 +182,9 @@ export default function ContactDetail() {
             </div>
           )}
 
+          {/* Identity Resolution */}
+          <IdentitySection contactId={id!} />
+
           {/* AI Enrichment */}
           <AIEnrichment contactId={id!} />
 
@@ -288,6 +291,270 @@ function InfoField({ label, value }: { label: string; value?: string | null }) {
     <div>
       <dt className="text-xs text-gray-500">{label}</dt>
       <dd className="text-sm text-gray-900 mt-0.5">{value}</dd>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Identity Resolution Section
+// ---------------------------------------------------------------------------
+
+interface IdentityNode {
+  type: string;
+  value: string;
+  verified: boolean;
+  confidence: number;
+  createdAt: string;
+}
+
+interface IdentityGraphData {
+  contactId: string;
+  contactName: string;
+  contactEmail: string | null;
+  company: { id: string; name: string; domain: string | null } | null;
+  identities: IdentityNode[];
+}
+
+interface DuplicateEntry {
+  contactId: string;
+  name: string;
+  email: string | null;
+  sharedIdentities: Array<{ type: string; value: string; confidence: number }>;
+  overallConfidence: number;
+}
+
+interface DuplicateGroup {
+  primaryContactId: string;
+  primaryName: string;
+  primaryEmail: string | null;
+  duplicates: DuplicateEntry[];
+}
+
+const IDENTITY_ICONS: Record<string, { label: string; color: string }> = {
+  EMAIL: { label: 'Email', color: 'bg-blue-100 text-blue-700' },
+  GITHUB: { label: 'GitHub', color: 'bg-gray-800 text-white' },
+  NPM: { label: 'npm', color: 'bg-red-100 text-red-700' },
+  TWITTER: { label: 'Twitter', color: 'bg-sky-100 text-sky-700' },
+  LINKEDIN: { label: 'LinkedIn', color: 'bg-blue-600 text-white' },
+  IP: { label: 'IP', color: 'bg-gray-100 text-gray-700' },
+  DOMAIN: { label: 'Domain', color: 'bg-green-100 text-green-700' },
+};
+
+function confidenceLabel(score: number): string {
+  if (score >= 0.9) return 'Very high';
+  if (score >= 0.8) return 'High';
+  if (score >= 0.6) return 'Medium';
+  if (score >= 0.4) return 'Low';
+  return 'Very low';
+}
+
+function confidenceColor(score: number): string {
+  if (score >= 0.8) return 'text-green-600';
+  if (score >= 0.6) return 'text-yellow-600';
+  return 'text-red-600';
+}
+
+function IdentitySection({ contactId }: { contactId: string }) {
+  const toast = useToast();
+  const [graph, setGraph] = useState<IdentityGraphData | null>(null);
+  const [loadingGraph, setLoadingGraph] = useState(false);
+  const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
+  const [loadingDupes, setLoadingDupes] = useState(false);
+  const [enriching, setEnriching] = useState(false);
+  const [enrichResult, setEnrichResult] = useState<string[] | null>(null);
+  const [merging, setMerging] = useState(false);
+
+  // Load identity graph on mount
+  useEffect(() => {
+    setLoadingGraph(true);
+    api
+      .get(`/identity/graph/${contactId}`)
+      .then(({ data }) => setGraph(data))
+      .catch(() => {})
+      .finally(() => setLoadingGraph(false));
+  }, [contactId]);
+
+  const handleFindDuplicates = async () => {
+    setLoadingDupes(true);
+    try {
+      const { data } = await api.get('/identity/duplicates');
+      // Filter to show only groups relevant to this contact
+      const relevant = (data.duplicates || []).filter(
+        (g: DuplicateGroup) =>
+          g.primaryContactId === contactId ||
+          g.duplicates.some((d: DuplicateEntry) => d.contactId === contactId),
+      );
+      setDuplicates(relevant);
+      if (relevant.length === 0) {
+        toast.success('No duplicates found for this contact');
+      }
+    } catch {
+      toast.error('Failed to find duplicates');
+    } finally {
+      setLoadingDupes(false);
+    }
+  };
+
+  const handleMerge = async (primaryId: string, duplicateIds: string[]) => {
+    if (!confirm(`Merge ${duplicateIds.length} duplicate(s) into the primary contact? This cannot be undone.`)) return;
+    setMerging(true);
+    try {
+      await api.post('/identity/merge', { primaryId, duplicateIds });
+      toast.success('Contacts merged successfully');
+      setDuplicates([]);
+      // Refresh graph
+      const { data } = await api.get(`/identity/graph/${contactId}`);
+      setGraph(data);
+    } catch {
+      toast.error('Failed to merge contacts');
+    } finally {
+      setMerging(false);
+    }
+  };
+
+  const handleEnrich = async () => {
+    setEnriching(true);
+    setEnrichResult(null);
+    try {
+      const { data } = await api.post(`/identity/enrich/${contactId}`);
+      setEnrichResult(data.enrichments || []);
+      if (data.identitiesAdded > 0 || data.companyResolved) {
+        toast.success(`Enriched: ${data.identitiesAdded} identities added`);
+        // Refresh graph
+        const graphRes = await api.get(`/identity/graph/${contactId}`);
+        setGraph(graphRes.data);
+      } else {
+        toast.success('No new identities found');
+      }
+    } catch {
+      toast.error('Enrichment failed');
+    } finally {
+      setEnriching(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Identity Graph</h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleEnrich}
+            disabled={enriching}
+            className="text-xs font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50 border border-indigo-200 px-2.5 py-1 rounded-lg hover:bg-indigo-50 transition-colors"
+          >
+            {enriching ? 'Enriching...' : 'Enrich'}
+          </button>
+          <button
+            onClick={handleFindDuplicates}
+            disabled={loadingDupes}
+            className="text-xs font-medium text-amber-600 hover:text-amber-500 disabled:opacity-50 border border-amber-200 px-2.5 py-1 rounded-lg hover:bg-amber-50 transition-colors"
+          >
+            {loadingDupes ? 'Scanning...' : 'Find Duplicates'}
+          </button>
+        </div>
+      </div>
+
+      {/* Identity list */}
+      {loadingGraph ? (
+        <div className="flex justify-center py-4">
+          <Spinner size="sm" />
+        </div>
+      ) : graph && graph.identities.length > 0 ? (
+        <div className="space-y-2">
+          {graph.identities.map((identity, idx) => {
+            const meta = IDENTITY_ICONS[identity.type] || {
+              label: identity.type,
+              color: 'bg-gray-100 text-gray-700',
+            };
+            return (
+              <div
+                key={`${identity.type}-${identity.value}-${idx}`}
+                className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
+              >
+                <span
+                  className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-xs font-semibold ${meta.color}`}
+                >
+                  {meta.label}
+                </span>
+                <span className="text-sm text-gray-900 font-mono truncate flex-1">
+                  {identity.value}
+                </span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {identity.verified && (
+                    <span className="text-xs text-green-600 font-medium">Verified</span>
+                  )}
+                  <span
+                    className={`text-xs font-medium ${confidenceColor(identity.confidence)}`}
+                    title={`Confidence: ${(identity.confidence * 100).toFixed(0)}%`}
+                  >
+                    {confidenceLabel(identity.confidence)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-sm text-gray-400 py-2">
+          No linked identities yet. Click "Enrich" to discover identities from connected sources.
+        </p>
+      )}
+
+      {/* Enrichment results */}
+      {enrichResult && enrichResult.length > 0 && (
+        <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3">
+          <p className="text-xs font-medium text-green-800 mb-1.5">Enrichment results:</p>
+          <ul className="space-y-0.5">
+            {enrichResult.map((r, i) => (
+              <li key={i} className="text-xs text-green-700">
+                {r}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Duplicate detection results */}
+      {duplicates.length > 0 && (
+        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p className="text-xs font-medium text-amber-800 mb-2">Potential duplicates found:</p>
+          {duplicates.map((group) => (
+            <div key={group.primaryContactId} className="space-y-2">
+              {group.duplicates.map((dupe) => (
+                <div
+                  key={dupe.contactId}
+                  className="flex items-center justify-between gap-2 p-2 rounded border border-amber-100 bg-white"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{dupe.name}</p>
+                    {dupe.email && (
+                      <p className="text-xs text-gray-500 truncate">{dupe.email}</p>
+                    )}
+                    <div className="flex gap-1 mt-1">
+                      {dupe.sharedIdentities.map((si, i) => (
+                        <span
+                          key={i}
+                          className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded"
+                        >
+                          {si.type}: {si.value}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleMerge(group.primaryContactId, [dupe.contactId])}
+                    disabled={merging}
+                    className="text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 px-2.5 py-1 rounded transition-colors flex-shrink-0"
+                  >
+                    {merging ? 'Merging...' : 'Merge'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
