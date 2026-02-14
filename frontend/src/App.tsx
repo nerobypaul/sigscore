@@ -31,6 +31,7 @@ import EmailSequences from './pages/EmailSequences';
 import EmailSequenceDetail from './pages/EmailSequenceDetail';
 import DashboardBuilder from './pages/DashboardBuilder';
 import CrmImport from './pages/CrmImport';
+import Playbooks from './pages/Playbooks';
 import NotFound from './pages/NotFound';
 
 /**
@@ -106,6 +107,7 @@ function AppRoutes() {
         <Route path="/signals" element={<Signals />} />
         <Route path="/scores" element={<PQADashboard />} />
         <Route path="/workflows" element={<Workflows />} />
+        <Route path="/playbooks" element={<Playbooks />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/billing" element={<Billing />} />
         <Route path="/team" element={<TeamMembers />} />

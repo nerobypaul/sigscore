@@ -15,6 +15,7 @@ const navItems = [
   { to: '/signals', label: 'Signals', icon: SignalsIcon },
   { to: '/scores', label: 'PQA Scores', icon: ScoresIcon },
   { to: '/workflows', label: 'Workflows', icon: WorkflowsIcon },
+  { to: '/playbooks', label: 'Playbooks', icon: PlaybooksIcon },
   { to: '/sequences', label: 'Sequences', icon: SequencesIcon },
 ];
 
@@ -306,6 +307,14 @@ function WorkflowsIcon() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+    </svg>
+  );
+}
+
+function PlaybooksIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
     </svg>
   );
 }
