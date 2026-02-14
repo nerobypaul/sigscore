@@ -19,7 +19,8 @@ export default function GettingStarted() {
     return localStorage.getItem(DISMISSED_KEY) === 'true';
   });
   const [contactCount, setContactCount] = useState<number | null>(null);
-  const [companyCount, setCompanyCount] = useState<number | null>(null);
+  const [sourceCount, setSourceCount] = useState<number | null>(null);
+  const [memberCount, setMemberCount] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -29,20 +30,30 @@ export default function GettingStarted() {
 
     async function fetchCounts() {
       try {
-        const [contactsRes, companiesRes] = await Promise.all([
+        const [contactsRes, sourcesRes, membersRes] = await Promise.all([
           api.get('/contacts', { params: { limit: 1 } }).catch(() => null),
-          api.get('/companies', { params: { limit: 1 } }).catch(() => null),
+          api.get('/sources', { params: { limit: 100 } }).catch(() => null),
+          api.get('/members').catch(() => null),
         ]);
 
         if (cancelled) return;
 
         setContactCount(contactsRes?.data?.pagination?.total ?? 0);
-        setCompanyCount(companiesRes?.data?.pagination?.total ?? 0);
+
+        // Count signal sources, excluding demo sources
+        const sources = sourcesRes?.data?.sources || sourcesRes?.data || [];
+        const realSources = Array.isArray(sources)
+          ? sources.filter((s: { name?: string }) => s.name !== 'Demo Signal Source')
+          : [];
+        setSourceCount(realSources.length);
+
+        const members = membersRes?.data?.members || membersRes?.data || [];
+        setMemberCount(Array.isArray(members) ? members.length : 0);
       } catch {
-        // If fetches fail, default to 0
         if (!cancelled) {
           setContactCount(0);
-          setCompanyCount(0);
+          setSourceCount(0);
+          setMemberCount(0);
         }
       } finally {
         if (!cancelled) setLoaded(true);
@@ -60,7 +71,8 @@ export default function GettingStarted() {
 
   const hasOrg = (user?.organizations?.length ?? 0) > 0;
   const hasContact = (contactCount ?? 0) > 0;
-  const hasCompany = (companyCount ?? 0) > 0;
+  const hasSource = (sourceCount ?? 0) > 0;
+  const hasTeam = (memberCount ?? 0) > 1;
 
   const items: ChecklistItem[] = [
     {
@@ -69,48 +81,47 @@ export default function GettingStarted() {
       done: hasOrg,
     },
     {
+      id: 'signal-source',
+      label: 'Connect a signal source',
+      href: '/settings',
+      done: hasSource,
+      detail: (
+        <span className="text-xs text-gray-400">GitHub, npm, Segment, or a custom webhook</span>
+      ),
+    },
+    {
       id: 'contact',
       label: 'Add your first contact',
       href: '/contacts',
       done: hasContact,
     },
     {
-      id: 'company',
-      label: 'Create a company',
-      href: '/companies',
-      done: hasCompany,
-    },
-    {
-      id: 'signal-source',
-      label: 'Set up a signal source',
-      done: false,
-      detail: (
-        <span className="text-xs text-gray-400">Use the SDK or connect an integration</span>
-      ),
-    },
-    {
-      id: 'signal',
-      label: 'Ingest your first signal',
+      id: 'sdk',
+      label: 'Install the SDK',
+      href: '/docs',
       done: false,
       detail: (
         <code className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-mono block mt-1">
-          curl -X POST /api/v1/signals -d '&#123;"type":"page_view"&#125;'
+          npm install @devsignal/node
         </code>
       ),
     },
     {
-      id: 'pqa',
-      label: 'View your first PQA score',
-      href: '/scores',
-      done: false,
+      id: 'team',
+      label: 'Invite your team',
+      href: '/team',
+      done: hasTeam,
     },
   ];
 
   const completedCount = items.filter((i) => i.done).length;
   const totalCount = items.length;
-
-  // If all completed, allow the card to show but encourage dismissal
   const progressPct = Math.round((completedCount / totalCount) * 100);
+
+  // If all steps are complete, auto-dismiss
+  if (completedCount === totalCount) {
+    return null;
+  }
 
   const handleDismiss = () => {
     localStorage.setItem(DISMISSED_KEY, 'true');
@@ -124,7 +135,7 @@ export default function GettingStarted() {
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Getting Started</h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            {completedCount} of {totalCount} completed
+            {completedCount} of {totalCount} completed -- {progressPct}%
           </p>
         </div>
         <button

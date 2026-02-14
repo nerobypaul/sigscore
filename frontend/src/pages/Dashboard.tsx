@@ -5,6 +5,7 @@ import type { Contact, Deal, Activity, Signal, AccountScore } from '../types';
 import { STAGE_LABELS, STAGE_COLORS, TIER_COLORS } from '../types';
 import Spinner from '../components/Spinner';
 import GettingStarted from '../components/GettingStarted';
+import DemoDataBanner from '../components/DemoDataBanner';
 
 interface DashboardStats {
   contacts: { total: number; recent: Contact[] };
@@ -139,6 +140,9 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      {/* Demo data banner */}
+      <DemoDataBanner />
+
       {/* Getting Started checklist for new users */}
       <GettingStarted />
 

@@ -10,6 +10,7 @@ const STEPS = [
   { label: 'Organization' },
   { label: 'Team' },
   { label: 'Signals' },
+  { label: 'Sample Data' },
   { label: 'Done' },
 ];
 
@@ -84,6 +85,11 @@ export default function Onboarding() {
   // Step 3 state
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [sourceName, setSourceName] = useState('');
+
+  // Step 4 state (demo data)
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoError, setDemoError] = useState('');
+  const [demoSeeded, setDemoSeeded] = useState(false);
 
   // ---- Helpers ----
 
@@ -184,6 +190,29 @@ export default function Onboarding() {
     }
   };
 
+  // ---- Step 4: Demo Data ----
+
+  const handleSeedDemoData = async () => {
+    setDemoLoading(true);
+    setDemoError('');
+
+    try {
+      await api.post('/demo/seed');
+      setDemoSeeded(true);
+      // Move to the Done step after a brief pause so user sees the success state
+      setTimeout(() => setCurrentStep(4), 600);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string; message?: string } } };
+      setDemoError(
+        axiosErr.response?.data?.error ||
+          axiosErr.response?.data?.message ||
+          'Failed to load sample data. You can always add it later from Settings.'
+      );
+    } finally {
+      setDemoLoading(false);
+    }
+  };
+
   // ---- Navigation ----
 
   const goToDashboard = useCallback(() => {
@@ -234,7 +263,7 @@ export default function Onboarding() {
               {/* Connector line */}
               {idx < STEPS.length - 1 && (
                 <div
-                  className={`w-16 sm:w-24 h-0.5 mx-2 mb-6 transition-colors ${
+                  className={`w-12 sm:w-20 h-0.5 mx-1.5 mb-6 transition-colors ${
                     idx < currentStep ? 'bg-indigo-600' : 'bg-gray-200'
                   }`}
                 />
@@ -523,8 +552,104 @@ export default function Onboarding() {
             </div>
           )}
 
-          {/* =================== STEP 4: Done =================== */}
+          {/* =================== STEP 4: Sample Data =================== */}
           {currentStep === 3 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+              <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
+                </svg>
+              </div>
+
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
+                Want to see DevSignal in action?
+              </h2>
+              <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
+                We can populate your workspace with realistic sample data --
+                companies, contacts, deals, and signals -- so you can explore
+                every feature right away.
+              </p>
+
+              {demoError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm mb-6 max-w-md mx-auto">
+                  {demoError}
+                </div>
+              )}
+
+              {demoSeeded ? (
+                <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm mb-6 max-w-md mx-auto flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Sample data loaded successfully!
+                </div>
+              ) : (
+                <div className="space-y-3 max-w-sm mx-auto">
+                  <button
+                    type="button"
+                    onClick={handleSeedDemoData}
+                    disabled={demoLoading}
+                    className="w-full bg-indigo-600 text-white py-2.5 px-6 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {demoLoading ? (
+                      <>
+                        <Spinner size="sm" className="border-white border-t-transparent" />
+                        Loading sample data...
+                      </>
+                    ) : (
+                      'Yes, load demo data'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(4)}
+                    disabled={demoLoading}
+                    className="w-full text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors py-2"
+                  >
+                    No thanks, I'll add my own data
+                  </button>
+                </div>
+              )}
+
+              {/* What gets created */}
+              {!demoSeeded && !demoLoading && (
+                <div className="mt-8 max-w-sm mx-auto text-left">
+                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">
+                    What gets created
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full flex-shrink-0" />
+                      5 companies
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full flex-shrink-0" />
+                      12 contacts
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full flex-shrink-0" />
+                      8 deals
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full flex-shrink-0" />
+                      30 signals
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full flex-shrink-0" />
+                      PQA scores
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full flex-shrink-0" />
+                      1 workflow
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* =================== STEP 5: Done =================== */}
+          {currentStep === 4 && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
               {/* Celebration icon */}
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -535,50 +660,10 @@ export default function Onboarding() {
 
               <h2 className="text-2xl font-bold text-gray-900 mb-2">You're all set!</h2>
               <p className="text-sm text-gray-500 mb-8 max-w-md mx-auto">
-                Your workspace is ready. Here is a quick checklist to help you get the most out of
-                DevSignal.
+                {demoSeeded
+                  ? 'Your workspace is loaded with sample data. Explore the dashboard to see DevSignal in action.'
+                  : 'Your workspace is ready. Connect your signal sources to start tracking product-qualified accounts.'}
               </p>
-
-              {/* Getting started checklist */}
-              <div className="text-left max-w-lg mx-auto mb-8">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Getting Started</h3>
-                <div className="space-y-2">
-                  {[
-                    { label: 'Create your organization', done: true },
-                    { label: 'Add your first contact', done: false },
-                    { label: 'Create a company', done: false },
-                    { label: 'Set up a signal source', done: false },
-                    { label: 'Ingest your first signal', done: false },
-                    { label: 'View your first PQA score', done: false },
-                  ].map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-50"
-                    >
-                      <div
-                        className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          item.done
-                            ? 'bg-green-500 text-white'
-                            : 'border-2 border-gray-300'
-                        }`}
-                      >
-                        {item.done && (
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                        )}
-                      </div>
-                      <span
-                        className={`text-sm ${
-                          item.done ? 'text-gray-400 line-through' : 'text-gray-700'
-                        }`}
-                      >
-                        {item.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
               <button
                 type="button"

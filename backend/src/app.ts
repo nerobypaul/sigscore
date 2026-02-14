@@ -29,11 +29,14 @@ import analyticsRoutes from './routes/analytics';
 import workflowRoutes from './routes/workflows';
 import connectorRoutes from './routes/connectors';
 import segmentWebhookRoutes from './routes/segment-webhook';
+import slackInteractionsRoutes from './routes/slack-interactions';
 import bulkRoutes from './routes/bulk';
 import notificationRoutes from './routes/notifications';
 import memberRoutes from './routes/members';
 import auditRoutes from './routes/audit';
 import savedViewRoutes from './routes/saved-views';
+import workerRoutes from './routes/workers';
+import demoRoutes from './routes/demo';
 
 const app = express();
 
@@ -123,6 +126,7 @@ app.use('/api/v1/sources', signalSourceRoutes);
 // more specific /webhooks paths take precedence.
 app.use('/api/v1/webhooks/github', githubWebhookRoutes);
 app.use('/api/v1/webhooks/segment', segmentWebhookRoutes);
+app.use('/api/v1/webhooks/slack', slackInteractionsRoutes);
 
 app.use('/api/v1/webhooks', webhookRoutes);
 
@@ -163,6 +167,12 @@ app.use('/api/v1/audit', auditRoutes);
 
 // API routes — Saved Views
 app.use('/api/v1/views', savedViewRoutes);
+
+// API routes — Worker Status
+app.use('/api/v1/workers', workerRoutes);
+
+// API routes — Demo Data
+app.use('/api/v1/demo', demoRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);
