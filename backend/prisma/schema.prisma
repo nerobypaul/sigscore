@@ -76,6 +76,7 @@ model Organization {
   savedViews         SavedView[]
   emailSequences     EmailSequence[]
   dashboards         Dashboard[]
+  ssoConnections     SsoConnection[]
 
   @@index([slug])
   @@map("organizations")
@@ -893,4 +894,42 @@ model Dashboard {
   @@index([organizationId, userId])
   @@index([organizationId, isDefault])
   @@map("dashboards")
+}
+
+// ============================================================
+// SSO — Enterprise SAML / OIDC Single Sign-On
+// ============================================================
+
+model SsoConnection {
+  id             String      @id @default(cuid())
+  organizationId String
+  provider       SsoProvider
+  name           String      // Human-readable label, e.g. "Okta", "Azure AD"
+
+  // SAML fields
+  entityId       String?     // IdP Entity ID
+  ssoUrl         String?     // IdP SSO URL (HTTP-Redirect binding)
+  certificate    String?     // IdP X.509 certificate (PEM)
+
+  // OIDC fields
+  clientId       String?
+  clientSecret   String?
+  issuer         String?
+  discoveryUrl   String?
+
+  enabled        Boolean     @default(true)
+
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId])
+  @@index([organizationId])
+  @@map("sso_connections")
+}
+
+enum SsoProvider {
+  SAML
+  OIDC
 }

@@ -41,11 +41,13 @@ import emailSequenceRoutes from './routes/email-sequences';
 import dashboardApiRoutes from './routes/dashboards';
 import crmImportRoutes from './routes/crm-import';
 import hubspotSyncRoutes from './routes/hubspot-sync';
+import salesforceSyncRoutes from './routes/salesforce-sync';
 import githubOnboardingRoutes from './routes/github-onboarding';
 import playbookRoutes from './routes/playbooks';
 import scoringRoutes from './routes/scoring';
 import identityRoutes from './routes/identity';
 import discordConnectorRoutes from './routes/discord-connector';
+import ssoRoutes from './routes/sso';
 
 const app = express();
 
@@ -196,8 +198,9 @@ app.use('/api/v1/import/crm', crmImportRoutes);
 // API routes — GitHub Onboarding
 app.use('/api/v1/onboarding', githubOnboardingRoutes);
 
-// API routes — Integrations (HubSpot bidirectional sync)
+// API routes — Integrations (HubSpot + Salesforce bidirectional sync)
 app.use('/api/v1/integrations', hubspotSyncRoutes);
+app.use('/api/v1/integrations', salesforceSyncRoutes);
 
 // API routes — Playbooks
 app.use('/api/v1/playbooks', playbookRoutes);
@@ -207,6 +210,9 @@ app.use('/api/v1/scoring', scoringRoutes);
 
 // API routes — Identity Resolution
 app.use('/api/v1/identity', identityRoutes);
+
+// API routes — SSO (SAML / OIDC)
+app.use('/api/v1/sso', ssoRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);
