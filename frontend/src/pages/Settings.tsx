@@ -36,6 +36,10 @@ interface SignalSource {
 interface SlackSettings {
   configured: boolean;
   webhookUrl: string | null;
+  richAlerts: boolean;
+  alertTypes: string[];
+  slackUserMap: Record<string, string>;
+  slackTeamId: string | null;
 }
 
 interface SegmentSource {
@@ -1003,19 +1007,39 @@ function SlackTab() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [savingAlerts, setSavingAlerts] = useState(false);
+  const [richAlerts, setRichAlerts] = useState(false);
+  const [alertTypes, setAlertTypes] = useState<Set<string>>(new Set());
+
+  const ALL_ALERT_TYPES = [
+    { id: 'hot_accounts', label: 'Hot Accounts', desc: 'When a company reaches HOT tier' },
+    { id: 'new_signups', label: 'New Signups', desc: 'When a new contact is created' },
+    { id: 'deal_changes', label: 'Deal Changes', desc: 'When a deal moves stages' },
+    { id: 'workflow_failures', label: 'Workflow Failures', desc: 'When a workflow action fails' },
+  ];
 
   useEffect(() => {
     async function fetchSlackSettings() {
       try {
         const { data } = await api.get('/settings/slack');
         setSlackSettings(data);
+        setRichAlerts(data.richAlerts || false);
+        setAlertTypes(new Set(data.alertTypes || ALL_ALERT_TYPES.map((t) => t.id)));
       } catch {
-        setSlackSettings({ configured: false, webhookUrl: null });
+        setSlackSettings({
+          configured: false,
+          webhookUrl: null,
+          richAlerts: false,
+          alertTypes: [],
+          slackUserMap: {},
+          slackTeamId: null,
+        });
       } finally {
         setLoading(false);
       }
     }
     fetchSlackSettings();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleSave() {
@@ -1031,7 +1055,7 @@ function SlackTab() {
     setSaving(true);
     try {
       const { data } = await api.put('/settings/slack', { webhookUrl });
-      setSlackSettings(data);
+      setSlackSettings((prev) => prev ? { ...prev, ...data } : data);
       setWebhookUrl('');
       toast.success('Slack webhook URL saved successfully.');
     } catch (err) {
@@ -1057,13 +1081,45 @@ function SlackTab() {
     setRemoving(true);
     try {
       const { data } = await api.delete('/settings/slack');
-      setSlackSettings(data);
+      setSlackSettings({ ...data, richAlerts: false, alertTypes: [], slackUserMap: {}, slackTeamId: null });
+      setRichAlerts(false);
+      setAlertTypes(new Set(ALL_ALERT_TYPES.map((t) => t.id)));
       toast.success('Slack integration removed.');
     } catch {
       toast.error('Failed to remove Slack integration.');
     } finally {
       setRemoving(false);
     }
+  }
+
+  async function handleSaveAlerts() {
+    setSavingAlerts(true);
+    try {
+      await api.put('/settings/slack/alerts', {
+        richAlerts,
+        alertTypes: Array.from(alertTypes),
+      });
+      setSlackSettings((prev) =>
+        prev ? { ...prev, richAlerts, alertTypes: Array.from(alertTypes) } : prev
+      );
+      toast.success('Alert preferences saved.');
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setSavingAlerts(false);
+    }
+  }
+
+  function toggleAlertType(typeId: string) {
+    setAlertTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(typeId)) {
+        next.delete(typeId);
+      } else {
+        next.add(typeId);
+      }
+      return next;
+    });
   }
 
   if (loading) {
@@ -1209,13 +1265,157 @@ function SlackTab() {
               <li>Copy the webhook URL and paste it above.</li>
             </ol>
             <p className="text-xs text-gray-400 mt-3">
-              You will receive notifications for: PQA tier changes (COLD to WARM
-              to HOT), new HOT accounts, and high-value signals (signups, app
-              installs, PR merges, team adoption).
+              For interactive buttons (Claim, Snooze), also enable{' '}
+              <strong>Interactivity</strong> in your Slack app and set the Request
+              URL to your DevSignal backend:{' '}
+              <code className="text-xs">
+                https://your-domain.com/api/v1/webhooks/slack/interactions
+              </code>
             </p>
           </div>
         </div>
       </div>
+
+      {/* Rich Alerts configuration -- only show when connected */}
+      {slackSettings?.configured && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="px-6 py-5 border-b border-gray-100">
+            <h3 className="text-base font-semibold text-gray-900">
+              Rich Alerts
+            </h3>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Send interactive Slack messages with action buttons (Claim Account,
+              Snooze, View).
+            </p>
+          </div>
+
+          <div className="px-6 py-5 space-y-5">
+            {/* Toggle */}
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  Enable Rich Alerts
+                </label>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  When enabled, alerts include Block Kit formatting and
+                  interactive buttons.
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={richAlerts}
+                onClick={() => setRichAlerts(!richAlerts)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                  richAlerts ? 'bg-indigo-600' : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    richAlerts ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Alert type checkboxes */}
+            {richAlerts && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Alert Types
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {ALL_ALERT_TYPES.map((type) => (
+                    <label
+                      key={type.id}
+                      className="flex items-start gap-2 px-3 py-2.5 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={alertTypes.has(type.id)}
+                        onChange={() => toggleAlertType(type.id)}
+                        className="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-gray-700 block">
+                          {type.label}
+                        </span>
+                        <span className="text-xs text-gray-400">{type.desc}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={handleSaveAlerts}
+              disabled={savingAlerts}
+              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {savingAlerts ? 'Saving...' : 'Save Alert Preferences'}
+            </button>
+
+            {/* Message preview */}
+            {richAlerts && (
+              <div className="rounded-lg border border-gray-200 overflow-hidden">
+                <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Message Preview
+                  </p>
+                </div>
+                <div className="bg-white p-4 space-y-3">
+                  {/* Faux Slack message */}
+                  <div className="border-l-4 border-indigo-500 pl-3">
+                    <p className="text-sm font-bold text-gray-900">
+                      Account Alert: Acme Corp
+                    </p>
+                    <div className="grid grid-cols-4 gap-2 mt-2 text-xs text-gray-600">
+                      <div>
+                        <span className="font-medium text-gray-500">Tier</span>
+                        <br />
+                        HOT
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-500">PQA Score</span>
+                        <br />
+                        87/100
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-500">Trend</span>
+                        <br />
+                        Rising
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-500">Signals</span>
+                        <br />
+                        24
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Top signal: app.signup
+                    </p>
+                    <div className="flex gap-2 mt-3">
+                      <span className="inline-flex items-center px-3 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                        View Account
+                      </span>
+                      <span className="inline-flex items-center px-3 py-1 rounded text-xs font-medium bg-indigo-600 text-white">
+                        Claim Account
+                      </span>
+                      <span className="inline-flex items-center px-3 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                        Snooze 7d
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-gray-400">
+                    DevSignal &bull; 2024-01-15
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

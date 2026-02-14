@@ -5,6 +5,7 @@ import { validate } from '../middleware/validate';
 import { prisma } from '../config/database';
 import { sendTestMessage } from '../services/slack-notifications';
 import { logger } from '../utils/logger';
+import { Prisma } from '@prisma/client';
 
 const router = Router();
 
@@ -13,17 +14,29 @@ router.use(authenticate);
 router.use(requireOrganization);
 router.use(requireOrgRole('ADMIN'));
 
-// Validation schema
+// Validation schemas
 const updateSlackSettingsSchema = z.object({
   webhookUrl: z.string().url().startsWith('https://hooks.slack.com/', {
     message: 'Must be a valid Slack incoming webhook URL (https://hooks.slack.com/...)',
   }),
 });
 
-/**
- * GET /api/v1/settings/slack
- * Returns current Slack integration status
- */
+const VALID_ALERT_TYPES = ['hot_accounts', 'new_signups', 'deal_changes', 'workflow_failures'] as const;
+
+const updateSlackAlertsSchema = z.object({
+  richAlerts: z.boolean(),
+  alertTypes: z.array(z.enum(VALID_ALERT_TYPES)).optional(),
+});
+
+const updateSlackUserMapSchema = z.object({
+  slackUserMap: z.record(z.string(), z.string()),
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/v1/settings/slack
+// Returns current Slack integration status including rich alert config
+// ---------------------------------------------------------------------------
+
 router.get('/slack', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const organizationId = req.organizationId!;
@@ -35,23 +48,29 @@ router.get('/slack', async (req: Request, res: Response, next: NextFunction): Pr
 
     const settings = org?.settings as Record<string, unknown> | null;
     const webhookUrl = (settings?.slackWebhookUrl as string) || null;
+    const richAlerts = (settings?.slackRichAlerts as boolean) || false;
+    const alertTypes = (settings?.slackAlertTypes as string[]) || [];
+    const slackUserMap = (settings?.slackUserMap as Record<string, string>) || {};
+    const slackTeamId = (settings?.slackTeamId as string) || null;
 
     res.json({
       configured: !!webhookUrl,
-      // Mask the webhook URL for security — only show the last 8 chars
-      webhookUrl: webhookUrl
-        ? `...${webhookUrl.slice(-8)}`
-        : null,
+      webhookUrl: webhookUrl ? `...${webhookUrl.slice(-8)}` : null,
+      richAlerts,
+      alertTypes: alertTypes.length > 0 ? alertTypes : [...VALID_ALERT_TYPES],
+      slackUserMap,
+      slackTeamId,
     });
   } catch (error) {
     next(error);
   }
 });
 
-/**
- * PUT /api/v1/settings/slack
- * Save Slack webhook URL to organization settings
- */
+// ---------------------------------------------------------------------------
+// PUT /api/v1/settings/slack
+// Save Slack webhook URL to organization settings
+// ---------------------------------------------------------------------------
+
 router.put(
   '/slack',
   validate(updateSlackSettingsSchema),
@@ -60,7 +79,6 @@ router.put(
       const organizationId = req.organizationId!;
       const { webhookUrl } = req.body;
 
-      // Read existing settings so we don't overwrite other fields
       const org = await prisma.organization.findUnique({
         where: { id: organizationId },
         select: { settings: true },
@@ -74,7 +92,7 @@ router.put(
           settings: {
             ...existingSettings,
             slackWebhookUrl: webhookUrl,
-          } as unknown as import('@prisma/client').Prisma.InputJsonValue,
+          } as unknown as Prisma.InputJsonValue,
         },
       });
 
@@ -90,10 +108,93 @@ router.put(
   },
 );
 
-/**
- * DELETE /api/v1/settings/slack
- * Remove Slack webhook URL from organization settings
- */
+// ---------------------------------------------------------------------------
+// PUT /api/v1/settings/slack/alerts
+// Update rich alerts toggle and alert type preferences
+// ---------------------------------------------------------------------------
+
+router.put(
+  '/slack/alerts',
+  validate(updateSlackAlertsSchema),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const organizationId = req.organizationId!;
+      const { richAlerts, alertTypes } = req.body;
+
+      const org = await prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { settings: true },
+      });
+
+      const existingSettings = (org?.settings as Record<string, unknown>) || {};
+
+      await prisma.organization.update({
+        where: { id: organizationId },
+        data: {
+          settings: {
+            ...existingSettings,
+            slackRichAlerts: richAlerts,
+            ...(alertTypes !== undefined && { slackAlertTypes: alertTypes }),
+          } as unknown as Prisma.InputJsonValue,
+        },
+      });
+
+      logger.info('Slack alert settings updated', { organizationId, richAlerts });
+
+      res.json({
+        richAlerts,
+        alertTypes: alertTypes || existingSettings.slackAlertTypes || [...VALID_ALERT_TYPES],
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// PUT /api/v1/settings/slack/user-map
+// Update the Slack user ID to DevSignal user ID mapping
+// ---------------------------------------------------------------------------
+
+router.put(
+  '/slack/user-map',
+  validate(updateSlackUserMapSchema),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const organizationId = req.organizationId!;
+      const { slackUserMap } = req.body;
+
+      const org = await prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { settings: true },
+      });
+
+      const existingSettings = (org?.settings as Record<string, unknown>) || {};
+
+      await prisma.organization.update({
+        where: { id: organizationId },
+        data: {
+          settings: {
+            ...existingSettings,
+            slackUserMap,
+          } as unknown as Prisma.InputJsonValue,
+        },
+      });
+
+      logger.info('Slack user map updated', { organizationId });
+
+      res.json({ slackUserMap });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// DELETE /api/v1/settings/slack
+// Remove Slack webhook URL from organization settings
+// ---------------------------------------------------------------------------
+
 router.delete('/slack', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const organizationId = req.organizationId!;
@@ -105,11 +206,11 @@ router.delete('/slack', async (req: Request, res: Response, next: NextFunction):
 
     const existingSettings = (org?.settings as Record<string, unknown>) || {};
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { slackWebhookUrl, ...rest } = existingSettings;
+    const { slackWebhookUrl, slackRichAlerts, slackAlertTypes, slackUserMap, slackTeamId, ...rest } = existingSettings;
 
     await prisma.organization.update({
       where: { id: organizationId },
-      data: { settings: rest as unknown as import('@prisma/client').Prisma.InputJsonValue },
+      data: { settings: rest as unknown as Prisma.InputJsonValue },
     });
 
     logger.info('Slack webhook URL removed', { organizationId });
@@ -120,10 +221,11 @@ router.delete('/slack', async (req: Request, res: Response, next: NextFunction):
   }
 });
 
-/**
- * POST /api/v1/settings/slack/test
- * Send a test message to the configured Slack webhook
- */
+// ---------------------------------------------------------------------------
+// POST /api/v1/settings/slack/test
+// Send a test message to the configured Slack webhook
+// ---------------------------------------------------------------------------
+
 router.post('/slack/test', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const organizationId = req.organizationId!;
