@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import * as dealService from '../services/deals';
-import { processEvent } from '../services/workflows';
+import { enqueueWorkflowExecution } from '../jobs/producers';
 import { notifyOrgUsers } from '../services/notifications';
+import { sendDealAlert } from '../services/slack-notifications';
 import { logAudit } from '../services/audit';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
@@ -102,9 +103,9 @@ export const updateDeal = async (req: Request, res: Response, next: NextFunction
       changes: Object.keys(dealChanges).length > 0 ? dealChanges : undefined,
     }).catch(() => {});
 
-    // Trigger workflow if stage changed (fire-and-forget)
+    // Enqueue workflow processing via BullMQ if stage changed
     if (oldStage && deal.stage !== oldStage) {
-      processEvent(organizationId, 'deal_stage_changed', {
+      enqueueWorkflowExecution(organizationId, 'deal_stage_changed', {
         dealId: deal.id,
         oldStage,
         newStage: deal.stage,
@@ -112,7 +113,7 @@ export const updateDeal = async (req: Request, res: Response, next: NextFunction
         amount: deal.amount,
         companyId: deal.companyId,
         contactId: deal.contactId,
-      }).catch((err) => logger.error('Workflow processing error:', err));
+      }).catch((err) => logger.error('Workflow enqueue error:', err));
 
       // Notify org users of stage change (fire-and-forget)
       notifyOrgUsers(organizationId, {
@@ -123,6 +124,10 @@ export const updateDeal = async (req: Request, res: Response, next: NextFunction
         entityId: deal.id,
         excludeUserId: req.user?.id,
       }).catch((err) => logger.error('Notification error:', err));
+
+      // Rich Slack deal stage alert (fire-and-forget)
+      sendDealAlert(organizationId, deal.id, oldStage, deal.stage)
+        .catch((err) => logger.error('Slack deal alert failed', { err }));
     }
 
     res.json(deal);

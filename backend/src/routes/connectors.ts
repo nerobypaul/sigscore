@@ -4,8 +4,9 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { authenticate, requireOrganization, requireOrgRole } from '../middleware/auth';
 import { validate } from '../middleware/validate';
-import { syncNpmSource, testNpmConnection } from '../services/npm-connector';
-import { syncPypiSource, testPypiConnection } from '../services/pypi-connector';
+import { testNpmConnection } from '../services/npm-connector';
+import { testPypiConnection } from '../services/pypi-connector';
+import { enqueueSignalSync } from '../jobs/producers';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
 
@@ -28,28 +29,20 @@ const testPackagesSchema = z.object({
 /**
  * POST /connectors/npm/:sourceId/sync
  *
- * Triggers a sync for a specific npm signal source.
- * Fetches download stats and registry metadata for all configured packages,
- * creates idempotent signals, and updates the source status.
+ * Enqueues a sync job for a specific npm signal source.
+ * The actual sync runs asynchronously via BullMQ workers.
  */
 router.post('/npm/:sourceId/sync', async (req: Request, res: Response): Promise<void> => {
   try {
     const { sourceId } = req.params;
     const organizationId = req.organizationId!;
 
-    const result = await syncNpmSource(organizationId, sourceId);
+    const job = await enqueueSignalSync('npm', sourceId, organizationId);
 
-    res.json(result);
+    res.json({ message: 'Sync job queued', jobId: job.id });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Sync failed';
-    logger.error('npm sync endpoint error', { error: err });
-
-    // Surface "not found" errors as 404
-    if (message.includes('not found')) {
-      res.status(404).json({ error: message });
-      return;
-    }
-
+    const message = err instanceof Error ? err.message : 'Failed to enqueue sync';
+    logger.error('npm sync enqueue error', { error: err });
     res.status(500).json({ error: message });
   }
 });
@@ -83,28 +76,20 @@ router.post('/npm/test', validate(testPackagesSchema), async (req: Request, res:
 /**
  * POST /connectors/pypi/:sourceId/sync
  *
- * Triggers a sync for a specific PyPI signal source.
- * Fetches download stats and registry metadata for all configured packages,
- * creates idempotent signals, and updates the source status.
+ * Enqueues a sync job for a specific PyPI signal source.
+ * The actual sync runs asynchronously via BullMQ workers.
  */
 router.post('/pypi/:sourceId/sync', async (req: Request, res: Response): Promise<void> => {
   try {
     const { sourceId } = req.params;
     const organizationId = req.organizationId!;
 
-    const result = await syncPypiSource(organizationId, sourceId);
+    const job = await enqueueSignalSync('pypi', sourceId, organizationId);
 
-    res.json(result);
+    res.json({ message: 'Sync job queued', jobId: job.id });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Sync failed';
-    logger.error('PyPI sync endpoint error', { error: err });
-
-    // Surface "not found" errors as 404
-    if (message.includes('not found')) {
-      res.status(404).json({ error: message });
-      return;
-    }
-
+    const message = err instanceof Error ? err.message : 'Failed to enqueue sync';
+    logger.error('PyPI sync enqueue error', { error: err });
     res.status(500).json({ error: message });
   }
 });

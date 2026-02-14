@@ -2,8 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ScoreTier } from '@prisma/client';
 import * as signalService from '../services/signals';
 import * as accountScoreService from '../services/account-scores';
-import * as webhookService from '../services/webhooks';
-import { processEvent } from '../services/workflows';
+import { enqueueWebhookDelivery, enqueueWorkflowExecution } from '../jobs/producers';
 import { notifyHighValueSignal } from '../services/slack-notifications';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
@@ -15,13 +14,13 @@ export const ingestSignal = async (req: Request, res: Response, next: NextFuncti
     const signal = await signalService.ingestSignal(organizationId, req.body);
     logger.info(`Signal ingested: ${signal.id} (${signal.type})`);
 
-    // Fire webhook asynchronously (don't block response)
-    webhookService.dispatchWebhookEvent(organizationId, 'signal.received', {
+    // Enqueue webhook delivery via BullMQ (reliable retry)
+    enqueueWebhookDelivery(organizationId, 'signal.received', {
       signalId: signal.id,
       type: signal.type,
       accountId: signal.accountId,
       actorId: signal.actorId,
-    }).catch((err) => logger.error('Webhook dispatch error:', err));
+    }).catch((err) => logger.error('Webhook enqueue error:', err));
 
     // Recompute score if signal matched to an account
     if (signal.accountId) {
@@ -30,14 +29,14 @@ export const ingestSignal = async (req: Request, res: Response, next: NextFuncti
         .catch((err) => logger.error('Score recompute error:', err));
     }
 
-    // Process workflow automations (fire-and-forget)
-    processEvent(organizationId, 'signal_received', {
+    // Enqueue workflow processing via BullMQ (async with retries)
+    enqueueWorkflowExecution(organizationId, 'signal_received', {
       signalId: signal.id,
       type: signal.type,
       accountId: signal.accountId,
       actorId: signal.actorId,
       metadata: req.body.metadata || {},
-    }).catch((err) => logger.error('Workflow processing error:', err));
+    }).catch((err) => logger.error('Workflow enqueue error:', err));
 
     // Notify Slack for high-value signals (fire-and-forget)
     const actorName = signal.actor

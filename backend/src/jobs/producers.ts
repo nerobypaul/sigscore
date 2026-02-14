@@ -5,10 +5,14 @@ import {
   scoreComputationQueue,
   webhookDeliveryQueue,
   enrichmentQueue,
+  signalSyncQueue,
+  workflowExecutionQueue,
   SignalProcessingJobData,
   ScoreComputationJobData,
   WebhookDeliveryJobData,
   EnrichmentJobData,
+  SignalSyncJobData,
+  WorkflowExecutionJobData,
 } from './queue';
 
 // ---------------------------------------------------------------------------
@@ -76,10 +80,6 @@ export const enqueueWebhookDelivery = async (
   const job = await webhookDeliveryQueue.add(
     'deliver-webhook',
     { organizationId, event, payload },
-    {
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 2000 },
-    },
   );
   logger.debug('Enqueued webhook delivery', { jobId: job.id, organizationId, event });
   return job;
@@ -105,5 +105,59 @@ export const enqueueEnrichment = async (
     },
   );
   logger.debug('Enqueued enrichment', { jobId: job.id, organizationId, contactId });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// Signal Sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue a sync job for a specific npm or pypi source.
+ */
+export const enqueueSignalSync = async (
+  type: 'npm' | 'pypi',
+  sourceId: string,
+  organizationId: string,
+): Promise<Job<SignalSyncJobData>> => {
+  const job = await signalSyncQueue.add(
+    `sync-${type}-source`,
+    { sourceId, organizationId, type },
+  );
+  logger.debug('Enqueued signal sync', { jobId: job.id, type, sourceId, organizationId });
+  return job;
+};
+
+/**
+ * Enqueue a sync-all job for all sources of the given type.
+ */
+export const enqueueSignalSyncAll = async (
+  type: 'npm' | 'pypi',
+): Promise<Job<SignalSyncJobData>> => {
+  const job = await signalSyncQueue.add(
+    `sync-all-${type}`,
+    { type },
+  );
+  logger.debug('Enqueued signal sync all', { jobId: job.id, type });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// Workflow Execution
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue a workflow event for asynchronous processing.
+ */
+export const enqueueWorkflowExecution = async (
+  organizationId: string,
+  eventType: string,
+  data: Record<string, unknown>,
+): Promise<Job<WorkflowExecutionJobData>> => {
+  const job = await workflowExecutionQueue.add(
+    'process-event',
+    { organizationId, eventType, data },
+  );
+  logger.debug('Enqueued workflow execution', { jobId: job.id, organizationId, eventType });
   return job;
 };

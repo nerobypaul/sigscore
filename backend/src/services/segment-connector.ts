@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
-import { processEvent } from './workflows';
+import { enqueueWorkflowExecution } from '../jobs/producers';
 import { notifyOrgUsers } from './notifications';
 import { logger } from '../utils/logger';
 
@@ -191,12 +191,12 @@ async function processIdentify(
       entityId: contactId,
     }).catch((err) => logger.error('Segment identify notification error:', err));
 
-    // Fire workflow trigger for contact_created (fire-and-forget)
-    processEvent(organizationId, 'contact_created', {
+    // Enqueue workflow for contact_created via BullMQ (async with retries)
+    enqueueWorkflowExecution(organizationId, 'contact_created', {
       contactId,
       source: 'segment',
       email,
-    }).catch((err) => logger.error('Segment contact_created workflow error:', err));
+    }).catch((err) => logger.error('Segment contact_created workflow enqueue error:', err));
   }
 
   // Create/update ContactIdentity records
@@ -292,14 +292,14 @@ async function processTrack(
     },
   });
 
-  // Fire workflow trigger (fire-and-forget)
-  processEvent(organizationId, 'signal_received', {
+  // Enqueue workflow for signal_received via BullMQ (async with retries)
+  enqueueWorkflowExecution(organizationId, 'signal_received', {
     signalId: signal.id,
     type: eventName,
     accountId,
     actorId,
     metadata: payload.properties || {},
-  }).catch((err) => logger.error('Segment track workflow error:', err));
+  }).catch((err) => logger.error('Segment track workflow enqueue error:', err));
 
   // Update lastSyncAt
   await prisma.signalSource.update({
@@ -492,14 +492,14 @@ async function processPageOrScreen(
     },
   });
 
-  // Fire workflow trigger (fire-and-forget)
-  processEvent(organizationId, 'signal_received', {
+  // Enqueue workflow for signal_received via BullMQ (async with retries)
+  enqueueWorkflowExecution(organizationId, 'signal_received', {
     signalId: signal.id,
     type: signalType,
     accountId,
     actorId,
     metadata,
-  }).catch((err) => logger.error('Segment page/screen workflow error:', err));
+  }).catch((err) => logger.error('Segment page/screen workflow enqueue error:', err));
 
   // Update lastSyncAt
   await prisma.signalSource.update({

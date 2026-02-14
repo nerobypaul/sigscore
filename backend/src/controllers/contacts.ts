@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import * as contactService from '../services/contacts';
-import { processEvent } from '../services/workflows';
+import { enqueueWorkflowExecution } from '../jobs/producers';
 import { notifyOrgUsers } from '../services/notifications';
+import { sendSignupAlert } from '../services/slack-notifications';
 import { logAudit } from '../services/audit';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
@@ -58,14 +59,14 @@ export const createContact = async (req: Request, res: Response, next: NextFunct
       entityName: `${contact.firstName} ${contact.lastName}`,
     }).catch(() => {});
 
-    // Trigger workflow automations (fire-and-forget)
-    processEvent(organizationId, 'contact_created', {
+    // Enqueue workflow processing via BullMQ (async with retries)
+    enqueueWorkflowExecution(organizationId, 'contact_created', {
       contactId: contact.id,
       firstName: contact.firstName,
       lastName: contact.lastName,
       email: contact.email,
       companyId: contact.companyId,
-    }).catch((err) => logger.error('Workflow processing error:', err));
+    }).catch((err) => logger.error('Workflow enqueue error:', err));
 
     // Notify org users (fire-and-forget)
     notifyOrgUsers(organizationId, {
@@ -76,6 +77,10 @@ export const createContact = async (req: Request, res: Response, next: NextFunct
       entityId: contact.id,
       excludeUserId: req.user?.id,
     }).catch((err) => logger.error('Notification error:', err));
+
+    // Rich Slack signup alert (fire-and-forget)
+    sendSignupAlert(organizationId, contact.id)
+      .catch((err) => logger.error('Slack signup alert failed', { err }));
 
     res.status(201).json(contact);
   } catch (error) {

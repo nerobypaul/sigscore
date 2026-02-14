@@ -3,6 +3,9 @@ import { mockRequest, mockResponse, mockNext, testData } from '../helpers';
 
 // Mock the contacts service module
 jest.mock('../../services/contacts');
+jest.mock('../../jobs/producers', () => ({
+  enqueueWorkflowExecution: jest.fn().mockResolvedValue({ id: 'mock-job-id' }),
+}));
 
 import {
   getContacts,

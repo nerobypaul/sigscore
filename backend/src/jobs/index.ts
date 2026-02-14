@@ -5,6 +5,8 @@ export {
   scoreComputationQueue,
   webhookDeliveryQueue,
   enrichmentQueue,
+  signalSyncQueue,
+  workflowExecutionQueue,
   closeAllQueues,
 } from './queue';
 
@@ -14,13 +16,20 @@ export type {
   ScoreComputationJobData,
   WebhookDeliveryJobData,
   EnrichmentJobData,
+  SignalSyncJobData,
+  WorkflowExecutionJobData,
 } from './queue';
 
 export { startWorkers, stopWorkers } from './workers';
+
+export { setupScheduler } from './scheduler';
 
 export {
   enqueueSignalProcessing,
   enqueueScoreComputation,
   enqueueWebhookDelivery,
   enqueueEnrichment,
+  enqueueSignalSync,
+  enqueueSignalSyncAll,
+  enqueueWorkflowExecution,
 } from './producers';

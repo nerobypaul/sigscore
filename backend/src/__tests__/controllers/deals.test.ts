@@ -2,8 +2,8 @@ import '../setup';
 import { mockRequest, mockResponse, mockNext, testData } from '../helpers';
 
 jest.mock('../../services/deals');
-jest.mock('../../services/workflows', () => ({
-  processEvent: jest.fn().mockResolvedValue(undefined),
+jest.mock('../../jobs/producers', () => ({
+  enqueueWorkflowExecution: jest.fn().mockResolvedValue({ id: 'mock-job-id' }),
 }));
 
 import {

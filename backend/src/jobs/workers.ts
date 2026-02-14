@@ -4,12 +4,17 @@ import { logger } from '../utils/logger';
 import { ingestSignal } from '../services/signals';
 import { computeAccountScore } from '../services/account-scores';
 import { dispatchWebhookEvent } from '../services/webhooks';
+import { syncNpmSource, syncAllNpmSources } from '../services/npm-connector';
+import { syncPypiSource, syncAllPypiSources } from '../services/pypi-connector';
+import { processEvent } from '../services/workflows';
 import {
   QUEUE_NAMES,
   SignalProcessingJobData,
   ScoreComputationJobData,
   WebhookDeliveryJobData,
   EnrichmentJobData,
+  SignalSyncJobData,
+  WorkflowExecutionJobData,
 } from './queue';
 
 // ---------------------------------------------------------------------------
@@ -122,6 +127,81 @@ function createEnrichmentWorker(): Worker<EnrichmentJobData> {
 }
 
 // ---------------------------------------------------------------------------
+// Signal Sync Worker (npm / pypi source syncing)
+// ---------------------------------------------------------------------------
+function createSignalSyncWorker(): Worker<SignalSyncJobData> {
+  return new Worker<SignalSyncJobData>(
+    QUEUE_NAMES.SIGNAL_SYNC,
+    async (job: Job<SignalSyncJobData>) => {
+      const { sourceId, organizationId, type } = job.data;
+
+      if (sourceId && organizationId) {
+        // Sync a specific source
+        logger.info('Signal sync started for single source', {
+          jobId: job.id,
+          sourceId,
+          organizationId,
+          type,
+        });
+
+        if (type === 'npm') {
+          const result = await syncNpmSource(organizationId, sourceId);
+          logger.info('npm source sync completed', { jobId: job.id, sourceId, synced: result.synced });
+          return result;
+        } else {
+          const result = await syncPypiSource(organizationId, sourceId);
+          logger.info('PyPI source sync completed', { jobId: job.id, sourceId, synced: result.synced });
+          return result;
+        }
+      } else {
+        // Sync all sources of the given type
+        logger.info('Signal sync started for all sources', { jobId: job.id, type });
+
+        if (type === 'npm') {
+          await syncAllNpmSources();
+          logger.info('All npm sources synced', { jobId: job.id });
+          return { type: 'npm', syncedAll: true };
+        } else {
+          await syncAllPypiSources();
+          logger.info('All PyPI sources synced', { jobId: job.id });
+          return { type: 'pypi', syncedAll: true };
+        }
+      }
+    },
+    {
+      connection: bullConnection,
+      concurrency: 2,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Workflow Execution Worker
+// ---------------------------------------------------------------------------
+function createWorkflowExecutionWorker(): Worker<WorkflowExecutionJobData> {
+  return new Worker<WorkflowExecutionJobData>(
+    QUEUE_NAMES.WORKFLOW_EXECUTION,
+    async (job: Job<WorkflowExecutionJobData>) => {
+      const { organizationId, eventType, data } = job.data;
+      logger.info('Workflow execution started', {
+        jobId: job.id,
+        organizationId,
+        eventType,
+        attempt: job.attemptsMade + 1,
+      });
+
+      await processEvent(organizationId, eventType, data);
+
+      logger.info('Workflow execution completed', { jobId: job.id, eventType });
+    },
+    {
+      connection: bullConnection,
+      concurrency: 5,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Lifecycle helpers
 // ---------------------------------------------------------------------------
 function attachLogging(worker: Worker): void {
@@ -153,8 +233,10 @@ export const startWorkers = (): void => {
   const scoreWorker = createScoreComputationWorker();
   const webhookWorker = createWebhookDeliveryWorker();
   const enrichmentWorker = createEnrichmentWorker();
+  const signalSyncWorker = createSignalSyncWorker();
+  const workflowWorker = createWorkflowExecutionWorker();
 
-  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker].forEach((w) => {
+  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker].forEach((w) => {
     attachLogging(w);
     workers.push(w);
   });

@@ -1,8 +1,8 @@
 import { Prisma, ScoreTier, ScoreTrend } from '@prisma/client';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
-import { notifyTierChange } from './slack-notifications';
-import { processEvent } from './workflows';
+import { notifyTierChange, sendAccountAlert } from './slack-notifications';
+import { enqueueWorkflowExecution } from '../jobs/producers';
 
 interface ScoreFactor {
   name: string;
@@ -204,8 +204,14 @@ export const computeAccountScore = async (organizationId: string, accountId: str
     notifyTierChange(organizationId, accountName, oldTier, tier, totalScore, totalSignals, userCount)
       .catch((err) => logger.error('Slack tier notification failed', { err }));
 
-    // Trigger workflow for score/tier change (fire-and-forget)
-    processEvent(organizationId, 'score_changed', {
+    // Send rich Slack alert when entering HOT tier (fire-and-forget)
+    if (tier === 'HOT' && oldTier !== 'HOT') {
+      sendAccountAlert(organizationId, accountId)
+        .catch((err) => logger.error('Slack rich account alert failed', { err }));
+    }
+
+    // Enqueue workflow for score/tier change via BullMQ (async with retries)
+    enqueueWorkflowExecution(organizationId, 'score_changed', {
       accountId,
       accountName,
       oldTier,
@@ -214,7 +220,7 @@ export const computeAccountScore = async (organizationId: string, accountId: str
       newScore: totalScore,
       signalCount: totalSignals,
       userCount,
-    }).catch((err) => logger.error('Workflow processing error:', err));
+    }).catch((err) => logger.error('Workflow enqueue error:', err));
   }
 
   return score;

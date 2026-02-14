@@ -10,6 +10,8 @@ export const QUEUE_NAMES = {
   SCORE_COMPUTATION: 'score-computation',
   WEBHOOK_DELIVERY: 'webhook-delivery',
   ENRICHMENT: 'enrichment',
+  SIGNAL_SYNC: 'signal-sync',
+  WORKFLOW_EXECUTION: 'workflow-execution',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -47,6 +49,18 @@ export interface EnrichmentJobData {
   contactId: string;
 }
 
+export interface SignalSyncJobData {
+  sourceId?: string;
+  organizationId?: string;
+  type: 'npm' | 'pypi';
+}
+
+export interface WorkflowExecutionJobData {
+  organizationId: string;
+  eventType: string;
+  data: Record<string, unknown>;
+}
+
 // ---------------------------------------------------------------------------
 // Queue instances
 // ---------------------------------------------------------------------------
@@ -76,8 +90,8 @@ export const webhookDeliveryQueue = new Queue<WebhookDeliveryJobData>(
     ...defaultQueueOpts,
     defaultJobOptions: {
       ...defaultQueueOpts.defaultJobOptions,
-      attempts: 3,
-      backoff: { type: 'exponential' as const, delay: 2000 },
+      attempts: 5,
+      backoff: { type: 'exponential' as const, delay: 10_000 },
     },
   },
 );
@@ -85,6 +99,30 @@ export const webhookDeliveryQueue = new Queue<WebhookDeliveryJobData>(
 export const enrichmentQueue = new Queue<EnrichmentJobData>(
   QUEUE_NAMES.ENRICHMENT,
   defaultQueueOpts,
+);
+
+export const signalSyncQueue = new Queue<SignalSyncJobData>(
+  QUEUE_NAMES.SIGNAL_SYNC,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 5000 },
+    },
+  },
+);
+
+export const workflowExecutionQueue = new Queue<WorkflowExecutionJobData>(
+  QUEUE_NAMES.WORKFLOW_EXECUTION,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 1000 },
+    },
+  },
 );
 
 // ---------------------------------------------------------------------------
@@ -95,6 +133,8 @@ const allQueues: Queue[] = [
   scoreComputationQueue,
   webhookDeliveryQueue,
   enrichmentQueue,
+  signalSyncQueue,
+  workflowExecutionQueue,
 ];
 
 /**
