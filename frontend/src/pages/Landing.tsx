@@ -224,7 +224,8 @@ export default function Landing() {
             <div className="hidden sm:flex items-center gap-6 text-sm text-gray-400">
               <a href="#features" className="hover:text-white transition-colors">Features</a>
               <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
-              <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+              <Link to="/use-cases" className="hover:text-white transition-colors">Use Cases</Link>
+              <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
             </div>
             <div className="flex items-center gap-3">
               <Link
@@ -629,7 +630,8 @@ export default function Landing() {
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-500">
               <a href="#features" className="hover:text-gray-300 transition-colors">Features</a>
-              <a href="#pricing" className="hover:text-gray-300 transition-colors">Pricing</a>
+              <Link to="/use-cases" className="hover:text-gray-300 transition-colors">Use Cases</Link>
+              <Link to="/pricing" className="hover:text-gray-300 transition-colors">Pricing</Link>
               <Link to="/login" className="hover:text-gray-300 transition-colors">Sign in</Link>
             </div>
             <p className="text-xs text-gray-600">

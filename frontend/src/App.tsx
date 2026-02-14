@@ -22,6 +22,8 @@ import Billing from './pages/Billing';
 import Workflows from './pages/Workflows';
 import DealDetail from './pages/DealDetail';
 import Landing from './pages/Landing';
+import UseCases from './pages/UseCases';
+import Pricing from './pages/Pricing';
 import ApiDocs from './pages/ApiDocs';
 import TeamMembers from './pages/TeamMembers';
 import AuditLog from './pages/AuditLog';
@@ -57,6 +59,8 @@ function AppRoutes() {
     <Routes>
       {/* Public routes */}
       <Route path="/landing" element={<Landing />} />
+      <Route path="/use-cases" element={<UseCases />} />
+      <Route path="/pricing" element={<Pricing />} />
       <Route path="/docs" element={<ApiDocs />} />
       <Route
         path="/login"
