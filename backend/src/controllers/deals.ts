@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import * as dealService from '../services/deals';
 import { processEvent } from '../services/workflows';
 import { notifyOrgUsers } from '../services/notifications';
+import { logAudit } from '../services/audit';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
 
@@ -48,6 +49,16 @@ export const createDeal = async (req: Request, res: Response, next: NextFunction
     const deal = await dealService.createDeal(organizationId, req.body);
     logger.info(`Deal created: ${deal.id}`);
 
+    // Audit log (fire-and-forget)
+    logAudit({
+      organizationId,
+      userId: req.user?.id,
+      action: 'create',
+      entityType: 'deal',
+      entityId: deal.id,
+      entityName: deal.title,
+    }).catch(() => {});
+
     // Notify org users of new deal (fire-and-forget)
     notifyOrgUsers(organizationId, {
       type: 'deal_created',
@@ -75,6 +86,21 @@ export const updateDeal = async (req: Request, res: Response, next: NextFunction
 
     const deal = await dealService.updateDeal(id, organizationId, req.body);
     logger.info(`Deal updated: ${deal.id}`);
+
+    // Audit log (fire-and-forget)
+    const dealChanges: Record<string, { from: unknown; to: unknown }> = {};
+    if (oldStage && deal.stage !== oldStage) {
+      dealChanges.stage = { from: oldStage, to: deal.stage };
+    }
+    logAudit({
+      organizationId,
+      userId: req.user?.id,
+      action: 'update',
+      entityType: 'deal',
+      entityId: deal.id,
+      entityName: deal.title,
+      changes: Object.keys(dealChanges).length > 0 ? dealChanges : undefined,
+    }).catch(() => {});
 
     // Trigger workflow if stage changed (fire-and-forget)
     if (oldStage && deal.stage !== oldStage) {
@@ -112,6 +138,15 @@ export const deleteDeal = async (req: Request, res: Response, next: NextFunction
 
     await dealService.deleteDeal(id, organizationId);
     logger.info(`Deal deleted: ${id}`);
+
+    // Audit log (fire-and-forget)
+    logAudit({
+      organizationId,
+      userId: req.user?.id,
+      action: 'delete',
+      entityType: 'deal',
+      entityId: id,
+    }).catch(() => {});
 
     res.status(204).send();
   } catch (error) {

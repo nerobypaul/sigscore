@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as companyService from '../services/companies';
+import { logAudit } from '../services/audit';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
 
@@ -45,6 +46,16 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
     const company = await companyService.createCompany(organizationId, req.body);
     logger.info(`Company created: ${company.id}`);
 
+    // Audit log (fire-and-forget)
+    logAudit({
+      organizationId,
+      userId: req.user?.id,
+      action: 'create',
+      entityType: 'company',
+      entityId: company.id,
+      entityName: company.name,
+    }).catch(() => {});
+
     res.status(201).json(company);
   } catch (error) {
     next(error);
@@ -59,6 +70,16 @@ export const updateCompany = async (req: Request, res: Response, next: NextFunct
     const company = await companyService.updateCompany(id, organizationId, req.body);
     logger.info(`Company updated: ${company.id}`);
 
+    // Audit log (fire-and-forget)
+    logAudit({
+      organizationId,
+      userId: req.user?.id,
+      action: 'update',
+      entityType: 'company',
+      entityId: company.id,
+      entityName: company.name,
+    }).catch(() => {});
+
     res.json(company);
   } catch (error) {
     next(error);
@@ -72,6 +93,15 @@ export const deleteCompany = async (req: Request, res: Response, next: NextFunct
 
     await companyService.deleteCompany(id, organizationId);
     logger.info(`Company deleted: ${id}`);
+
+    // Audit log (fire-and-forget)
+    logAudit({
+      organizationId,
+      userId: req.user?.id,
+      action: 'delete',
+      entityType: 'company',
+      entityId: id,
+    }).catch(() => {});
 
     res.status(204).send();
   } catch (error) {

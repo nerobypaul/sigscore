@@ -31,6 +31,8 @@ import connectorRoutes from './routes/connectors';
 import bulkRoutes from './routes/bulk';
 import notificationRoutes from './routes/notifications';
 import memberRoutes from './routes/members';
+import auditRoutes from './routes/audit';
+import savedViewRoutes from './routes/saved-views';
 
 const app = express();
 
@@ -153,6 +155,12 @@ app.use('/api/v1/notifications', notificationRoutes);
 
 // API routes — Team Members
 app.use('/api/v1/members', memberRoutes);
+
+// API routes — Audit Log
+app.use('/api/v1/audit', auditRoutes);
+
+// API routes — Saved Views
+app.use('/api/v1/views', savedViewRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);

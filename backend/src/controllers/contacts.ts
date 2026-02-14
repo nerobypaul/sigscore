@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import * as contactService from '../services/contacts';
 import { processEvent } from '../services/workflows';
 import { notifyOrgUsers } from '../services/notifications';
+import { logAudit } from '../services/audit';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
 
@@ -47,6 +48,16 @@ export const createContact = async (req: Request, res: Response, next: NextFunct
     const contact = await contactService.createContact(organizationId, req.body);
     logger.info(`Contact created: ${contact.id}`);
 
+    // Audit log (fire-and-forget)
+    logAudit({
+      organizationId,
+      userId: req.user?.id,
+      action: 'create',
+      entityType: 'contact',
+      entityId: contact.id,
+      entityName: `${contact.firstName} ${contact.lastName}`,
+    }).catch(() => {});
+
     // Trigger workflow automations (fire-and-forget)
     processEvent(organizationId, 'contact_created', {
       contactId: contact.id,
@@ -80,6 +91,16 @@ export const updateContact = async (req: Request, res: Response, next: NextFunct
     const contact = await contactService.updateContact(id, organizationId, req.body);
     logger.info(`Contact updated: ${contact.id}`);
 
+    // Audit log (fire-and-forget)
+    logAudit({
+      organizationId,
+      userId: req.user?.id,
+      action: 'update',
+      entityType: 'contact',
+      entityId: contact.id,
+      entityName: `${contact.firstName} ${contact.lastName}`,
+    }).catch(() => {});
+
     res.json(contact);
   } catch (error) {
     next(error);
@@ -93,6 +114,15 @@ export const deleteContact = async (req: Request, res: Response, next: NextFunct
 
     await contactService.deleteContact(id, organizationId);
     logger.info(`Contact deleted: ${id}`);
+
+    // Audit log (fire-and-forget)
+    logAudit({
+      organizationId,
+      userId: req.user?.id,
+      action: 'delete',
+      entityType: 'contact',
+      entityId: id,
+    }).catch(() => {});
 
     res.status(204).send();
   } catch (error) {

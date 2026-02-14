@@ -1,6 +1,7 @@
 import { OrgRole } from '@prisma/client';
 import { prisma } from '../config/database';
 import { AppError } from '../utils/errors';
+import { logAudit } from './audit';
 import { logger } from '../utils/logger';
 
 // ---------------------------------------------------------------------------
@@ -91,6 +92,17 @@ export async function inviteMember(
 
   logger.info(`Member invited: ${user.email} as ${role} to org ${organizationId} by ${invitedBy}`);
 
+  // Audit log (fire-and-forget)
+  logAudit({
+    organizationId,
+    userId: invitedBy,
+    action: 'invite',
+    entityType: 'member',
+    entityId: user.id,
+    entityName: `${user.firstName} ${user.lastName}`,
+    metadata: { email: user.email, role },
+  }).catch(() => {});
+
   return {
     id: membership.id,
     userId: membership.userId,
@@ -157,6 +169,17 @@ export async function updateMemberRole(
     `Member role updated: ${memberUserId} from ${membership.role} to ${newRole} in org ${organizationId}`,
   );
 
+  // Audit log (fire-and-forget)
+  logAudit({
+    organizationId,
+    userId: requesterId,
+    action: 'role_change',
+    entityType: 'member',
+    entityId: memberUserId,
+    entityName: `${updated.user.firstName} ${updated.user.lastName}`,
+    changes: { role: { from: membership.role, to: newRole } },
+  }).catch(() => {});
+
   return {
     id: updated.id,
     userId: updated.userId,
@@ -203,6 +226,15 @@ export async function removeMember(
   });
 
   logger.info(`Member removed: ${memberUserId} from org ${organizationId} by ${requesterId}`);
+
+  // Audit log (fire-and-forget)
+  logAudit({
+    organizationId,
+    userId: requesterId,
+    action: 'remove',
+    entityType: 'member',
+    entityId: memberUserId,
+  }).catch(() => {});
 
   return { removed: true };
 }
@@ -253,6 +285,16 @@ export async function transferOwnership(
   logger.info(
     `Ownership transferred: ${currentOwnerId} → ${newOwnerUserId} in org ${organizationId}`,
   );
+
+  // Audit log (fire-and-forget)
+  logAudit({
+    organizationId,
+    userId: currentOwnerId,
+    action: 'transfer_ownership',
+    entityType: 'member',
+    entityId: newOwnerUserId,
+    changes: { owner: { from: currentOwnerId, to: newOwnerUserId } },
+  }).catch(() => {});
 
   return { transferred: true, newOwnerId: newOwnerUserId };
 }

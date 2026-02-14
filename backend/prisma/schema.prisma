@@ -72,6 +72,8 @@ model Organization {
   apiKeys            ApiKey[]
   workflows          Workflow[]
   notifications      Notification[]
+  auditLogs          AuditLog[]
+  savedViews         SavedView[]
 
   @@index([slug])
   @@map("organizations")
@@ -723,4 +725,57 @@ model Notification {
   @@index([userId, read, createdAt])
   @@index([organizationId])
   @@map("notifications")
+}
+
+// ============================================================
+// AUDIT LOG — Enterprise compliance trail
+// ============================================================
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String?
+  action         String   // create, update, delete, login, export, invite, role_change, etc.
+  entityType     String?  // contact, company, deal, workflow, api_key, member, etc.
+  entityId       String?
+  entityName     String?  // human-readable name for display (e.g., "John Doe", "Acme Corp")
+  changes        Json?    // { field: { from: old, to: new } } for updates
+  metadata       Json?    // extra context (IP, user agent, etc.)
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([organizationId, entityType, entityId])
+  @@index([organizationId, userId])
+  @@index([organizationId, action])
+  @@map("audit_logs")
+}
+
+// ============================================================
+// SAVED VIEWS — Custom filtered views for power users
+// ============================================================
+
+model SavedView {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String   // creator
+  name           String
+  entityType     String   // 'contact', 'company', 'deal'
+  filters        Json     // { search?: string, tags?: string[], stage?: string, scoreRange?: [min, max], ... }
+  sortField      String?  // field to sort by
+  sortDirection  String?  // 'asc' | 'desc'
+  isShared       Boolean  @default(false) // visible to all org members
+  isDefault      Boolean  @default(false) // auto-load for this entity type
+  icon           String?  // optional emoji icon
+  color          String?  // optional color for the view tab
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, entityType])
+  @@index([userId, entityType])
+  @@map("saved_views")
 }
