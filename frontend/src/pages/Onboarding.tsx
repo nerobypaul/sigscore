@@ -1,4 +1,4 @@
-import { useState, useCallback, FormEvent } from 'react';
+import { useState, useCallback, useEffect, useRef, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import api from '../lib/api';
@@ -8,59 +8,44 @@ import Spinner from '../components/Spinner';
 
 const STEPS = [
   { label: 'Organization' },
-  { label: 'Team' },
-  { label: 'Signals' },
-  { label: 'Sample Data' },
-  { label: 'Done' },
+  { label: 'Connect GitHub' },
+  { label: 'Your Signals' },
 ];
 
-// ---- Signal source definitions ----
+// ---- Types ----
 
-interface SignalSource {
-  id: string;
+interface RepoInfo {
+  fullName: string;
   name: string;
-  description: string;
-  icon: React.ReactNode;
+  url: string;
+  stars: number;
+  forks: number;
+  language: string | null;
 }
 
-const SIGNAL_SOURCES: SignalSource[] = [
-  {
-    id: 'github',
-    name: 'GitHub',
-    description: 'Track repo stars, clones, issues',
-    icon: <GitHubIcon />,
-  },
-  {
-    id: 'npm',
-    name: 'npm',
-    description: 'Monitor package installs',
-    icon: <NpmIcon />,
-  },
-  {
-    id: 'website',
-    name: 'Website',
-    description: 'Track page views and signups',
-    icon: <WebsiteIcon />,
-  },
-  {
-    id: 'product-api',
-    name: 'Product API',
-    description: 'Ingest custom usage events',
-    icon: <ApiIcon />,
-  },
-  {
-    id: 'segment',
-    name: 'Segment',
-    description: 'Connect your Segment workspace',
-    icon: <SegmentIcon />,
-  },
-  {
-    id: 'webhook',
-    name: 'Custom Webhook',
-    description: 'Send any event via webhook',
-    icon: <WebhookIcon />,
-  },
-];
+interface TopCompany {
+  name: string;
+  domain: string | null;
+  developerCount: number;
+  signals: number;
+}
+
+interface OnboardingSummary {
+  companiesFound: number;
+  developersFound: number;
+  signalsCreated: number;
+  topCompanies: TopCompany[];
+}
+
+interface CrawlProgress {
+  status: string;
+  phase: string;
+  phaseCurrent: number;
+  phaseTotal: number;
+  developersFound: number;
+  companiesFound: number;
+  error?: string;
+}
 
 // ---- Main component ----
 
@@ -78,18 +63,21 @@ export default function Onboarding() {
   const [orgError, setOrgError] = useState('');
 
   // Step 2 state
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteList, setInviteList] = useState<string[]>([]);
-  const [inviteError, setInviteError] = useState('');
+  const [ghToken, setGhToken] = useState('');
+  const [tokenValidating, setTokenValidating] = useState(false);
+  const [tokenError, setTokenError] = useState('');
+  const [repos, setRepos] = useState<RepoInfo[]>([]);
+  const [selectedRepos, setSelectedRepos] = useState<Set<string>>(new Set());
+  const [reposLoaded, setReposLoaded] = useState(false);
+
+  // Crawl state
+  const [crawling, setCrawling] = useState(false);
+  const [crawlProgress, setCrawlProgress] = useState<CrawlProgress | null>(null);
+  const [crawlError, setCrawlError] = useState('');
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Step 3 state
-  const [selectedSource, setSelectedSource] = useState<string | null>(null);
-  const [sourceName, setSourceName] = useState('');
-
-  // Step 4 state (demo data)
-  const [demoLoading, setDemoLoading] = useState(false);
-  const [demoError, setDemoError] = useState('');
-  const [demoSeeded, setDemoSeeded] = useState(false);
+  const [summary, setSummary] = useState<OnboardingSummary | null>(null);
 
   // ---- Helpers ----
 
@@ -129,15 +117,12 @@ export default function Onboarding() {
 
       const { data } = await api.post('/organizations', payload);
 
-      // Set the new organization in localStorage so API interceptor picks it up
       const orgId = data.id || data.organization?.id;
       if (orgId) {
         localStorage.setItem('organizationId', orgId);
       }
 
-      // Refresh the user context so it picks up the new org
       await refreshUser();
-
       setCurrentStep(1);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string; message?: string } } };
@@ -151,65 +136,102 @@ export default function Onboarding() {
     }
   };
 
-  // ---- Step 2: Invite Team ----
+  // ---- Step 2: Connect GitHub ----
 
-  const handleAddInvite = () => {
-    const email = inviteEmail.trim().toLowerCase();
-    setInviteError('');
-
-    if (!email) return;
-
-    // Basic email validation
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setInviteError('Please enter a valid email address.');
-      return;
-    }
-
-    if (inviteList.includes(email)) {
-      setInviteError('This email is already in the list.');
-      return;
-    }
-
-    setInviteList((prev) => [...prev, email]);
-    setInviteEmail('');
-  };
-
-  const handleRemoveInvite = (email: string) => {
-    setInviteList((prev) => prev.filter((e) => e !== email));
-  };
-
-  // ---- Step 3: Signal Sources ----
-
-  const handleSelectSource = (sourceId: string) => {
-    if (selectedSource === sourceId) {
-      setSelectedSource(null);
-      setSourceName('');
-    } else {
-      setSelectedSource(sourceId);
-      setSourceName('');
-    }
-  };
-
-  // ---- Step 4: Demo Data ----
-
-  const handleSeedDemoData = async () => {
-    setDemoLoading(true);
-    setDemoError('');
+  const handleValidateToken = async () => {
+    setTokenError('');
+    setTokenValidating(true);
+    setRepos([]);
+    setReposLoaded(false);
 
     try {
-      await api.post('/demo/seed');
-      setDemoSeeded(true);
-      // Move to the Done step after a brief pause so user sees the success state
-      setTimeout(() => setCurrentStep(4), 600);
+      const { data } = await api.post('/onboarding/github/repos', { token: ghToken });
+      setRepos(data.repos || []);
+      setReposLoaded(true);
+
+      // Auto-select repos with > 0 stars (up to 5)
+      const autoSelected = new Set<string>();
+      const sorted = [...(data.repos || [])].sort(
+        (a: RepoInfo, b: RepoInfo) => b.stars - a.stars,
+      );
+      for (const repo of sorted.slice(0, 5)) {
+        if (repo.stars > 0) {
+          autoSelected.add(repo.fullName);
+        }
+      }
+      setSelectedRepos(autoSelected);
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { error?: string; message?: string } } };
-      setDemoError(
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      setTokenError(
         axiosErr.response?.data?.error ||
-          axiosErr.response?.data?.message ||
-          'Failed to load sample data. You can always add it later from Settings.'
+          'Could not connect to GitHub. Check your token and try again.'
       );
     } finally {
-      setDemoLoading(false);
+      setTokenValidating(false);
+    }
+  };
+
+  const toggleRepo = (fullName: string) => {
+    setSelectedRepos((prev) => {
+      const next = new Set(prev);
+      if (next.has(fullName)) {
+        next.delete(fullName);
+      } else if (next.size < 10) {
+        next.add(fullName);
+      }
+      return next;
+    });
+  };
+
+  // Poll crawl progress
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
+  const startCrawl = async () => {
+    setCrawling(true);
+    setCrawlError('');
+    setCrawlProgress(null);
+
+    // Start polling progress
+    pollRef.current = setInterval(async () => {
+      try {
+        const { data } = await api.get('/onboarding/github/status');
+        setCrawlProgress(data);
+
+        if (data.status === 'complete' || data.status === 'error') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
+      } catch {
+        // Ignore polling errors
+      }
+    }, 1500);
+
+    try {
+      const { data } = await api.post('/onboarding/github/connect', {
+        token: ghToken,
+        repos: selectedRepos.size > 0 ? Array.from(selectedRepos) : undefined,
+      });
+
+      if (pollRef.current) clearInterval(pollRef.current);
+      pollRef.current = null;
+
+      setSummary(data);
+      setCrawling(false);
+      setCurrentStep(2);
+    } catch (err: unknown) {
+      if (pollRef.current) clearInterval(pollRef.current);
+      pollRef.current = null;
+
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      setCrawlError(
+        axiosErr.response?.data?.error ||
+          'Something went wrong during the scan. Please try again.'
+      );
+      setCrawling(false);
     }
   };
 
@@ -233,7 +255,6 @@ export default function Onboarding() {
         <div className="flex items-center gap-0">
           {STEPS.map((step, idx) => (
             <div key={step.label} className="flex items-center">
-              {/* Circle */}
               <div className="flex flex-col items-center">
                 <div
                   className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
@@ -260,7 +281,6 @@ export default function Onboarding() {
                   {step.label}
                 </span>
               </div>
-              {/* Connector line */}
               {idx < STEPS.length - 1 && (
                 <div
                   className={`w-12 sm:w-20 h-0.5 mx-1.5 mb-6 transition-colors ${
@@ -358,317 +378,327 @@ export default function Onboarding() {
             </div>
           )}
 
-          {/* =================== STEP 2: Invite Team =================== */}
+          {/* =================== STEP 2: Connect GitHub =================== */}
           {currentStep === 1 && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-1">Invite your team</h2>
-              <p className="text-sm text-gray-500 mb-6">
-                Add team members to collaborate in your workspace.
-              </p>
-
-              <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-700 mb-6">
-                Coming soon -- invites will be sent when your account is activated.
-              </div>
-
-              {/* Email input */}
-              <div className="flex gap-2 mb-4">
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => {
-                    setInviteEmail(e.target.value);
-                    setInviteError('');
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddInvite();
-                    }
-                  }}
-                  className="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow"
-                  placeholder="colleague@company.com"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddInvite}
-                  className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
-                >
-                  Add
-                </button>
-              </div>
-
-              {inviteError && (
-                <p className="text-sm text-red-600 mb-3">{inviteError}</p>
-              )}
-
-              {/* Invite list */}
-              {inviteList.length > 0 && (
-                <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 mb-6">
-                  {inviteList.map((email) => (
-                    <div key={email} className="flex items-center justify-between px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                          </svg>
-                        </div>
-                        <span className="text-sm text-gray-700">{email}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveInvite(email)}
-                        className="text-gray-400 hover:text-red-500 transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-10 h-10 rounded-lg bg-gray-900 flex items-center justify-center flex-shrink-0">
+                  <GitHubIcon />
                 </div>
-              )}
-
-              {inviteList.length === 0 && (
-                <p className="text-sm text-gray-400 mb-6">No team members added yet.</p>
-              )}
-
-              {/* Actions */}
-              <div className="flex justify-between pt-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(2)}
-                  className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors"
-                >
-                  Skip this step
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(2)}
-                  className="bg-indigo-600 text-white py-2.5 px-6 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* =================== STEP 3: Connect Signal Source =================== */}
-          {currentStep === 2 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-1">Connect a signal source</h2>
-              <p className="text-sm text-gray-500 mb-6">
-                Start ingesting product signals to identify your best leads.
-              </p>
-
-              {/* Source grid */}
-              {!selectedSource ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                  {SIGNAL_SOURCES.map((source) => (
-                    <button
-                      key={source.id}
-                      type="button"
-                      onClick={() => handleSelectSource(source.id)}
-                      className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50/50 transition-colors text-left"
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                        {source.icon}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">{source.name}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{source.description}</p>
-                      </div>
-                    </button>
-                  ))}
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Connect GitHub</h2>
+                  <p className="text-sm text-gray-500">
+                    See which companies are engaging with your repos -- in under 60 seconds.
+                  </p>
                 </div>
-              ) : (
-                <div className="mb-6">
-                  {/* Selected source config */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedSource(null)}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                      </svg>
-                    </button>
-                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                      {SIGNAL_SOURCES.find((s) => s.id === selectedSource)?.icon}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {SIGNAL_SOURCES.find((s) => s.id === selectedSource)?.name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {SIGNAL_SOURCES.find((s) => s.id === selectedSource)?.description}
-                      </p>
-                    </div>
-                  </div>
+              </div>
 
-                  <div className="space-y-4">
+              <div className="mt-6 space-y-5">
+                {/* Token input */}
+                {!reposLoaded && (
+                  <>
                     <div>
-                      <label
-                        htmlFor="sourceName"
-                        className="block text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Source name
+                      <label htmlFor="ghToken" className="block text-sm font-medium text-gray-700 mb-1">
+                        GitHub Personal Access Token
                       </label>
                       <input
-                        id="sourceName"
-                        type="text"
-                        value={sourceName}
-                        onChange={(e) => setSourceName(e.target.value)}
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow"
-                        placeholder={`My ${SIGNAL_SOURCES.find((s) => s.id === selectedSource)?.name} source`}
+                        id="ghToken"
+                        type="password"
+                        value={ghToken}
+                        onChange={(e) => {
+                          setGhToken(e.target.value);
+                          setTokenError('');
+                        }}
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow font-mono"
+                        placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                       />
+                      <p className="mt-1.5 text-xs text-gray-400">
+                        Needs <code className="bg-gray-100 px-1 rounded">read:user</code> and{' '}
+                        <code className="bg-gray-100 px-1 rounded">repo</code> scopes.{' '}
+                        <a
+                          href="https://github.com/settings/tokens/new?scopes=repo,read:user&description=DevSignal%20Onboarding"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:text-indigo-700 underline"
+                        >
+                          Create one here
+                        </a>
+                      </p>
                     </div>
 
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700">
-                      Full configuration coming soon. After setup, you will receive an API key and
-                      webhook URL to start sending events.
+                    {tokenError && (
+                      <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+                        {tokenError}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleValidateToken}
+                      disabled={tokenValidating || !ghToken.trim()}
+                      className="w-full bg-gray-900 text-white py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                    >
+                      {tokenValidating ? (
+                        <>
+                          <Spinner size="sm" className="border-white border-t-transparent" />
+                          Connecting...
+                        </>
+                      ) : (
+                        <>
+                          <GitHubIcon />
+                          Connect to GitHub
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
+
+                {/* Repo picker */}
+                {reposLoaded && !crawling && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">
+                          Select repos to scan
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          We will analyze stargazers, forkers, and contributors to find companies.
+                        </p>
+                      </div>
+                      <span className="text-xs text-gray-400">{selectedRepos.size}/10 selected</span>
                     </div>
+
+                    <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-80 overflow-y-auto">
+                      {repos.length === 0 && (
+                        <div className="px-4 py-8 text-center text-sm text-gray-400">
+                          No repositories found. Make sure your token has repo access.
+                        </div>
+                      )}
+                      {repos.map((repo) => (
+                        <label
+                          key={repo.fullName}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedRepos.has(repo.fullName)}
+                            onChange={() => toggleRepo(repo.fullName)}
+                            className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-900 truncate">
+                                {repo.name}
+                              </span>
+                              {repo.language && (
+                                <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                                  {repo.language}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-400 truncate">{repo.fullName}</p>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-gray-400 flex-shrink-0">
+                            <span className="flex items-center gap-1">
+                              <StarIcon /> {formatNumber(repo.stars)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <ForkIcon /> {formatNumber(repo.forks)}
+                            </span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+
+                    {crawlError && (
+                      <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+                        {crawlError}
+                      </div>
+                    )}
+
+                    <div className="flex justify-between pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReposLoaded(false);
+                          setGhToken('');
+                          setRepos([]);
+                          setSelectedRepos(new Set());
+                        }}
+                        className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors"
+                      >
+                        Use a different token
+                      </button>
+                      <button
+                        type="button"
+                        onClick={startCrawl}
+                        disabled={selectedRepos.size === 0}
+                        className="bg-indigo-600 text-white py-2.5 px-6 rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Scan {selectedRepos.size} {selectedRepos.size === 1 ? 'repo' : 'repos'}
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* Crawl progress */}
+                {crawling && (
+                  <div className="text-center py-4">
+                    <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Spinner size="md" />
+                    </div>
+
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      Scanning your repos...
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-4">
+                      {crawlProgress?.phase || 'Starting...'}
+                    </p>
+
+                    {/* Progress bar */}
+                    {crawlProgress && crawlProgress.phaseTotal > 0 && (
+                      <div className="max-w-sm mx-auto mb-4">
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
+                            style={{
+                              width: `${Math.min(
+                                (crawlProgress.phaseCurrent / crawlProgress.phaseTotal) * 100,
+                                100,
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                        <div className="flex justify-between mt-1 text-xs text-gray-400">
+                          <span>
+                            {crawlProgress.phaseCurrent} / {crawlProgress.phaseTotal}
+                          </span>
+                          <span>
+                            {crawlProgress.developersFound > 0 &&
+                              `${crawlProgress.developersFound} developers`}
+                            {crawlProgress.companiesFound > 0 &&
+                              ` | ${crawlProgress.companiesFound} companies`}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-400">
+                      This usually takes 30-60 seconds
+                    </p>
                   </div>
+                )}
+              </div>
+
+              {/* Skip option (only when not crawling) */}
+              {!crawling && !reposLoaded && (
+                <div className="mt-6 pt-4 border-t border-gray-100 text-center">
+                  <button
+                    type="button"
+                    onClick={goToDashboard}
+                    className="text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors"
+                  >
+                    Skip for now -- I will set up later
+                  </button>
                 </div>
               )}
-
-              {/* Actions */}
-              <div className="flex justify-between pt-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(3)}
-                  className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors"
-                >
-                  Skip this step
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(3)}
-                  className="bg-indigo-600 text-white py-2.5 px-6 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
-                >
-                  {selectedSource ? 'Complete Setup' : 'Continue'}
-                </button>
-              </div>
             </div>
           )}
 
-          {/* =================== STEP 4: Sample Data =================== */}
-          {currentStep === 3 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-              <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
-                </svg>
-              </div>
-
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
-                Want to see DevSignal in action?
-              </h2>
-              <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
-                We can populate your workspace with realistic sample data --
-                companies, contacts, deals, and signals -- so you can explore
-                every feature right away.
-              </p>
-
-              {demoError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm mb-6 max-w-md mx-auto">
-                  {demoError}
-                </div>
-              )}
-
-              {demoSeeded ? (
-                <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm mb-6 max-w-md mx-auto flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          {/* =================== STEP 3: See Results =================== */}
+          {currentStep === 2 && summary && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+              {/* Success header */}
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Sample data loaded successfully!
                 </div>
-              ) : (
-                <div className="space-y-3 max-w-sm mx-auto">
-                  <button
-                    type="button"
-                    onClick={handleSeedDemoData}
-                    disabled={demoLoading}
-                    className="w-full bg-indigo-600 text-white py-2.5 px-6 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {demoLoading ? (
-                      <>
-                        <Spinner size="sm" className="border-white border-t-transparent" />
-                        Loading sample data...
-                      </>
-                    ) : (
-                      'Yes, load demo data'
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentStep(4)}
-                    disabled={demoLoading}
-                    className="w-full text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors py-2"
-                  >
-                    No thanks, I'll add my own data
-                  </button>
-                </div>
-              )}
 
-              {/* What gets created */}
-              {!demoSeeded && !demoLoading && (
-                <div className="mt-8 max-w-sm mx-auto text-left">
-                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">
-                    What gets created
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full flex-shrink-0" />
-                      5 companies
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full flex-shrink-0" />
-                      12 contacts
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full flex-shrink-0" />
-                      8 deals
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full flex-shrink-0" />
-                      30 signals
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full flex-shrink-0" />
-                      PQA scores
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full flex-shrink-0" />
-                      1 workflow
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* =================== STEP 5: Done =================== */}
-          {currentStep === 4 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-              {/* Celebration icon */}
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  We found {summary.companiesFound} {summary.companiesFound === 1 ? 'company' : 'companies'}!
+                </h2>
+                <p className="text-sm text-gray-500 max-w-md mx-auto">
+                  {summary.developersFound} developers across {summary.signalsCreated} signals
+                  are already engaging with your repos. Here are the top accounts.
+                </p>
               </div>
 
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">You're all set!</h2>
-              <p className="text-sm text-gray-500 mb-8 max-w-md mx-auto">
-                {demoSeeded
-                  ? 'Your workspace is loaded with sample data. Explore the dashboard to see DevSignal in action.'
-                  : 'Your workspace is ready. Connect your signal sources to start tracking product-qualified accounts.'}
-              </p>
+              {/* Stats row */}
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-indigo-50 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-indigo-600">{summary.companiesFound}</p>
+                  <p className="text-xs text-indigo-600/70 font-medium mt-0.5">Companies</p>
+                </div>
+                <div className="bg-emerald-50 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-emerald-600">{summary.developersFound}</p>
+                  <p className="text-xs text-emerald-600/70 font-medium mt-0.5">Developers</p>
+                </div>
+                <div className="bg-amber-50 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-amber-600">{summary.signalsCreated}</p>
+                  <p className="text-xs text-amber-600/70 font-medium mt-0.5">Signals</p>
+                </div>
+              </div>
+
+              {/* Top companies table */}
+              {summary.topCompanies.length > 0 && (
+                <div className="border border-gray-200 rounded-lg overflow-hidden mb-8">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 text-left">
+                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Company
+                        </th>
+                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">
+                          Developers
+                        </th>
+                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">
+                          Signals
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {summary.topCompanies.map((company, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span className="text-xs font-bold text-indigo-600">
+                                  {company.name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {company.name}
+                                </p>
+                                {company.domain && (
+                                  <p className="text-xs text-gray-400">{company.domain}</p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="text-sm font-semibold text-gray-700">
+                              {company.developerCount}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                              {company.signals}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               <button
                 type="button"
                 onClick={goToDashboard}
-                className="bg-indigo-600 text-white py-2.5 px-8 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
+                className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
               >
                 Go to Dashboard
               </button>
@@ -680,52 +710,35 @@ export default function Onboarding() {
   );
 }
 
-// ---- Signal Source Icons ----
+// ---- Helper functions ----
+
+function formatNumber(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  return String(n);
+}
+
+// ---- Icons ----
 
 function GitHubIcon() {
   return (
-    <svg className="w-5 h-5 text-gray-700" viewBox="0 0 24 24" fill="currentColor">
+    <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
       <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
     </svg>
   );
 }
 
-function NpmIcon() {
+function StarIcon() {
   return (
-    <svg className="w-5 h-5 text-red-600" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M0 7.334v8h6.666v1.332H12v-1.332h12v-8H0zm6.666 6.664H5.334v-4H3.999v4H1.335V8.667h5.331v5.331zm4 0v1.336H8.001V8.667h5.334v5.332h-2.669zm12.001 0h-1.33v-4h-1.336v4h-1.335v-4h-1.33v4h-2.671V8.667h8.002v5.331zM10.665 10H12v2.667h-1.335V10z" />
+    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
     </svg>
   );
 }
 
-function WebsiteIcon() {
+function ForkIcon() {
   return (
-    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
-    </svg>
-  );
-}
-
-function ApiIcon() {
-  return (
-    <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
-    </svg>
-  );
-}
-
-function SegmentIcon() {
-  return (
-    <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-    </svg>
-  );
-}
-
-function WebhookIcon() {
-  return (
-    <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
     </svg>
   );
 }
