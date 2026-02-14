@@ -28,6 +28,7 @@ import billingRoutes, { billingWebhookRouter } from './routes/billing';
 import analyticsRoutes from './routes/analytics';
 import workflowRoutes from './routes/workflows';
 import connectorRoutes from './routes/connectors';
+import segmentWebhookRoutes from './routes/segment-webhook';
 import bulkRoutes from './routes/bulk';
 import notificationRoutes from './routes/notifications';
 import memberRoutes from './routes/members';
@@ -119,8 +120,9 @@ app.use('/api/v1/sources', signalSourceRoutes);
 
 // Inbound connector webhooks (no auth — verified via HMAC signature)
 // Must be mounted BEFORE the authenticated /webhooks routes so the
-// more specific /webhooks/github path takes precedence.
+// more specific /webhooks paths take precedence.
 app.use('/api/v1/webhooks/github', githubWebhookRoutes);
+app.use('/api/v1/webhooks/segment', segmentWebhookRoutes);
 
 app.use('/api/v1/webhooks', webhookRoutes);
 

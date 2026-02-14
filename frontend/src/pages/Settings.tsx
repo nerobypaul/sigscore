@@ -38,13 +38,25 @@ interface SlackSettings {
   webhookUrl: string | null;
 }
 
-type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack';
+interface SegmentSource {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  webhookUrl: string;
+  sharedSecret: string | null;
+  lastSyncAt: string | null;
+  createdAt: string;
+}
+
+type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack' | 'segment';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'api-keys', label: 'API Keys' },
   { id: 'webhooks', label: 'Webhooks' },
   { id: 'sources', label: 'Signal Sources' },
   { id: 'slack', label: 'Slack' },
+  { id: 'segment', label: 'Segment' },
 ];
 
 const ALL_SCOPES = [
@@ -1209,6 +1221,349 @@ function SlackTab() {
 }
 
 // ---------------------------------------------------------------------------
+// Tab 5: Segment
+// ---------------------------------------------------------------------------
+
+function SegmentTab() {
+  const toast = useToast();
+  const [segmentSource, setSegmentSource] = useState<SegmentSource | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [sourceName, setSourceName] = useState('Segment');
+  const [showSecret, setShowSecret] = useState(false);
+  const [rotating, setRotating] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const fetchSegmentSource = useCallback(async () => {
+    try {
+      const { data } = await api.get('/sources');
+      const sources = data.sources as SignalSource[];
+      const seg = sources.find((s) => s.type === 'SEGMENT');
+      if (seg) {
+        // Fetch full config with secret
+        const { data: detail } = await api.get(`/connectors/segment/${seg.id}`);
+        setSegmentSource(detail.source);
+      } else {
+        setSegmentSource(null);
+      }
+    } catch {
+      // If 403 or sources not found, no segment source
+      setSegmentSource(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSegmentSource();
+  }, [fetchSegmentSource]);
+
+  async function handleConnect() {
+    if (!sourceName.trim()) {
+      toast.error('Please enter a source name.');
+      return;
+    }
+    setCreating(true);
+    try {
+      const { data } = await api.post('/connectors/segment', {
+        name: sourceName.trim(),
+      });
+      setSegmentSource(data.source);
+      toast.success('Segment connector created.');
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleRotateSecret() {
+    if (
+      !window.confirm(
+        'Rotate the shared secret? The old secret will immediately stop working. You will need to update it in your Segment workspace.'
+      )
+    ) {
+      return;
+    }
+    setRotating(true);
+    try {
+      const { data } = await api.post(
+        `/connectors/segment/${segmentSource!.id}/rotate-secret`
+      );
+      setSegmentSource((prev) =>
+        prev ? { ...prev, sharedSecret: data.sharedSecret } : null
+      );
+      toast.success('Shared secret rotated.');
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setRotating(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    if (
+      !window.confirm(
+        'Disconnect Segment? This will delete the source and all incoming data will stop. Existing signals are preserved.'
+      )
+    ) {
+      return;
+    }
+    setDisconnecting(true);
+    try {
+      await api.delete(`/connectors/segment/${segmentSource!.id}`);
+      setSegmentSource(null);
+      toast.success('Segment connector disconnected.');
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  async function copyToClipboard(text: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(label);
+      toast.success(`${label} copied to clipboard.`);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      toast.error('Failed to copy to clipboard.');
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  // No source configured -- show setup card
+  if (!segmentSource) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="px-6 py-5 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                <SegmentIcon />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">
+                  Connect Segment
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Stream identify, track, group, and page events from Segment
+                  into DevSignal.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="px-6 py-5 space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Source Name
+              </label>
+              <input
+                type="text"
+                value={sourceName}
+                onChange={(e) => setSourceName(e.target.value)}
+                placeholder="e.g. Production Segment"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            <button
+              onClick={handleConnect}
+              disabled={creating || !sourceName.trim()}
+              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {creating ? 'Creating...' : 'Connect Segment'}
+            </button>
+
+            {/* How it works */}
+            <div className="rounded-lg bg-gray-50 border border-gray-100 p-4">
+              <h3 className="text-sm font-medium text-gray-800 mb-2">
+                How it works
+              </h3>
+              <ol className="text-sm text-gray-600 space-y-1.5 list-decimal list-inside">
+                <li>Click "Connect Segment" to generate a webhook URL and shared secret.</li>
+                <li>In your Segment workspace, add a new Webhook destination.</li>
+                <li>Paste the webhook URL and shared secret from DevSignal.</li>
+                <li>
+                  Segment will start streaming events -- identify calls create
+                  contacts, track calls create signals, group calls create
+                  companies.
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Source exists -- show configuration
+  const baseUrl = window.location.origin;
+  const fullWebhookUrl = `${baseUrl}${segmentSource.webhookUrl}`;
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="px-6 py-5 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+              <SegmentIcon />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">
+                {segmentSource.name}
+              </h2>
+              <p className="text-sm text-gray-500">
+                Segment inbound connector
+              </p>
+            </div>
+            <span className="ml-auto inline-flex items-center gap-1.5">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  segmentSource.status === 'ACTIVE'
+                    ? 'bg-green-500'
+                    : segmentSource.status === 'PAUSED'
+                      ? 'bg-yellow-500'
+                      : 'bg-red-500'
+                }`}
+              />
+              <span
+                className={`text-xs font-medium ${
+                  segmentSource.status === 'ACTIVE'
+                    ? 'text-green-700'
+                    : segmentSource.status === 'PAUSED'
+                      ? 'text-yellow-700'
+                      : 'text-red-700'
+                }`}
+              >
+                {segmentSource.status === 'ACTIVE'
+                  ? 'Active'
+                  : segmentSource.status === 'PAUSED'
+                    ? 'Paused'
+                    : 'Error'}
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {/* Webhook URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Webhook URL
+            </label>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 font-mono truncate">
+                {fullWebhookUrl}
+              </code>
+              <button
+                onClick={() => copyToClipboard(fullWebhookUrl, 'Webhook URL')}
+                className="flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {copied === 'Webhook URL' ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+          </div>
+
+          {/* Shared Secret */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Shared Secret
+            </label>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 font-mono truncate">
+                {showSecret
+                  ? segmentSource.sharedSecret || '(not available)'
+                  : '••••••••••••••••••••••••••••••••'}
+              </code>
+              <button
+                onClick={() => setShowSecret(!showSecret)}
+                className="flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {showSecret ? 'Hide' : 'Show'}
+              </button>
+              {segmentSource.sharedSecret && (
+                <button
+                  onClick={() =>
+                    copyToClipboard(segmentSource.sharedSecret!, 'Secret')
+                  }
+                  className="flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  {copied === 'Secret' ? 'Copied' : 'Copy'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Last sync */}
+          <div className="flex items-center gap-4 text-xs text-gray-400">
+            <span>Last event received: {formatDateTime(segmentSource.lastSyncAt)}</span>
+            <span>Created: {formatDate(segmentSource.createdAt)}</span>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+            <button
+              onClick={handleRotateSecret}
+              disabled={rotating}
+              className="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 disabled:opacity-50 transition-colors"
+            >
+              {rotating ? 'Rotating...' : 'Rotate Secret'}
+            </button>
+            <button
+              onClick={handleDisconnect}
+              disabled={disconnecting}
+              className="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors ml-auto"
+            >
+              {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+            </button>
+          </div>
+
+          {/* Setup instructions */}
+          <div className="rounded-lg bg-gray-50 border border-gray-100 p-4">
+            <h3 className="text-sm font-medium text-gray-800 mb-2">
+              Quick setup in Segment
+            </h3>
+            <ol className="text-sm text-gray-600 space-y-1.5 list-decimal list-inside">
+              <li>
+                In your{' '}
+                <a
+                  href="https://app.segment.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-indigo-600 hover:text-indigo-700 underline"
+                >
+                  Segment workspace
+                </a>
+                , go to Connections and add a new Destination.
+              </li>
+              <li>
+                Search for <strong>Webhooks (Actions)</strong> and select it.
+              </li>
+              <li>Paste the Webhook URL above as the endpoint.</li>
+              <li>Set the Shared Secret for HMAC signature verification.</li>
+              <li>Enable the destination and choose which sources to connect.</li>
+              <li>
+                DevSignal will automatically create contacts from identify calls,
+                signals from track calls, and companies from group calls.
+              </li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Settings page
 // ---------------------------------------------------------------------------
 
@@ -1269,6 +1624,11 @@ export default function Settings() {
           <SlackTab />
         </div>
       )}
+      {loadedTabsRef.current.has('segment') && (
+        <div className={activeTab === 'segment' ? '' : 'hidden'}>
+          <SegmentTab />
+        </div>
+      )}
     </div>
   );
 }
@@ -1295,6 +1655,29 @@ function SlackIcon() {
       <path
         d="M15.163 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.163 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zm0-1.27a2.527 2.527 0 0 1-2.52-2.523 2.527 2.527 0 0 1 2.52-2.52h6.315A2.528 2.528 0 0 1 24 15.163a2.528 2.528 0 0 1-2.522 2.523h-6.315z"
         fill="#ECB22E"
+      />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Segment icon (inline SVG)
+// ---------------------------------------------------------------------------
+
+function SegmentIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 64 64" fill="none">
+      <path
+        d="M34.6 53.3H13.1c-1 0-1.8-.8-1.8-1.8s.8-1.8 1.8-1.8h21.5c10.6 0 19.3-8.7 19.3-19.3 0-1 .8-1.8 1.8-1.8s1.8.8 1.8 1.8c0 12.6-10.3 22.9-22.9 22.9z"
+        fill="#52BD94"
+      />
+      <path
+        d="M56.3 18H22.5c-1 0-1.8-.8-1.8-1.8s.8-1.8 1.8-1.8h33.8c1 0 1.8.8 1.8 1.8S57.3 18 56.3 18z"
+        fill="#52BD94"
+      />
+      <path
+        d="M9.5 37.8c-5 0-9-4-9-9s4-9 9-9 9 4 9 9-4.1 9-9 9zm0-14.3c-3 0-5.4 2.4-5.4 5.4s2.4 5.4 5.4 5.4 5.4-2.4 5.4-5.4-2.5-5.4-5.4-5.4z"
+        fill="#52BD94"
       />
     </svg>
   );
