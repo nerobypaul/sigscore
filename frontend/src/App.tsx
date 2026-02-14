@@ -27,6 +27,10 @@ import Pricing from './pages/Pricing';
 import ApiDocs from './pages/ApiDocs';
 import TeamMembers from './pages/TeamMembers';
 import AuditLog from './pages/AuditLog';
+import EmailSequences from './pages/EmailSequences';
+import EmailSequenceDetail from './pages/EmailSequenceDetail';
+import DashboardBuilder from './pages/DashboardBuilder';
+import CrmImport from './pages/CrmImport';
 import NotFound from './pages/NotFound';
 
 /**
@@ -106,6 +110,10 @@ function AppRoutes() {
         <Route path="/billing" element={<Billing />} />
         <Route path="/team" element={<TeamMembers />} />
         <Route path="/audit" element={<AuditLog />} />
+        <Route path="/sequences" element={<EmailSequences />} />
+        <Route path="/sequences/:id" element={<EmailSequenceDetail />} />
+        <Route path="/dashboard-builder" element={<DashboardBuilder />} />
+        <Route path="/import/crm" element={<CrmImport />} />
       </Route>
 
       {/* 404 catch-all */}

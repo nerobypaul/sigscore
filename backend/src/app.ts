@@ -37,6 +37,9 @@ import auditRoutes from './routes/audit';
 import savedViewRoutes from './routes/saved-views';
 import workerRoutes from './routes/workers';
 import demoRoutes from './routes/demo';
+import emailSequenceRoutes from './routes/email-sequences';
+import dashboardApiRoutes from './routes/dashboards';
+import crmImportRoutes from './routes/crm-import';
 
 const app = express();
 
@@ -173,6 +176,15 @@ app.use('/api/v1/workers', workerRoutes);
 
 // API routes — Demo Data
 app.use('/api/v1/demo', demoRoutes);
+
+// API routes — Email Sequences
+app.use('/api/v1/sequences', emailSequenceRoutes);
+
+// API routes — Custom Dashboards
+app.use('/api/v1/dashboards', dashboardApiRoutes);
+
+// API routes — CRM Import (HubSpot/Salesforce)
+app.use('/api/v1/import/crm', crmImportRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);
