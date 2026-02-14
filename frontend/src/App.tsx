@@ -32,6 +32,8 @@ import EmailSequenceDetail from './pages/EmailSequenceDetail';
 import DashboardBuilder from './pages/DashboardBuilder';
 import CrmImport from './pages/CrmImport';
 import Playbooks from './pages/Playbooks';
+import ScoringBuilder from './pages/ScoringBuilder';
+import DevPortal from './pages/DevPortal';
 import NotFound from './pages/NotFound';
 
 /**
@@ -67,6 +69,7 @@ function AppRoutes() {
       <Route path="/use-cases" element={<UseCases />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/docs" element={<ApiDocs />} />
+      <Route path="/developers" element={<DevPortal />} />
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
@@ -106,6 +109,7 @@ function AppRoutes() {
         <Route path="/activities" element={<Activities />} />
         <Route path="/signals" element={<Signals />} />
         <Route path="/scores" element={<PQADashboard />} />
+        <Route path="/scoring" element={<ScoringBuilder />} />
         <Route path="/workflows" element={<Workflows />} />
         <Route path="/playbooks" element={<Playbooks />} />
         <Route path="/settings" element={<Settings />} />

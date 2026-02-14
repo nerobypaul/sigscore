@@ -3,6 +3,7 @@ import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
 import { notifyTierChange, sendAccountAlert } from './slack-notifications';
 import { enqueueWorkflowExecution } from '../jobs/producers';
+import { getScoringConfig, computeTierWithThresholds, type TierThresholds } from './scoring-rules';
 
 interface ScoreFactor {
   name: string;
@@ -11,11 +12,11 @@ interface ScoreFactor {
   description: string;
 }
 
-const computeTier = (score: number): ScoreTier => {
-  if (score >= 80) return 'HOT';
-  if (score >= 50) return 'WARM';
-  if (score >= 20) return 'COLD';
-  return 'INACTIVE';
+const DEFAULT_THRESHOLDS: TierThresholds = { HOT: 80, WARM: 50, COLD: 20 };
+
+const computeTier = (score: number, thresholds?: TierThresholds): ScoreTier => {
+  const t = thresholds || DEFAULT_THRESHOLDS;
+  return computeTierWithThresholds(score, t);
 };
 
 const computeTrend = (currentScore: number, previousScore: number | null): ScoreTrend => {
@@ -27,6 +28,15 @@ const computeTrend = (currentScore: number, previousScore: number | null): Score
 };
 
 export const computeAccountScore = async (organizationId: string, accountId: string) => {
+  // Load org-specific scoring config for tier thresholds
+  let tierThresholds: TierThresholds = DEFAULT_THRESHOLDS;
+  try {
+    const scoringConfig = await getScoringConfig(organizationId);
+    tierThresholds = scoringConfig.tierThresholds;
+  } catch (err) {
+    logger.debug('Failed to load custom scoring config, using defaults', { organizationId, err });
+  }
+
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -164,7 +174,7 @@ export const computeAccountScore = async (organizationId: string, accountId: str
     select: { score: true, tier: true },
   });
 
-  const tier = computeTier(totalScore);
+  const tier = computeTier(totalScore, tierThresholds);
   const trend = computeTrend(totalScore, existingScore?.score ?? null);
 
   // Upsert the score
