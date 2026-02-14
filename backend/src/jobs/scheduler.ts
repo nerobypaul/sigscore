@@ -1,6 +1,7 @@
 import { logger } from '../utils/logger';
-import { signalSyncQueue, hubspotSyncQueue } from './queue';
+import { signalSyncQueue, hubspotSyncQueue, discordSyncQueue } from './queue';
 import { getConnectedOrganizations } from '../services/hubspot-sync';
+import { getDiscordConnectedOrganizations } from '../services/discord-connector';
 
 /**
  * Set up recurring (cron-based) jobs using BullMQ's built-in repeatable jobs.
@@ -41,11 +42,22 @@ export const setupScheduler = async (): Promise<void> => {
     },
   );
 
+  // Discord sync every 30 minutes for all connected organizations.
+  await discordSyncQueue.add(
+    'discord-sync-scheduler',
+    { organizationId: '__scheduler__' },
+    {
+      repeat: { pattern: '*/30 * * * *' },
+      jobId: 'scheduled-discord-sync',
+    },
+  );
+
   logger.info('BullMQ scheduled jobs configured', {
     jobs: [
       { name: 'sync-all-npm', schedule: 'every 6 hours' },
       { name: 'sync-all-pypi', schedule: 'every 12 hours' },
       { name: 'hubspot-sync', schedule: 'every 15 minutes' },
+      { name: 'discord-sync', schedule: 'every 30 minutes' },
     ],
   });
 };
@@ -64,6 +76,24 @@ export async function enqueueHubSpotSyncForAllConnected(): Promise<void> {
     );
   }
   logger.info('Scheduled HubSpot sync enqueued for connected orgs', {
+    count: orgIds.length,
+  });
+}
+
+/**
+ * Resolve scheduled Discord sync into per-org jobs.
+ * Called by the Discord sync worker when it sees the scheduler sentinel.
+ */
+export async function enqueueDiscordSyncForAllConnected(): Promise<void> {
+  const orgIds = await getDiscordConnectedOrganizations();
+  for (const orgId of orgIds) {
+    await discordSyncQueue.add(
+      'discord-sync',
+      { organizationId: orgId },
+      { jobId: `discord-sync-${orgId}-${Date.now()}` },
+    );
+  }
+  logger.info('Scheduled Discord sync enqueued for connected orgs', {
     count: orgIds.length,
   });
 }

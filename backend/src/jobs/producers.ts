@@ -9,6 +9,7 @@ import {
   workflowExecutionQueue,
   emailSendQueue,
   hubspotSyncQueue,
+  discordSyncQueue,
   SignalProcessingJobData,
   ScoreComputationJobData,
   WebhookDeliveryJobData,
@@ -17,6 +18,7 @@ import {
   WorkflowExecutionJobData,
   EmailSendJobData,
   HubSpotSyncJobData,
+  DiscordSyncJobData,
 } from './queue';
 
 // ---------------------------------------------------------------------------
@@ -214,5 +216,27 @@ export const enqueueHubSpotSync = async (
     },
   );
   logger.debug('Enqueued HubSpot sync', { jobId: job.id, organizationId, fullSync });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// Discord Sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue a Discord sync job for a specific organization.
+ */
+export const enqueueDiscordSync = async (
+  organizationId: string,
+): Promise<Job<DiscordSyncJobData>> => {
+  const job = await discordSyncQueue.add(
+    'discord-sync',
+    { organizationId },
+    {
+      // Deduplication: only one pending sync per org at a time
+      jobId: `discord-sync-${organizationId}`,
+    },
+  );
+  logger.debug('Enqueued Discord sync', { jobId: job.id, organizationId });
   return job;
 };

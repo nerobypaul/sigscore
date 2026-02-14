@@ -414,6 +414,7 @@ enum SignalSourceType {
   DOCS
   PRODUCT_API
   SEGMENT
+  DISCORD
   CUSTOM_WEBHOOK
 }
 
@@ -526,6 +527,7 @@ enum IdentityType {
   LINKEDIN
   IP
   DOMAIN
+  DISCORD
 }
 
 // ============================================================

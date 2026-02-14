@@ -8,7 +8,8 @@ import { syncNpmSource, syncAllNpmSources } from '../services/npm-connector';
 import { syncPypiSource, syncAllPypiSources } from '../services/pypi-connector';
 import { processEvent } from '../services/workflows';
 import { runSync } from '../services/hubspot-sync';
-import { enqueueHubSpotSyncForAllConnected } from './scheduler';
+import { syncDiscordServer } from '../services/discord-connector';
+import { enqueueHubSpotSyncForAllConnected, enqueueDiscordSyncForAllConnected } from './scheduler';
 import {
   QUEUE_NAMES,
   SignalProcessingJobData,
@@ -18,6 +19,7 @@ import {
   SignalSyncJobData,
   WorkflowExecutionJobData,
   HubSpotSyncJobData,
+  DiscordSyncJobData,
 } from './queue';
 
 // ---------------------------------------------------------------------------
@@ -246,6 +248,47 @@ function createHubSpotSyncWorker(): Worker<HubSpotSyncJobData> {
 }
 
 // ---------------------------------------------------------------------------
+// Discord Sync Worker
+// ---------------------------------------------------------------------------
+function createDiscordSyncWorker(): Worker<DiscordSyncJobData> {
+  return new Worker<DiscordSyncJobData>(
+    QUEUE_NAMES.DISCORD_SYNC,
+    async (job: Job<DiscordSyncJobData>) => {
+      const { organizationId } = job.data;
+
+      // Handle scheduler sentinel: enqueue individual jobs for connected orgs
+      if (organizationId === '__scheduler__') {
+        logger.info('Discord sync scheduler triggered', { jobId: job.id });
+        await enqueueDiscordSyncForAllConnected();
+        return { scheduled: true };
+      }
+
+      logger.info('Discord sync started', {
+        jobId: job.id,
+        organizationId,
+        attempt: job.attemptsMade + 1,
+      });
+
+      const result = await syncDiscordServer(organizationId);
+
+      logger.info('Discord sync completed', {
+        jobId: job.id,
+        organizationId,
+        messagesProcessed: result.messagesProcessed,
+        signalsCreated: result.signalsCreated,
+        contactsResolved: result.contactsResolved,
+        errors: result.errors.length,
+      });
+      return result;
+    },
+    {
+      connection: bullConnection,
+      concurrency: 2,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Lifecycle helpers
 // ---------------------------------------------------------------------------
 function attachLogging(worker: Worker): void {
@@ -280,8 +323,9 @@ export const startWorkers = (): void => {
   const signalSyncWorker = createSignalSyncWorker();
   const workflowWorker = createWorkflowExecutionWorker();
   const hubspotSyncWorker = createHubSpotSyncWorker();
+  const discordSyncWorker = createDiscordSyncWorker();
 
-  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, hubspotSyncWorker].forEach((w) => {
+  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, hubspotSyncWorker, discordSyncWorker].forEach((w) => {
     attachLogging(w);
     workers.push(w);
   });

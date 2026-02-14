@@ -14,6 +14,7 @@ export const QUEUE_NAMES = {
   WORKFLOW_EXECUTION: 'workflow-execution',
   EMAIL_SEND: 'email-send',
   HUBSPOT_SYNC: 'hubspot-sync',
+  DISCORD_SYNC: 'discord-sync',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -71,6 +72,10 @@ export interface EmailSendJobData {
 export interface HubSpotSyncJobData {
   organizationId: string;
   fullSync?: boolean;
+}
+
+export interface DiscordSyncJobData {
+  organizationId: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -161,6 +166,18 @@ export const hubspotSyncQueue = new Queue<HubSpotSyncJobData>(
   },
 );
 
+export const discordSyncQueue = new Queue<DiscordSyncJobData>(
+  QUEUE_NAMES.DISCORD_SYNC,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 5_000 },
+    },
+  },
+);
+
 // ---------------------------------------------------------------------------
 // Convenience: all queues in a single array
 // ---------------------------------------------------------------------------
@@ -173,6 +190,7 @@ const allQueues: Queue[] = [
   workflowExecutionQueue,
   emailSendQueue,
   hubspotSyncQueue,
+  discordSyncQueue,
 ];
 
 /**
