@@ -48,6 +48,8 @@ import scoringRoutes from './routes/scoring';
 import identityRoutes from './routes/identity';
 import discordConnectorRoutes from './routes/discord-connector';
 import ssoRoutes from './routes/sso';
+import oauthRoutes from './routes/oauth';
+import { sentryErrorHandler } from './utils/sentry';
 
 const app = express();
 
@@ -214,6 +216,9 @@ app.use('/api/v1/identity', identityRoutes);
 // API routes — SSO (SAML / OIDC)
 app.use('/api/v1/sso', ssoRoutes);
 
+// API routes — OAuth Social Login (GitHub / Google)
+app.use('/api/v1', oauthRoutes);
+
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);
 
@@ -241,6 +246,9 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 app.use((_req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
+
+// Sentry error handler (must be before app errorHandler)
+app.use(sentryErrorHandler());
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
