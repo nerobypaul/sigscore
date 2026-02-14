@@ -8,8 +8,9 @@ import { syncNpmSource, syncAllNpmSources } from '../services/npm-connector';
 import { syncPypiSource, syncAllPypiSources } from '../services/pypi-connector';
 import { processEvent } from '../services/workflows';
 import { runSync } from '../services/hubspot-sync';
+import { runSync as runSalesforceSync } from '../services/salesforce-sync';
 import { syncDiscordServer } from '../services/discord-connector';
-import { enqueueHubSpotSyncForAllConnected, enqueueDiscordSyncForAllConnected } from './scheduler';
+import { enqueueHubSpotSyncForAllConnected, enqueueDiscordSyncForAllConnected, enqueueSalesforceSyncForAllConnected } from './scheduler';
 import {
   QUEUE_NAMES,
   SignalProcessingJobData,
@@ -20,6 +21,7 @@ import {
   WorkflowExecutionJobData,
   HubSpotSyncJobData,
   DiscordSyncJobData,
+  SalesforceSyncJobData,
 } from './queue';
 
 // ---------------------------------------------------------------------------
@@ -289,6 +291,47 @@ function createDiscordSyncWorker(): Worker<DiscordSyncJobData> {
 }
 
 // ---------------------------------------------------------------------------
+// Salesforce Sync Worker
+// ---------------------------------------------------------------------------
+function createSalesforceSyncWorker(): Worker<SalesforceSyncJobData> {
+  return new Worker<SalesforceSyncJobData>(
+    QUEUE_NAMES.SALESFORCE_SYNC,
+    async (job: Job<SalesforceSyncJobData>) => {
+      const { organizationId, fullSync } = job.data;
+
+      // Handle scheduler sentinel: enqueue individual jobs for connected orgs
+      if (organizationId === '__scheduler__') {
+        logger.info('Salesforce sync scheduler triggered', { jobId: job.id });
+        await enqueueSalesforceSyncForAllConnected();
+        return { scheduled: true };
+      }
+
+      logger.info('Salesforce sync started', {
+        jobId: job.id,
+        organizationId,
+        fullSync,
+        attempt: job.attemptsMade + 1,
+      });
+
+      const result = await runSalesforceSync(organizationId, fullSync);
+
+      logger.info('Salesforce sync completed', {
+        jobId: job.id,
+        organizationId,
+        contacts: result.contacts,
+        accounts: result.accounts,
+        opportunities: result.opportunities,
+      });
+      return result;
+    },
+    {
+      connection: bullConnection,
+      concurrency: 2,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Lifecycle helpers
 // ---------------------------------------------------------------------------
 function attachLogging(worker: Worker): void {
@@ -324,8 +367,9 @@ export const startWorkers = (): void => {
   const workflowWorker = createWorkflowExecutionWorker();
   const hubspotSyncWorker = createHubSpotSyncWorker();
   const discordSyncWorker = createDiscordSyncWorker();
+  const salesforceSyncWorker = createSalesforceSyncWorker();
 
-  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, hubspotSyncWorker, discordSyncWorker].forEach((w) => {
+  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker].forEach((w) => {
     attachLogging(w);
     workers.push(w);
   });

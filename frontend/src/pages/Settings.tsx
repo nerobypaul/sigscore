@@ -70,6 +70,23 @@ interface HubSpotSyncStatus {
   totalDealsSynced: number;
 }
 
+interface SalesforceSyncStatus {
+  connected: boolean;
+  lastSyncAt: string | null;
+  lastSyncResult: {
+    contacts: { created: number; updated: number; failed: number };
+    accounts: { created: number; updated: number; failed: number };
+    opportunities: { created: number; updated: number; failed: number };
+    tasks: { synced: number; failed: number };
+    errors: string[];
+  } | null;
+  syncInProgress: boolean;
+  instanceUrl: string | null;
+  totalContactsSynced: number;
+  totalAccountsSynced: number;
+  totalOpportunitiesSynced: number;
+}
+
 interface DiscordStatus {
   connected: boolean;
   guildName: string | null;
@@ -98,7 +115,7 @@ interface DiscordChannel {
   isBotChannel: boolean;
 }
 
-type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack' | 'segment' | 'hubspot' | 'discord';
+type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'api-keys', label: 'API Keys' },
@@ -107,6 +124,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'slack', label: 'Slack' },
   { id: 'segment', label: 'Segment' },
   { id: 'hubspot', label: 'HubSpot' },
+  { id: 'salesforce', label: 'Salesforce' },
   { id: 'discord', label: 'Discord' },
 ];
 
@@ -2283,7 +2301,479 @@ function HubSpotTab() {
 }
 
 // ---------------------------------------------------------------------------
-// Tab 7: Discord
+// Tab 7: Salesforce
+// ---------------------------------------------------------------------------
+
+function SalesforceTab() {
+  const toast = useToast();
+  const [status, setStatus] = useState<SalesforceSyncStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [accessToken, setAccessToken] = useState('');
+  const [refreshToken, setRefreshToken] = useState('');
+  const [instanceUrl, setInstanceUrl] = useState('');
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get('/integrations/salesforce/status');
+      setStatus(data);
+      // Stop polling if sync is no longer in progress
+      if (!data.syncInProgress && pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    } catch {
+      setStatus({
+        connected: false,
+        lastSyncAt: null,
+        lastSyncResult: null,
+        syncInProgress: false,
+        instanceUrl: null,
+        totalContactsSynced: 0,
+        totalAccountsSynced: 0,
+        totalOpportunitiesSynced: 0,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStatus();
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
+    };
+  }, [fetchStatus]);
+
+  async function handleConnect() {
+    if (!accessToken.trim() || !refreshToken.trim() || !instanceUrl.trim()) {
+      toast.error('Please enter access token, refresh token, and instance URL.');
+      return;
+    }
+
+    setConnecting(true);
+    try {
+      await api.post('/integrations/salesforce/connect', {
+        accessToken: accessToken.trim(),
+        refreshToken: refreshToken.trim(),
+        instanceUrl: instanceUrl.trim(),
+      });
+      setAccessToken('');
+      setRefreshToken('');
+      setInstanceUrl('');
+      await fetchStatus();
+      toast.success('Salesforce connected successfully. Custom fields registered.');
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function handleSync(fullSync = false) {
+    setSyncing(true);
+    try {
+      await api.post('/integrations/salesforce/sync', { fullSync });
+      toast.success(
+        fullSync
+          ? 'Full sync queued. This may take a few minutes.'
+          : 'Incremental sync queued.',
+      );
+      // Start polling for status updates
+      if (!pollRef.current) {
+        pollRef.current = setInterval(fetchStatus, 5000);
+      }
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    if (
+      !window.confirm(
+        'Disconnect Salesforce? Synced data in Salesforce will remain, but automatic syncing will stop.',
+      )
+    ) {
+      return;
+    }
+    setDisconnecting(true);
+    try {
+      await api.delete('/integrations/salesforce/disconnect');
+      await fetchStatus();
+      toast.success('Salesforce disconnected.');
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  // Not connected -- show setup
+  if (!status?.connected) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="px-6 py-5 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <SalesforceIcon />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">
+                  Connect Salesforce
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Push enriched developer signals, PQA scores, and opportunity data into
+                  Salesforce so sales reps see them where they already work.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-6 py-5 space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Salesforce Access Token
+              </label>
+              <input
+                type="password"
+                value={accessToken}
+                onChange={(e) => setAccessToken(e.target.value)}
+                placeholder="00D..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Salesforce Refresh Token
+              </label>
+              <input
+                type="password"
+                value={refreshToken}
+                onChange={(e) => setRefreshToken(e.target.value)}
+                placeholder="Refresh token from OAuth flow"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Instance URL
+              </label>
+              <input
+                type="text"
+                value={instanceUrl}
+                onChange={(e) => setInstanceUrl(e.target.value)}
+                placeholder="https://yourorg.my.salesforce.com"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            <button
+              onClick={handleConnect}
+              disabled={connecting || !accessToken.trim() || !refreshToken.trim() || !instanceUrl.trim()}
+              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {connecting ? 'Connecting...' : 'Connect Salesforce'}
+            </button>
+
+            {/* How it works */}
+            <div className="rounded-lg bg-gray-50 border border-gray-100 p-4">
+              <h3 className="text-sm font-medium text-gray-800 mb-2">
+                How to set up a Connected App
+              </h3>
+              <ol className="text-sm text-gray-600 space-y-1.5 list-decimal list-inside">
+                <li>In Salesforce Setup, go to App Manager and create a new Connected App.</li>
+                <li>Enable OAuth Settings and add scopes: api, refresh_token, offline_access.</li>
+                <li>Set a callback URL (e.g. https://yourapp.com/oauth/callback).</li>
+                <li>Complete the OAuth flow to obtain access and refresh tokens.</li>
+                <li>Paste the tokens and your instance URL above.</li>
+              </ol>
+            </div>
+
+            {/* What syncs */}
+            <div className="rounded-lg bg-gray-50 border border-gray-100 p-4">
+              <h3 className="text-sm font-medium text-gray-800 mb-2">
+                What gets synced to Salesforce
+              </h3>
+              <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                <div>
+                  <p className="font-medium text-gray-700">Contacts</p>
+                  <ul className="text-xs mt-1 space-y-0.5">
+                    <li>PQA Score (custom field)</li>
+                    <li>Signal Count</li>
+                    <li>Last Signal Date</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-700">Accounts</p>
+                  <ul className="text-xs mt-1 space-y-0.5">
+                    <li>PQA Score</li>
+                    <li>Signal Count</li>
+                    <li>Last Signal Date</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-700">Opportunities</p>
+                  <ul className="text-xs mt-1 space-y-0.5">
+                    <li>PLG Stage Mapping</li>
+                    <li>Amount & Close Date</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-700">Tasks</p>
+                  <ul className="text-xs mt-1 space-y-0.5">
+                    <li>Signal activity as Tasks</li>
+                    <li>e.g. "npm install detected"</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Connected -- show status and sync controls
+  const lastResult = status.lastSyncResult;
+
+  return (
+    <div className="space-y-4">
+      {/* Connection card */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="px-6 py-5 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+              <SalesforceIcon />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">
+                Salesforce Sync
+              </h2>
+              <p className="text-sm text-gray-500">
+                Bidirectional sync pushes DevSignal data into Salesforce.
+              </p>
+            </div>
+            <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700 border border-green-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+              Connected
+              {status.instanceUrl && (
+                <span className="text-green-500 ml-1 truncate max-w-[200px]">
+                  ({status.instanceUrl.replace('https://', '')})
+                </span>
+              )}
+            </span>
+          </div>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {/* Sync status banner */}
+          {status.syncInProgress && (
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3 flex items-center gap-3">
+              <Spinner size="sm" />
+              <span className="text-sm text-indigo-700 font-medium">
+                Sync in progress...
+              </span>
+            </div>
+          )}
+
+          {/* Stats grid */}
+          <div className="grid grid-cols-4 gap-4">
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+              <p className="text-xs text-gray-500 mb-1">Last Sync</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {formatDateTime(status.lastSyncAt)}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+              <p className="text-xs text-gray-500 mb-1">Contacts Synced</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {status.totalContactsSynced.toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+              <p className="text-xs text-gray-500 mb-1">Accounts Synced</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {status.totalAccountsSynced.toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+              <p className="text-xs text-gray-500 mb-1">Opps Synced</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {status.totalOpportunitiesSynced.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          {/* Last sync result */}
+          {lastResult && (
+            <div className="bg-white rounded-lg border border-gray-200">
+              <div className="px-4 py-3 border-b border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Last Sync Result
+                </h3>
+              </div>
+              <div className="px-4 py-3">
+                <div className="grid grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-xs text-gray-500">Contacts</p>
+                    <p className="text-gray-900">
+                      <span className="text-green-600">
+                        +{lastResult.contacts.created}
+                      </span>{' '}
+                      /{' '}
+                      <span className="text-blue-600">
+                        ~{lastResult.contacts.updated}
+                      </span>
+                      {lastResult.contacts.failed > 0 && (
+                        <>
+                          {' / '}
+                          <span className="text-red-600">
+                            {lastResult.contacts.failed} failed
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Accounts</p>
+                    <p className="text-gray-900">
+                      <span className="text-green-600">
+                        +{lastResult.accounts.created}
+                      </span>{' '}
+                      /{' '}
+                      <span className="text-blue-600">
+                        ~{lastResult.accounts.updated}
+                      </span>
+                      {lastResult.accounts.failed > 0 && (
+                        <>
+                          {' / '}
+                          <span className="text-red-600">
+                            {lastResult.accounts.failed} failed
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Opportunities</p>
+                    <p className="text-gray-900">
+                      <span className="text-green-600">
+                        +{lastResult.opportunities.created}
+                      </span>{' '}
+                      /{' '}
+                      <span className="text-blue-600">
+                        ~{lastResult.opportunities.updated}
+                      </span>
+                      {lastResult.opportunities.failed > 0 && (
+                        <>
+                          {' / '}
+                          <span className="text-red-600">
+                            {lastResult.opportunities.failed} failed
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Signal Tasks</p>
+                    <p className="text-gray-900">
+                      <span className="text-green-600">
+                        {lastResult.tasks.synced} synced
+                      </span>
+                      {lastResult.tasks.failed > 0 && (
+                        <>
+                          {' / '}
+                          <span className="text-red-600">
+                            {lastResult.tasks.failed} failed
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Errors */}
+                {lastResult.errors.length > 0 && (
+                  <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p className="text-xs font-medium text-red-700 mb-1">
+                      Errors ({lastResult.errors.length})
+                    </p>
+                    <ul className="text-xs text-red-600 space-y-0.5">
+                      {lastResult.errors.slice(0, 5).map((err, idx) => (
+                        <li key={idx}>{err}</li>
+                      ))}
+                      {lastResult.errors.length > 5 && (
+                        <li className="text-red-400">
+                          ...and {lastResult.errors.length - 5} more
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+            <button
+              onClick={() => handleSync(false)}
+              disabled={syncing || status.syncInProgress}
+              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {syncing || status.syncInProgress ? 'Syncing...' : 'Sync Now'}
+            </button>
+            <button
+              onClick={() => handleSync(true)}
+              disabled={syncing || status.syncInProgress}
+              className="px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Full Re-sync
+            </button>
+            <button
+              onClick={handleDisconnect}
+              disabled={disconnecting}
+              className="px-4 py-2 text-red-600 text-sm font-medium hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ml-auto"
+            >
+              {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+            </button>
+          </div>
+
+          {/* Info */}
+          <div className="rounded-lg bg-gray-50 border border-gray-100 p-4">
+            <p className="text-xs text-gray-500">
+              Automatic sync runs every 15 minutes and only pushes records
+              modified since the last sync. Use "Full Re-sync" to push all
+              records regardless of last sync time.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tab 8: Discord
 // ---------------------------------------------------------------------------
 
 function DiscordTab() {
@@ -2772,6 +3262,11 @@ export default function Settings() {
           <HubSpotTab />
         </div>
       )}
+      {loadedTabsRef.current.has('salesforce') && (
+        <div className={activeTab === 'salesforce' ? '' : 'hidden'}>
+          <SalesforceTab />
+        </div>
+      )}
       {loadedTabsRef.current.has('discord') && (
         <div className={activeTab === 'discord' ? '' : 'hidden'}>
           <DiscordTab />
@@ -2841,6 +3336,21 @@ function HubSpotIcon() {
       <path
         d="M17.63 9.22V6.85a1.73 1.73 0 0 0 1-1.56v-.05a1.73 1.73 0 0 0-1.73-1.73h-.05a1.73 1.73 0 0 0-1.73 1.73v.05a1.73 1.73 0 0 0 1 1.56v2.37a5.11 5.11 0 0 0-2.32 1.13L7.4 5.82a2.1 2.1 0 0 0 .08-.52 2.07 2.07 0 1 0-2.07 2.07 2.04 2.04 0 0 0 1.08-.31l6.34 4.69a5.08 5.08 0 0 0-.06 6.42l-1.93 1.93a1.55 1.55 0 0 0-.46-.07 1.59 1.59 0 1 0 1.59 1.59 1.55 1.55 0 0 0-.07-.46l1.89-1.89a5.12 5.12 0 1 0 3.84-10.05zm-.75 7.94a2.82 2.82 0 1 1 0-5.64 2.82 2.82 0 0 1 0 5.64z"
         fill="#FF7A59"
+      />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Salesforce icon (inline SVG)
+// ---------------------------------------------------------------------------
+
+function SalesforceIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M10.05 4.05c.82-.82 1.95-1.3 3.2-1.3 1.57 0 2.96.78 3.82 1.97a4.76 4.76 0 0 1 3.68 1.63c.97 1.03 1.5 2.38 1.5 3.8 0 1.44-.55 2.8-1.55 3.83a5.12 5.12 0 0 1-3.63 1.58h-.02l-.02-.01a4.5 4.5 0 0 1-2.63.84c-.7 0-1.37-.16-1.97-.45a4.06 4.06 0 0 1-3.58 2.14c-1.2 0-2.28-.52-3.03-1.35A4.27 4.27 0 0 1 2 13.52c0-1.12.42-2.14 1.1-2.92a4.27 4.27 0 0 1 2.55-4.8A4.6 4.6 0 0 1 10.05 4.05z"
+        fill="#00A1E0"
       />
     </svg>
   );

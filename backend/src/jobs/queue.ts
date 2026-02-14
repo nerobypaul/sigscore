@@ -15,6 +15,7 @@ export const QUEUE_NAMES = {
   EMAIL_SEND: 'email-send',
   HUBSPOT_SYNC: 'hubspot-sync',
   DISCORD_SYNC: 'discord-sync',
+  SALESFORCE_SYNC: 'salesforce-sync',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -76,6 +77,11 @@ export interface HubSpotSyncJobData {
 
 export interface DiscordSyncJobData {
   organizationId: string;
+}
+
+export interface SalesforceSyncJobData {
+  organizationId: string;
+  fullSync?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -178,6 +184,18 @@ export const discordSyncQueue = new Queue<DiscordSyncJobData>(
   },
 );
 
+export const salesforceSyncQueue = new Queue<SalesforceSyncJobData>(
+  QUEUE_NAMES.SALESFORCE_SYNC,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 10_000 },
+    },
+  },
+);
+
 // ---------------------------------------------------------------------------
 // Convenience: all queues in a single array
 // ---------------------------------------------------------------------------
@@ -191,6 +209,7 @@ const allQueues: Queue[] = [
   emailSendQueue,
   hubspotSyncQueue,
   discordSyncQueue,
+  salesforceSyncQueue,
 ];
 
 /**
