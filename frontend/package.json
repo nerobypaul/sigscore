@@ -10,11 +10,12 @@
     "lint": "eslint . --ext ts,tsx"
   },
   "dependencies": {
+    "@sentry/react": "^10.38.0",
+    "@tanstack/react-query": "^5.62.11",
+    "axios": "^1.7.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0",
-    "@tanstack/react-query": "^5.62.11",
-    "axios": "^1.7.9"
+    "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.18",

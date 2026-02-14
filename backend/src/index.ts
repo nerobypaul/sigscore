@@ -1,3 +1,8 @@
+import { initSentry } from './utils/sentry';
+
+// Initialize Sentry before anything else
+initSentry();
+
 import app from './app';
 import { config } from './config';
 import { prisma } from './config/database';
