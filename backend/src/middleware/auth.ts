@@ -1,7 +1,36 @@
 import { Request, Response, NextFunction } from 'express';
+import { OrgRole } from '@prisma/client';
 import { verifyAccessToken } from '../utils/jwt';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
+
+/** Role hierarchy: OWNER > ADMIN > MEMBER > VIEWER */
+const ROLE_HIERARCHY: Record<OrgRole, number> = {
+  OWNER: 4,
+  ADMIN: 3,
+  MEMBER: 2,
+  VIEWER: 1,
+};
+
+/**
+ * Middleware that requires the authenticated user to have at least the given
+ * org role. Must be used after `requireOrganization` which sets `req.orgRole`.
+ */
+export const requireOrgRole = (minimumRole: OrgRole) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.orgRole) {
+      res.status(403).json({ error: 'Organization context required' });
+      return;
+    }
+
+    if (ROLE_HIERARCHY[req.orgRole] < ROLE_HIERARCHY[minimumRole]) {
+      res.status(403).json({ error: 'Insufficient organization permissions' });
+      return;
+    }
+
+    next();
+  };
+};
 
 export const authenticate = async (
   req: Request,
@@ -85,6 +114,7 @@ export const requireOrganization = async (
     }
 
     req.organizationId = orgId;
+    req.orgRole = userOrg.role;
     next();
   } catch (error) {
     logger.error('Organization check error:', error);

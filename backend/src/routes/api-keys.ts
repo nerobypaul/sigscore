@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { createApiKey, listApiKeys, revokeApiKey, deleteApiKey } from '../controllers/api-keys';
-import { authenticate, requireOrganization } from '../middleware/auth';
+import { authenticate, requireOrganization, requireOrgRole } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
 
@@ -146,7 +146,7 @@ router.get('/', listApiKeys);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', validate(createApiKeySchema), createApiKey);
+router.post('/', requireOrgRole('ADMIN'), validate(createApiKeySchema), createApiKey);
 
 /**
  * @openapi
@@ -200,7 +200,7 @@ router.post('/', validate(createApiKeySchema), createApiKey);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/:id/revoke', revokeApiKey);
+router.put('/:id/revoke', requireOrgRole('ADMIN'), revokeApiKey);
 
 /**
  * @openapi
@@ -247,6 +247,6 @@ router.put('/:id/revoke', revokeApiKey);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/:id', deleteApiKey);
+router.delete('/:id', requireOrgRole('ADMIN'), deleteApiKey);
 
 export default router;

@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { authenticate, requireOrganization } from '../middleware/auth';
+import { authenticate, requireOrganization, requireOrgRole } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
@@ -8,9 +8,10 @@ import { Prisma } from '@prisma/client';
 
 const router = Router();
 
-// All routes require authentication + organization context
+// All bulk routes require authentication + organization + ADMIN role
 router.use(authenticate);
 router.use(requireOrganization);
+router.use(requireOrgRole('ADMIN'));
 
 // ---------------------------------------------------------------------------
 // Validation schemas

@@ -30,6 +30,7 @@ import workflowRoutes from './routes/workflows';
 import connectorRoutes from './routes/connectors';
 import bulkRoutes from './routes/bulk';
 import notificationRoutes from './routes/notifications';
+import memberRoutes from './routes/members';
 
 const app = express();
 
@@ -149,6 +150,9 @@ app.use('/api/v1/bulk', bulkRoutes);
 
 // API routes — Notifications
 app.use('/api/v1/notifications', notificationRoutes);
+
+// API routes — Team Members
+app.use('/api/v1/members', memberRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);

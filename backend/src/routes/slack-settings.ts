@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { authenticate, requireOrganization } from '../middleware/auth';
+import { authenticate, requireOrganization, requireOrgRole } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { prisma } from '../config/database';
 import { sendTestMessage } from '../services/slack-notifications';
@@ -8,9 +8,10 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 
-// All Slack settings routes require JWT auth + org context
+// All Slack settings routes require JWT auth + org context + ADMIN role
 router.use(authenticate);
 router.use(requireOrganization);
+router.use(requireOrgRole('ADMIN'));
 
 // Validation schema
 const updateSlackSettingsSchema = z.object({

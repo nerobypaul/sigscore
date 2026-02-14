@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getWebhooks, createWebhook, deleteWebhook } from '../controllers/webhooks';
-import { authenticate, requireOrganization } from '../middleware/auth';
+import { authenticate, requireOrganization, requireOrgRole } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
 
@@ -116,7 +116,7 @@ router.get('/', getWebhooks);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', validate(createWebhookSchema), createWebhook);
+router.post('/', requireOrgRole('ADMIN'), validate(createWebhookSchema), createWebhook);
 
 /**
  * @openapi
@@ -164,6 +164,6 @@ router.post('/', validate(createWebhookSchema), createWebhook);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/:id', deleteWebhook);
+router.delete('/:id', requireOrgRole('ADMIN'), deleteWebhook);
 
 export default router;

@@ -23,6 +23,7 @@ import Workflows from './pages/Workflows';
 import DealDetail from './pages/DealDetail';
 import Landing from './pages/Landing';
 import ApiDocs from './pages/ApiDocs';
+import TeamMembers from './pages/TeamMembers';
 import NotFound from './pages/NotFound';
 
 /**
@@ -98,6 +99,7 @@ function AppRoutes() {
         <Route path="/workflows" element={<Workflows />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/billing" element={<Billing />} />
+        <Route path="/team" element={<TeamMembers />} />
       </Route>
 
       {/* 404 catch-all */}
