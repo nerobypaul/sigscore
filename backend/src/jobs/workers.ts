@@ -7,6 +7,8 @@ import { dispatchWebhookEvent } from '../services/webhooks';
 import { syncNpmSource, syncAllNpmSources } from '../services/npm-connector';
 import { syncPypiSource, syncAllPypiSources } from '../services/pypi-connector';
 import { processEvent } from '../services/workflows';
+import { runSync } from '../services/hubspot-sync';
+import { enqueueHubSpotSyncForAllConnected } from './scheduler';
 import {
   QUEUE_NAMES,
   SignalProcessingJobData,
@@ -15,6 +17,7 @@ import {
   EnrichmentJobData,
   SignalSyncJobData,
   WorkflowExecutionJobData,
+  HubSpotSyncJobData,
 } from './queue';
 
 // ---------------------------------------------------------------------------
@@ -202,6 +205,47 @@ function createWorkflowExecutionWorker(): Worker<WorkflowExecutionJobData> {
 }
 
 // ---------------------------------------------------------------------------
+// HubSpot Sync Worker
+// ---------------------------------------------------------------------------
+function createHubSpotSyncWorker(): Worker<HubSpotSyncJobData> {
+  return new Worker<HubSpotSyncJobData>(
+    QUEUE_NAMES.HUBSPOT_SYNC,
+    async (job: Job<HubSpotSyncJobData>) => {
+      const { organizationId, fullSync } = job.data;
+
+      // Handle scheduler sentinel: enqueue individual jobs for connected orgs
+      if (organizationId === '__scheduler__') {
+        logger.info('HubSpot sync scheduler triggered', { jobId: job.id });
+        await enqueueHubSpotSyncForAllConnected();
+        return { scheduled: true };
+      }
+
+      logger.info('HubSpot sync started', {
+        jobId: job.id,
+        organizationId,
+        fullSync,
+        attempt: job.attemptsMade + 1,
+      });
+
+      const result = await runSync(organizationId, fullSync);
+
+      logger.info('HubSpot sync completed', {
+        jobId: job.id,
+        organizationId,
+        contacts: result.contacts,
+        companies: result.companies,
+        deals: result.deals,
+      });
+      return result;
+    },
+    {
+      connection: bullConnection,
+      concurrency: 2,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Lifecycle helpers
 // ---------------------------------------------------------------------------
 function attachLogging(worker: Worker): void {
@@ -235,8 +279,9 @@ export const startWorkers = (): void => {
   const enrichmentWorker = createEnrichmentWorker();
   const signalSyncWorker = createSignalSyncWorker();
   const workflowWorker = createWorkflowExecutionWorker();
+  const hubspotSyncWorker = createHubSpotSyncWorker();
 
-  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker].forEach((w) => {
+  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, hubspotSyncWorker].forEach((w) => {
     attachLogging(w);
     workers.push(w);
   });

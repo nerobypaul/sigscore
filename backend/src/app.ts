@@ -40,6 +40,9 @@ import demoRoutes from './routes/demo';
 import emailSequenceRoutes from './routes/email-sequences';
 import dashboardApiRoutes from './routes/dashboards';
 import crmImportRoutes from './routes/crm-import';
+import hubspotSyncRoutes from './routes/hubspot-sync';
+import githubOnboardingRoutes from './routes/github-onboarding';
+import playbookRoutes from './routes/playbooks';
 
 const app = express();
 
@@ -185,6 +188,15 @@ app.use('/api/v1/dashboards', dashboardApiRoutes);
 
 // API routes — CRM Import (HubSpot/Salesforce)
 app.use('/api/v1/import/crm', crmImportRoutes);
+
+// API routes — GitHub Onboarding
+app.use('/api/v1/onboarding', githubOnboardingRoutes);
+
+// API routes — Integrations (HubSpot bidirectional sync)
+app.use('/api/v1/integrations', hubspotSyncRoutes);
+
+// API routes — Playbooks
+app.use('/api/v1/playbooks', playbookRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);

@@ -53,7 +53,24 @@ interface SegmentSource {
   createdAt: string;
 }
 
-type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack' | 'segment';
+interface HubSpotSyncStatus {
+  connected: boolean;
+  lastSyncAt: string | null;
+  lastSyncResult: {
+    contacts: { created: number; updated: number; failed: number };
+    companies: { created: number; updated: number; failed: number };
+    deals: { created: number; updated: number; failed: number };
+    signals: { synced: number; failed: number };
+    errors: string[];
+  } | null;
+  syncInProgress: boolean;
+  portalId: string | null;
+  totalContactsSynced: number;
+  totalCompaniesSynced: number;
+  totalDealsSynced: number;
+}
+
+type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack' | 'segment' | 'hubspot';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'api-keys', label: 'API Keys' },
@@ -61,6 +78,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'sources', label: 'Signal Sources' },
   { id: 'slack', label: 'Slack' },
   { id: 'segment', label: 'Segment' },
+  { id: 'hubspot', label: 'HubSpot' },
 ];
 
 const ALL_SCOPES = [
@@ -1764,6 +1782,478 @@ function SegmentTab() {
 }
 
 // ---------------------------------------------------------------------------
+// Tab 6: HubSpot
+// ---------------------------------------------------------------------------
+
+function HubSpotTab() {
+  const toast = useToast();
+  const [status, setStatus] = useState<HubSpotSyncStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [accessToken, setAccessToken] = useState('');
+  const [refreshToken, setRefreshToken] = useState('');
+  const [portalId, setPortalId] = useState('');
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get('/integrations/hubspot/status');
+      setStatus(data);
+      // Stop polling if sync is no longer in progress
+      if (!data.syncInProgress && pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    } catch {
+      setStatus({
+        connected: false,
+        lastSyncAt: null,
+        lastSyncResult: null,
+        syncInProgress: false,
+        portalId: null,
+        totalContactsSynced: 0,
+        totalCompaniesSynced: 0,
+        totalDealsSynced: 0,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStatus();
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
+    };
+  }, [fetchStatus]);
+
+  async function handleConnect() {
+    if (!accessToken.trim() || !refreshToken.trim()) {
+      toast.error('Please enter both access token and refresh token.');
+      return;
+    }
+
+    setConnecting(true);
+    try {
+      await api.post('/integrations/hubspot/connect', {
+        accessToken: accessToken.trim(),
+        refreshToken: refreshToken.trim(),
+        portalId: portalId.trim() || undefined,
+      });
+      setAccessToken('');
+      setRefreshToken('');
+      setPortalId('');
+      await fetchStatus();
+      toast.success('HubSpot connected successfully. Custom properties registered.');
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function handleSync(fullSync = false) {
+    setSyncing(true);
+    try {
+      await api.post('/integrations/hubspot/sync', { fullSync });
+      toast.success(
+        fullSync
+          ? 'Full sync queued. This may take a few minutes.'
+          : 'Incremental sync queued.',
+      );
+      // Start polling for status updates
+      if (!pollRef.current) {
+        pollRef.current = setInterval(fetchStatus, 5000);
+      }
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    if (
+      !window.confirm(
+        'Disconnect HubSpot? Synced data in HubSpot will remain, but automatic syncing will stop.',
+      )
+    ) {
+      return;
+    }
+    setDisconnecting(true);
+    try {
+      await api.delete('/integrations/hubspot/disconnect');
+      await fetchStatus();
+      toast.success('HubSpot disconnected.');
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  // Not connected -- show setup
+  if (!status?.connected) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="px-6 py-5 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+                <HubSpotIcon />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">
+                  Connect HubSpot
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Push enriched developer signals, PQA scores, and deal data into
+                  HubSpot so sales reps see them where they already work.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-6 py-5 space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                HubSpot Access Token
+              </label>
+              <input
+                type="password"
+                value={accessToken}
+                onChange={(e) => setAccessToken(e.target.value)}
+                placeholder="pat-na1-..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                HubSpot Refresh Token
+              </label>
+              <input
+                type="password"
+                value={refreshToken}
+                onChange={(e) => setRefreshToken(e.target.value)}
+                placeholder="Refresh token from OAuth flow"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Portal ID
+                <span className="text-gray-400 font-normal ml-1">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={portalId}
+                onChange={(e) => setPortalId(e.target.value)}
+                placeholder="e.g. 12345678"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            <button
+              onClick={handleConnect}
+              disabled={connecting || !accessToken.trim() || !refreshToken.trim()}
+              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {connecting ? 'Connecting...' : 'Connect HubSpot'}
+            </button>
+
+            {/* How it works */}
+            <div className="rounded-lg bg-gray-50 border border-gray-100 p-4">
+              <h3 className="text-sm font-medium text-gray-800 mb-2">
+                How it works
+              </h3>
+              <ol className="text-sm text-gray-600 space-y-1.5 list-decimal list-inside">
+                <li>Connect using your HubSpot OAuth tokens (Private App or OAuth flow).</li>
+                <li>DevSignal auto-creates custom properties (PQA Score, Signal Count, etc.) in HubSpot.</li>
+                <li>Contacts, companies, deals, and signals sync to HubSpot every 15 minutes.</li>
+                <li>Sales reps see enriched developer data directly in HubSpot records.</li>
+              </ol>
+            </div>
+
+            {/* What syncs */}
+            <div className="rounded-lg bg-gray-50 border border-gray-100 p-4">
+              <h3 className="text-sm font-medium text-gray-800 mb-2">
+                What gets synced to HubSpot
+              </h3>
+              <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                <div>
+                  <p className="font-medium text-gray-700">Contacts</p>
+                  <ul className="text-xs mt-1 space-y-0.5">
+                    <li>PQA Score & Tier</li>
+                    <li>Signal Count</li>
+                    <li>Last Signal Date</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-700">Companies</p>
+                  <ul className="text-xs mt-1 space-y-0.5">
+                    <li>PQA Score</li>
+                    <li>Developer Count</li>
+                    <li>Top Signal Type</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-700">Deals</p>
+                  <ul className="text-xs mt-1 space-y-0.5">
+                    <li>PLG Stage</li>
+                    <li>Amount & Close Date</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-700">Signals</p>
+                  <ul className="text-xs mt-1 space-y-0.5">
+                    <li>Activity Notes on Contacts</li>
+                    <li>e.g. "npm install detected"</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Connected -- show status and sync controls
+  const lastResult = status.lastSyncResult;
+
+  return (
+    <div className="space-y-4">
+      {/* Connection card */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="px-6 py-5 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+              <HubSpotIcon />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">
+                HubSpot Sync
+              </h2>
+              <p className="text-sm text-gray-500">
+                Bidirectional sync pushes DevSignal data into HubSpot.
+              </p>
+            </div>
+            <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700 border border-green-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+              Connected
+              {status.portalId && (
+                <span className="text-green-500 ml-1">
+                  (Portal {status.portalId})
+                </span>
+              )}
+            </span>
+          </div>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {/* Sync status banner */}
+          {status.syncInProgress && (
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3 flex items-center gap-3">
+              <Spinner size="sm" />
+              <span className="text-sm text-indigo-700 font-medium">
+                Sync in progress...
+              </span>
+            </div>
+          )}
+
+          {/* Stats grid */}
+          <div className="grid grid-cols-4 gap-4">
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+              <p className="text-xs text-gray-500 mb-1">Last Sync</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {formatDateTime(status.lastSyncAt)}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+              <p className="text-xs text-gray-500 mb-1">Contacts Synced</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {status.totalContactsSynced.toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+              <p className="text-xs text-gray-500 mb-1">Companies Synced</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {status.totalCompaniesSynced.toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+              <p className="text-xs text-gray-500 mb-1">Deals Synced</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {status.totalDealsSynced.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          {/* Last sync result */}
+          {lastResult && (
+            <div className="bg-white rounded-lg border border-gray-200">
+              <div className="px-4 py-3 border-b border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Last Sync Result
+                </h3>
+              </div>
+              <div className="px-4 py-3">
+                <div className="grid grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-xs text-gray-500">Contacts</p>
+                    <p className="text-gray-900">
+                      <span className="text-green-600">
+                        +{lastResult.contacts.created}
+                      </span>{' '}
+                      /{' '}
+                      <span className="text-blue-600">
+                        ~{lastResult.contacts.updated}
+                      </span>
+                      {lastResult.contacts.failed > 0 && (
+                        <>
+                          {' / '}
+                          <span className="text-red-600">
+                            {lastResult.contacts.failed} failed
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Companies</p>
+                    <p className="text-gray-900">
+                      <span className="text-green-600">
+                        +{lastResult.companies.created}
+                      </span>{' '}
+                      /{' '}
+                      <span className="text-blue-600">
+                        ~{lastResult.companies.updated}
+                      </span>
+                      {lastResult.companies.failed > 0 && (
+                        <>
+                          {' / '}
+                          <span className="text-red-600">
+                            {lastResult.companies.failed} failed
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Deals</p>
+                    <p className="text-gray-900">
+                      <span className="text-green-600">
+                        +{lastResult.deals.created}
+                      </span>{' '}
+                      /{' '}
+                      <span className="text-blue-600">
+                        ~{lastResult.deals.updated}
+                      </span>
+                      {lastResult.deals.failed > 0 && (
+                        <>
+                          {' / '}
+                          <span className="text-red-600">
+                            {lastResult.deals.failed} failed
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Signal Notes</p>
+                    <p className="text-gray-900">
+                      <span className="text-green-600">
+                        {lastResult.signals.synced} synced
+                      </span>
+                      {lastResult.signals.failed > 0 && (
+                        <>
+                          {' / '}
+                          <span className="text-red-600">
+                            {lastResult.signals.failed} failed
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Errors */}
+                {lastResult.errors.length > 0 && (
+                  <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p className="text-xs font-medium text-red-700 mb-1">
+                      Errors ({lastResult.errors.length})
+                    </p>
+                    <ul className="text-xs text-red-600 space-y-0.5">
+                      {lastResult.errors.slice(0, 5).map((err, idx) => (
+                        <li key={idx}>{err}</li>
+                      ))}
+                      {lastResult.errors.length > 5 && (
+                        <li className="text-red-400">
+                          ...and {lastResult.errors.length - 5} more
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+            <button
+              onClick={() => handleSync(false)}
+              disabled={syncing || status.syncInProgress}
+              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {syncing || status.syncInProgress ? 'Syncing...' : 'Sync Now'}
+            </button>
+            <button
+              onClick={() => handleSync(true)}
+              disabled={syncing || status.syncInProgress}
+              className="px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Full Re-sync
+            </button>
+            <button
+              onClick={handleDisconnect}
+              disabled={disconnecting}
+              className="px-4 py-2 text-red-600 text-sm font-medium hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ml-auto"
+            >
+              {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+            </button>
+          </div>
+
+          {/* Info */}
+          <div className="rounded-lg bg-gray-50 border border-gray-100 p-4">
+            <p className="text-xs text-gray-500">
+              Automatic sync runs every 15 minutes and only pushes records
+              modified since the last sync. Use "Full Re-sync" to push all
+              records regardless of last sync time.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Settings page
 // ---------------------------------------------------------------------------
 
@@ -1829,6 +2319,11 @@ export default function Settings() {
           <SegmentTab />
         </div>
       )}
+      {loadedTabsRef.current.has('hubspot') && (
+        <div className={activeTab === 'hubspot' ? '' : 'hidden'}>
+          <HubSpotTab />
+        </div>
+      )}
     </div>
   );
 }
@@ -1878,6 +2373,21 @@ function SegmentIcon() {
       <path
         d="M9.5 37.8c-5 0-9-4-9-9s4-9 9-9 9 4 9 9-4.1 9-9 9zm0-14.3c-3 0-5.4 2.4-5.4 5.4s2.4 5.4 5.4 5.4 5.4-2.4 5.4-5.4-2.5-5.4-5.4-5.4z"
         fill="#52BD94"
+      />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// HubSpot icon (inline SVG)
+// ---------------------------------------------------------------------------
+
+function HubSpotIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M17.63 9.22V6.85a1.73 1.73 0 0 0 1-1.56v-.05a1.73 1.73 0 0 0-1.73-1.73h-.05a1.73 1.73 0 0 0-1.73 1.73v.05a1.73 1.73 0 0 0 1 1.56v2.37a5.11 5.11 0 0 0-2.32 1.13L7.4 5.82a2.1 2.1 0 0 0 .08-.52 2.07 2.07 0 1 0-2.07 2.07 2.04 2.04 0 0 0 1.08-.31l6.34 4.69a5.08 5.08 0 0 0-.06 6.42l-1.93 1.93a1.55 1.55 0 0 0-.46-.07 1.59 1.59 0 1 0 1.59 1.59 1.55 1.55 0 0 0-.07-.46l1.89-1.89a5.12 5.12 0 1 0 3.84-10.05zm-.75 7.94a2.82 2.82 0 1 1 0-5.64 2.82 2.82 0 0 1 0 5.64z"
+        fill="#FF7A59"
       />
     </svg>
   );

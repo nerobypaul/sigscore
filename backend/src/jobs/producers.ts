@@ -8,6 +8,7 @@ import {
   signalSyncQueue,
   workflowExecutionQueue,
   emailSendQueue,
+  hubspotSyncQueue,
   SignalProcessingJobData,
   ScoreComputationJobData,
   WebhookDeliveryJobData,
@@ -15,6 +16,7 @@ import {
   SignalSyncJobData,
   WorkflowExecutionJobData,
   EmailSendJobData,
+  HubSpotSyncJobData,
 } from './queue';
 
 // ---------------------------------------------------------------------------
@@ -189,5 +191,28 @@ export const enqueueEmailSend = async (
     },
   );
   logger.debug('Enqueued email send', { jobId: job.id, enrollmentId, stepId, delay });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// HubSpot Sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue a HubSpot sync job for a specific organization.
+ */
+export const enqueueHubSpotSync = async (
+  organizationId: string,
+  fullSync = false,
+): Promise<Job<HubSpotSyncJobData>> => {
+  const job = await hubspotSyncQueue.add(
+    'hubspot-sync',
+    { organizationId, fullSync },
+    {
+      // Deduplication: only one pending sync per org at a time
+      jobId: `hubspot-sync-${organizationId}`,
+    },
+  );
+  logger.debug('Enqueued HubSpot sync', { jobId: job.id, organizationId, fullSync });
   return job;
 };
