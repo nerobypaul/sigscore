@@ -301,3 +301,22 @@ export const TREND_ICONS: Record<ScoreTrend, string> = {
   STABLE: 'minus',
   FALLING: 'arrow-down',
 };
+
+// === Saved Views ===
+
+export interface SavedView {
+  id: string;
+  organizationId: string;
+  userId: string;
+  name: string;
+  entityType: 'contact' | 'company' | 'deal';
+  filters: Record<string, unknown>;
+  sortField?: string | null;
+  sortDirection?: string | null;
+  isShared: boolean;
+  isDefault: boolean;
+  icon?: string | null;
+  color?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

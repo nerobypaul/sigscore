@@ -6,6 +6,7 @@ import Spinner from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
 import CSVImport from '../components/CSVImport';
+import SavedViewSelector from '../components/SavedViewSelector';
 
 const SIZE_LABELS: Record<string, string> = {
   STARTUP: 'Startup',
@@ -54,6 +55,14 @@ export default function Companies() {
   useEffect(() => {
     setSelectedIds(new Set());
   }, [page, search]);
+
+  // Saved view filter handler
+  const handleViewFiltersChange = useCallback((filters: Record<string, unknown>) => {
+    const viewSearch = (filters.search as string) || '';
+    setSearchInput(viewSearch);
+    setSearch(viewSearch);
+    setPage(1);
+  }, []);
 
   // Debounced search
   const [searchInput, setSearchInput] = useState('');
@@ -179,6 +188,13 @@ export default function Companies() {
           </button>
         </div>
       </div>
+
+      {/* Saved Views */}
+      <SavedViewSelector
+        entityType="company"
+        currentFilters={{ search: search || undefined }}
+        onFiltersChange={handleViewFiltersChange}
+      />
 
       {/* Search */}
       <div className="mb-4">

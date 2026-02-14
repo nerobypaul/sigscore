@@ -8,6 +8,7 @@ import { DEAL_STAGES, STAGE_LABELS, STAGE_COLORS } from '../types';
 import Spinner from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
+import SavedViewSelector from '../components/SavedViewSelector';
 
 type ViewMode = 'pipeline' | 'list';
 
@@ -17,6 +18,15 @@ export default function Deals() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('pipeline');
   const [showCreate, setShowCreate] = useState(false);
+
+  // Saved view filter state
+  const [stageFilter, setStageFilter] = useState<string | null>(null);
+
+  // Saved view filter handler
+  const handleViewFiltersChange = useCallback((filters: Record<string, unknown>) => {
+    const stage = (filters.stage as string) || null;
+    setStageFilter(stage);
+  }, []);
 
   // Bulk selection state (list view only)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -57,9 +67,14 @@ export default function Deals() {
 
   useWebSocket(handleWSMessage);
 
+  // Apply saved view stage filter
+  const filteredDeals = stageFilter
+    ? deals.filter((d) => d.stage === stageFilter)
+    : deals;
+
   const dealsByStage = DEAL_STAGES.reduce(
     (acc, stage) => {
-      acc[stage] = deals.filter((d) => d.stage === stage);
+      acc[stage] = filteredDeals.filter((d) => d.stage === stage);
       return acc;
     },
     {} as Record<DealStage, Deal[]>
@@ -80,13 +95,13 @@ export default function Deals() {
   };
 
   // Bulk selection helpers
-  const allSelected = deals.length > 0 && deals.every((d) => selectedIds.has(d.id));
+  const allSelected = filteredDeals.length > 0 && filteredDeals.every((d) => selectedIds.has(d.id));
 
   const toggleSelectAll = () => {
     if (allSelected) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(deals.map((d) => d.id)));
+      setSelectedIds(new Set(filteredDeals.map((d) => d.id)));
     }
   };
 
@@ -166,6 +181,13 @@ export default function Deals() {
         </div>
       </div>
 
+      {/* Saved Views */}
+      <SavedViewSelector
+        entityType="deal"
+        currentFilters={{ stage: stageFilter || undefined }}
+        onFiltersChange={handleViewFiltersChange}
+      />
+
       {deals.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1">
           <EmptyState
@@ -184,7 +206,7 @@ export default function Deals() {
         <PipelineView dealsByStage={dealsByStage} onStageChange={handleStageChange} />
       ) : (
         <ListView
-          deals={deals}
+          deals={filteredDeals}
           selectedIds={selectedIds}
           toggleSelect={toggleSelect}
           toggleSelectAll={toggleSelectAll}
