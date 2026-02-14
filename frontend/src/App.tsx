@@ -36,6 +36,7 @@ import ScoringBuilder from './pages/ScoringBuilder';
 import DevPortal from './pages/DevPortal';
 import SsoSettings from './pages/SsoSettings';
 import SsoCallback from './pages/SsoCallback';
+import OAuthCallback from './pages/OAuthCallback';
 import NotFound from './pages/NotFound';
 
 /**
@@ -73,6 +74,7 @@ function AppRoutes() {
       <Route path="/docs" element={<ApiDocs />} />
       <Route path="/developers" element={<DevPortal />} />
       <Route path="/sso/callback" element={<SsoCallback />} />
+      <Route path="/oauth/callback" element={<OAuthCallback />} />
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
