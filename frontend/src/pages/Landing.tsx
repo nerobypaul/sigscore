@@ -85,25 +85,25 @@ const features = [
     icon: SignalIcon,
     title: 'Signal Engine',
     description:
-      'Ingest product usage signals from GitHub, NPM, your website, and custom APIs. Identity resolution ties anonymous events to real accounts.',
+      'Ingest signals from npm, PyPI, GitHub, Segment, and your product API. Identity resolution ties anonymous developers to real accounts.',
   },
   {
     icon: ScoreIcon,
     title: 'PQA Scoring',
     description:
-      'Product-Qualified Account scoring with a 6-factor model. HOT / WARM / COLD tiers with RISING, STABLE, and FALLING trends.',
+      'Product-Qualified Account scoring surfaces your hottest accounts. See who\'s expanding, who\'s evaluating, and who needs a nudge.',
   },
   {
     icon: PipelineIcon,
     title: 'PLG Pipeline',
     description:
-      'Purpose-built pipeline stages: Anonymous Usage, Identified, Activated, Team Adoption, Enterprise Opportunity, and Closed Won.',
+      'Track the developer journey from first install to team adoption to enterprise deal. Stages built for how devtools actually sell.',
   },
   {
     icon: AIIcon,
     title: 'AI Briefs',
     description:
-      'Automatic account briefs and contact enrichment powered by AI. Know the full story before every conversation.',
+      'AI-generated account intelligence before every conversation. Know their tech stack, growth trajectory, and the perfect opening message.',
   },
   {
     icon: APIIcon,
@@ -124,7 +124,7 @@ const steps = [
     step: '01',
     title: 'Connect Signals',
     description:
-      'Drop in the SDK or configure webhooks. DevSignal starts ingesting usage data from GitHub, NPM, your app, and more.',
+      'Drop in the SDK or configure webhooks. DevSignal starts ingesting usage data from GitHub, npm, PyPI, Segment, your app, and more.',
   },
   {
     step: '02',
@@ -134,9 +134,9 @@ const steps = [
   },
   {
     step: '03',
-    title: 'Close Deals',
+    title: 'Grow Revenue',
     description:
-      'Arm your sales team with AI briefs, Slack alerts, and a pipeline built for PLG. Convert product-qualified accounts into revenue.',
+      'Surface product-qualified accounts to your growth team with AI briefs, Slack alerts, and automated workflows. Convert developers into customers.',
   },
 ];
 
@@ -155,7 +155,7 @@ const pricing: PricingTier[] = [
     name: 'Free',
     price: '$0',
     period: '/mo',
-    description: 'For indie devtool builders getting started with PLG.',
+    description: 'For indie devtool builders exploring product-led growth.',
     features: [
       'Up to 1,000 contacts',
       '5,000 signals / month',
@@ -170,7 +170,7 @@ const pricing: PricingTier[] = [
     name: 'Pro',
     price: '$79',
     period: '/mo',
-    description: 'For growing devtool teams ready to operationalize PLG.',
+    description: 'For growing devtool teams turning signals into pipeline.',
     features: [
       'Up to 25,000 contacts',
       '100,000 signals / month',
@@ -186,7 +186,7 @@ const pricing: PricingTier[] = [
     name: 'Scale',
     price: '$299',
     period: '/mo',
-    description: 'For devtool companies scaling PLG across the org.',
+    description: 'For devtool companies scaling growth across the organization.',
     features: [
       'Unlimited contacts',
       'Unlimited signals',
@@ -195,7 +195,7 @@ const pricing: PricingTier[] = [
       'Dedicated support',
       'SLA guarantee',
     ],
-    cta: 'Talk to Sales',
+    cta: 'Talk to Us',
     highlighted: false,
   },
 ];
@@ -258,20 +258,20 @@ export default function Landing() {
             {/* Pill badge */}
             <div className="inline-flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-full px-4 py-1.5 mb-8">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-sm text-gray-300">Now in public beta</span>
+              <span className="text-sm text-gray-300">Built for devtool companies</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
-              The CRM that understands{' '}
+              Turn developer signals{' '}
               <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                product-led growth
+                into pipeline
               </span>
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-              DevSignal is the AI-first headless CRM built for devtool companies.
-              Ingest product signals, score accounts automatically, and close deals
-              that start with usage -- not cold calls.
+              DevSignal tracks npm downloads, GitHub activity, API usage, and
+              product signals -- then tells you which developers are ready to buy.
+              Purpose-built for devtool companies.
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -336,8 +336,11 @@ export default function Landing() {
       {/* ----------------------------------------------------------------- */}
       <section className="border-y border-gray-800 bg-gray-900/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-          <p className="text-center text-sm text-gray-500 uppercase tracking-widest font-medium mb-6">
-            Built for devtool teams shipping PLG
+          <p className="text-center text-sm text-gray-500 uppercase tracking-widest font-medium mb-2">
+            Built for companies like Resend, Railway, Neon, Supabase, and Upstash
+          </p>
+          <p className="text-center text-xs text-gray-600 mb-6">
+            Developer pipeline intelligence for devtool teams shipping PLG
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-gray-500">
             <div className="flex items-center gap-2">
@@ -381,7 +384,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28">
           <div className="max-w-2xl mx-auto text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Everything you need to run PLG sales
+              Everything you need for developer pipeline intelligence
             </h2>
             <p className="mt-4 text-lg text-gray-500">
               From signal ingestion to AI-powered account scoring, DevSignal
@@ -584,11 +587,11 @@ export default function Landing() {
 
             <div className="relative">
               <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
-                Stop guessing. Start closing.
+                Stop guessing. Start converting developers.
               </h2>
               <p className="text-lg text-indigo-100 max-w-xl mx-auto mb-10">
-                Join devtool teams using DevSignal to turn product usage into
-                pipeline. Set up in minutes -- no credit card required.
+                Join devtool growth teams using DevSignal to turn product usage
+                into pipeline. Set up in minutes -- no credit card required.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link
