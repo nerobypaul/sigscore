@@ -128,7 +128,7 @@ const API_CATEGORIES: EndpointCategory[] = [
     id: 'webhooks',
     label: 'Webhooks',
     description:
-      'Register HTTPS webhook endpoints to receive real-time notifications when signals are ingested or CRM events occur.',
+      'Register HTTPS webhook endpoints to receive real-time notifications when signals are ingested or platform events occur.',
     endpoints: [
       { method: 'GET', path: '/webhooks', description: 'List webhook endpoints with delivery counts' },
       { method: 'POST', path: '/webhooks', description: 'Register a new webhook endpoint (HTTPS only)' },
@@ -402,7 +402,7 @@ export default function ApiDocs() {
             <Section id="overview">
               <h1 className="text-4xl font-bold tracking-tight text-white">API Reference</h1>
               <p className="mt-4 text-lg text-gray-400 leading-relaxed">
-                DevSignal provides a REST API for managing your CRM data, ingesting product usage
+                DevSignal provides a REST API for managing your developer signal data, ingesting product usage
                 signals, computing PQA scores, and automating your PLG sales motion. All endpoints
                 return JSON and follow standard HTTP semantics.
               </p>

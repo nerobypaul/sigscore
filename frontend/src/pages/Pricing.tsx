@@ -84,6 +84,25 @@ const tiers: PricingTier[] = [
     highlighted: true,
   },
   {
+    name: 'Growth',
+    price: '$199',
+    period: '/mo',
+    description: 'For scaling devtool teams that need deeper signal coverage and CRM sync.',
+    features: [
+      '100,000 contacts',
+      '500,000 signals/month',
+      '25 users',
+      'Everything in Pro',
+      'CRM sync (HubSpot, Salesforce)',
+      'Priority support',
+      'Advanced PQA scoring',
+      'Custom signal sources',
+    ],
+    cta: 'Start Growth Trial',
+    ctaLink: '/register',
+    highlighted: false,
+  },
+  {
     name: 'Scale',
     price: '$299',
     period: '/mo',
@@ -92,7 +111,7 @@ const tiers: PricingTier[] = [
       'Unlimited contacts',
       'Unlimited signals',
       'Unlimited users',
-      'Everything in Pro',
+      'Everything in Growth',
       'SSO (SAML/OIDC)',
       'Audit log',
       'Custom integrations',
@@ -224,11 +243,10 @@ export default function Pricing() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-12 sm:pb-16">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1]">
-              Simple,{' '}
+              Developer Signal Intelligence{' '}
               <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                transparent
-              </span>{' '}
-              pricing
+                Pricing
+              </span>
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
@@ -240,8 +258,8 @@ export default function Pricing() {
       </section>
 
       {/* Pricing Grid */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 sm:pb-28">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 sm:pb-28">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {tiers.map((tier) => (
             <div
               key={tier.name}

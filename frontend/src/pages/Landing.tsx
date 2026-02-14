@@ -259,20 +259,20 @@ export default function Landing() {
             {/* Pill badge */}
             <div className="inline-flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-full px-4 py-1.5 mb-8">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-sm text-gray-300">Built for devtool companies</span>
+              <span className="text-sm text-gray-300">Developer Signal Intelligence</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
-              Turn developer signals{' '}
+              Developer Signal Intelligence{' '}
               <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                into pipeline
+                for Devtool Companies
               </span>
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-              DevSignal tracks npm downloads, GitHub activity, API usage, and
-              product signals -- then tells you which developers are ready to buy.
-              Purpose-built for devtool companies.
+              Track npm downloads, GitHub activity, and product signals -- then
+              surface which developers are ready to buy. Purpose-built for
+              devtool companies running PLG.
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -341,7 +341,7 @@ export default function Landing() {
             Built for companies like Resend, Railway, Neon, Supabase, and Upstash
           </p>
           <p className="text-center text-xs text-gray-600 mb-6">
-            Developer pipeline intelligence for devtool teams shipping PLG
+            Developer signal intelligence for devtool teams shipping PLG
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-gray-500">
             <div className="flex items-center gap-2">
@@ -385,11 +385,12 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28">
           <div className="max-w-2xl mx-auto text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Everything you need for developer pipeline intelligence
+              Everything you need for developer signal intelligence
             </h2>
             <p className="mt-4 text-lg text-gray-500">
               From signal ingestion to AI-powered account scoring, DevSignal
-              gives your team the full picture -- without the bloat.
+              gives your growth team the full picture -- without the bloat of
+              legacy sales tools.
             </p>
           </div>
 
@@ -564,6 +565,52 @@ export default function Landing() {
                 </Link>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ----------------------------------------------------------------- */}
+      {/* Competitive Positioning */}
+      {/* ----------------------------------------------------------------- */}
+      <section className="bg-gray-50 text-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28">
+          <div className="max-w-2xl mx-auto text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Why DevSignal over the alternatives?
+            </h2>
+            <p className="mt-4 text-lg text-gray-500">
+              Purpose-built developer GTM -- not a generic sales tool with a plugin bolted on.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">vs HubSpot / Salesforce</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Native developer signals -- npm downloads, GitHub engagement,
+                API usage patterns -- that generic sales tools simply cannot
+                track. PQA scoring replaces MQL with signals that predict
+                developer intent.
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">vs Common Room</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                12x cheaper and devtool-specific. DevSignal focuses on the
+                signals that matter for PLG conversion -- package installs,
+                API adoption curves, team expansion -- without the enterprise
+                bloat and six-figure contracts.
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">vs Reo.dev</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Self-serve in 10 minutes, $79/mo transparent pricing. No sales
+                calls, no custom quotes. API-first architecture with a
+                zero-dependency TypeScript SDK so your engineering team actually
+                wants to use it.
+              </p>
+            </div>
           </div>
         </div>
       </section>

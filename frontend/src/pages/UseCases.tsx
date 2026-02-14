@@ -385,7 +385,7 @@ export default function UseCases() {
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-full px-4 py-1.5 mb-8">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-sm text-gray-300">Developer Pipeline Intelligence</span>
+              <span className="text-sm text-gray-300">Developer Signal Intelligence</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1]">
