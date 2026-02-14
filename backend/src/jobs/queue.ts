@@ -12,6 +12,7 @@ export const QUEUE_NAMES = {
   ENRICHMENT: 'enrichment',
   SIGNAL_SYNC: 'signal-sync',
   WORKFLOW_EXECUTION: 'workflow-execution',
+  EMAIL_SEND: 'email-send',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -59,6 +60,11 @@ export interface WorkflowExecutionJobData {
   organizationId: string;
   eventType: string;
   data: Record<string, unknown>;
+}
+
+export interface EmailSendJobData {
+  enrollmentId: string;
+  stepId: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -125,6 +131,18 @@ export const workflowExecutionQueue = new Queue<WorkflowExecutionJobData>(
   },
 );
 
+export const emailSendQueue = new Queue<EmailSendJobData>(
+  QUEUE_NAMES.EMAIL_SEND,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 5000 },
+    },
+  },
+);
+
 // ---------------------------------------------------------------------------
 // Convenience: all queues in a single array
 // ---------------------------------------------------------------------------
@@ -135,6 +153,7 @@ const allQueues: Queue[] = [
   enrichmentQueue,
   signalSyncQueue,
   workflowExecutionQueue,
+  emailSendQueue,
 ];
 
 /**

@@ -7,12 +7,14 @@ import {
   enrichmentQueue,
   signalSyncQueue,
   workflowExecutionQueue,
+  emailSendQueue,
   SignalProcessingJobData,
   ScoreComputationJobData,
   WebhookDeliveryJobData,
   EnrichmentJobData,
   SignalSyncJobData,
   WorkflowExecutionJobData,
+  EmailSendJobData,
 } from './queue';
 
 // ---------------------------------------------------------------------------
@@ -159,5 +161,33 @@ export const enqueueWorkflowExecution = async (
     { organizationId, eventType, data },
   );
   logger.debug('Enqueued workflow execution', { jobId: job.id, organizationId, eventType });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// Email Send
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue an email send for a specific enrollment step.
+ */
+export const enqueueEmailSend = async (
+  enrollmentId: string,
+  stepId: string,
+  scheduledFor?: Date,
+): Promise<Job<EmailSendJobData>> => {
+  const delay = scheduledFor
+    ? Math.max(0, scheduledFor.getTime() - Date.now())
+    : 0;
+
+  const job = await emailSendQueue.add(
+    'send-email',
+    { enrollmentId, stepId },
+    {
+      delay,
+      jobId: `email-${enrollmentId}-${stepId}`,
+    },
+  );
+  logger.debug('Enqueued email send', { jobId: job.id, enrollmentId, stepId, delay });
   return job;
 };

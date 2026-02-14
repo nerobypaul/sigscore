@@ -74,6 +74,8 @@ model Organization {
   notifications      Notification[]
   auditLogs          AuditLog[]
   savedViews         SavedView[]
+  emailSequences     EmailSequence[]
+  dashboards         Dashboard[]
 
   @@index([slug])
   @@map("organizations")
@@ -144,6 +146,7 @@ model Contact {
   tags           ContactTag[]
   identities     ContactIdentity[]
   signals        Signal[]
+  emailEnrollments EmailEnrollment[]
 
   @@index([organizationId])
   @@index([companyId])
@@ -778,4 +781,114 @@ model SavedView {
   @@index([organizationId, entityType])
   @@index([userId, entityType])
   @@map("saved_views")
+}
+
+// ============================================================
+// EMAIL SEQUENCES — Automated outreach for growth teams
+// ============================================================
+
+model EmailSequence {
+  id              String   @id @default(uuid())
+  organizationId  String
+  name            String
+  description     String?
+  status          String   @default("draft") // draft, active, paused, archived
+  triggerType     String   // manual, signal_threshold, deal_stage, score_change
+  triggerConfig   Json     @default("{}")
+  fromName        String?
+  fromEmail       String?
+  replyTo         String?
+  createdById     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  steps           EmailSequenceStep[]
+  enrollments     EmailEnrollment[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@map("email_sequences")
+}
+
+model EmailSequenceStep {
+  id          String   @id @default(uuid())
+  sequenceId  String
+  stepNumber  Int
+  subject     String
+  body        String   // HTML body with {{variable}} support
+  delayDays   Int      @default(1)
+  delayHours  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sequence    EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  sends       EmailSend[]
+
+  @@unique([sequenceId, stepNumber])
+  @@index([sequenceId])
+  @@map("email_sequence_steps")
+}
+
+model EmailEnrollment {
+  id          String   @id @default(uuid())
+  sequenceId  String
+  contactId   String
+  status      String   @default("active") // active, completed, paused, bounced, unsubscribed
+  currentStep Int      @default(0)
+  enrolledAt  DateTime @default(now())
+  completedAt DateTime?
+
+  sequence    EmailSequence @relation(fields: [sequenceId], references: [id])
+  contact     Contact       @relation(fields: [contactId], references: [id])
+  sends       EmailSend[]
+
+  @@unique([sequenceId, contactId])
+  @@index([sequenceId])
+  @@index([contactId])
+  @@index([status])
+  @@map("email_enrollments")
+}
+
+model EmailSend {
+  id           String   @id @default(uuid())
+  enrollmentId String
+  stepId       String
+  status       String   @default("pending") // pending, sent, delivered, opened, clicked, bounced, failed
+  sentAt       DateTime?
+  openedAt     DateTime?
+  clickedAt    DateTime?
+  bouncedAt    DateTime?
+  messageId    String?  // from email provider
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  enrollment   EmailEnrollment   @relation(fields: [enrollmentId], references: [id])
+  step         EmailSequenceStep @relation(fields: [stepId], references: [id])
+
+  @@index([enrollmentId])
+  @@index([stepId])
+  @@index([status])
+  @@map("email_sends")
+}
+
+// ============================================================
+// CUSTOM DASHBOARDS — Personalized metric views
+// ============================================================
+
+model Dashboard {
+  id              String   @id @default(uuid())
+  organizationId  String
+  userId          String
+  name            String   @default("My Dashboard")
+  isDefault       Boolean  @default(false)
+  layout          Json     @default("[]") // Array of widget configs
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId])
+  @@index([organizationId, isDefault])
+  @@map("dashboards")
 }
