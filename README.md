@@ -1,257 +1,233 @@
+<div align="center">
+
+<!-- Replace with actual logo when available -->
 # DevSignal
 
-**Developer Pipeline Intelligence for devtool companies.**
+**Turn developer signals into pipeline.**
 
-DevSignal tracks npm downloads, GitHub activity, API usage, and product signals -- then tells you which developers are ready to buy. Purpose-built for devtool companies running PLG.
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/nerobypaul/headless-crm)
+[![Tests](https://img.shields.io/badge/tests-288%20passing-brightgreen)](https://github.com/nerobypaul/headless-crm)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> "Your npm installs are pipeline. You just can't see it yet."
+DevSignal is an open-source developer signal intelligence platform that helps devtool companies identify, score, and convert their most engaged developers into paying customers.
 
-## Why DevSignal?
+[Quick Start](#quick-start) | [Features](#key-features) | [SDK](#sdk-usage) | [Architecture](#architecture) | [Pricing](#pricing)
 
-Traditional CRMs don't understand developer-led growth. HubSpot doesn't know what an npm download is. Salesforce can't tell you which company's engineers are evaluating your tool.
+</div>
 
-DevSignal was built for devtool companies where:
+---
 
-- Users adopt the product before talking to sales
-- Pipeline starts with `npm install`, not a demo request
-- Account health is measured by API calls and GitHub activity, not email opens
-- The buyer is the Head of Growth, not the VP of Sales
+## Why This Exists
 
-### The PLG CRM Graveyard
+Devtool companies have a blind spot: thousands of developers use their tools every day, but there is no way to know who they are, which companies they work for, or when they are ready to buy. The signal data is scattered across GitHub, npm, Stack Overflow, Discord, and a dozen other places.
 
-Calixa ($16.3M), Koala ($15M), Endgame ($17M) -- they all tried to build "PLG CRM for everyone" and failed. DevSignal wins by being specifically for devtools, at a price point that doesn't require procurement approval.
+Existing solutions like Common Room ($1,000+/mo) and Reo.dev ($500+/mo) are built for enterprise budgets. DevSignal delivers the same intelligence at a fraction of the cost, and you can self-host it for free.
 
-## Features
+## Key Features
 
-### Signal Engine
-Ingest developer activity from multiple sources with automatic identity resolution.
+**13 Signal Sources** -- Ingest developer activity from GitHub (stars, forks, issues, PRs), npm, PyPI, Segment, Slack, Discord, Stack Overflow, Twitter/X, Reddit, PostHog, Clearbit, HubSpot, and Salesforce.
 
-| Connector | Signals |
-|-----------|---------|
-| **npm** | Download velocity, version adoption, company resolution |
-| **PyPI** | Package downloads, version tracking |
-| **GitHub** | Stars, forks, issues, PRs, contributor patterns |
-| **Segment** | identify, track, group, page/screen events |
-| **Webhooks** | Any custom event via REST API |
-| **SDK** | `@devsignal/node` -- zero deps, three lines to start |
+**PQA Scoring (0-100)** -- Product-Qualified Account scoring with customizable rules. Automatically tier accounts as HOT, WARM, or COLD based on signal velocity, breadth, and recency.
 
-### PQA Scoring (Product-Qualified Accounts)
-6-factor scoring model with automatic tier classification: HOT / WARM / COLD / INACTIVE. Scores update in real-time as new signals arrive.
+**Identity Resolution** -- Tie anonymous activity across platforms to real people and companies. Match GitHub usernames to Stack Overflow profiles to Slack accounts to email addresses.
 
-### PLG-Native Pipeline
-Deal stages that map to how devtool companies actually sell:
+**AI-Powered Account Briefs** -- Generate executive summaries for any account using Claude. Get context on what a company does, how they use your product, and what to say in outreach.
 
-```
-Anonymous Usage -> Identified -> Activated -> Team Adoption -> Expansion Signal -> Sales Qualified -> Negotiation -> Closed Won
-```
+**CRM Sync** -- Bidirectional sync with HubSpot and Salesforce. Push scored accounts and contacts to your existing pipeline without changing workflows.
 
-### AI Intelligence
-- **Account Briefs** -- One-click AI-generated intelligence from signal patterns
-- **Contact Enrichment** -- AI-powered profile enrichment
-- **Next-Best-Actions** -- Suggested actions based on account signals
+**Automated Workflows and Playbooks** -- 10 pre-built playbooks covering acquisition, expansion, retention, and engagement. Trigger actions on signal_received, contact_created, deal_stage_changed, or score_changed.
 
-### Account 360
-5-tab company intelligence hub: Overview, Timeline, Contacts, Deals, AI Intelligence. The "demo closer" page.
+**Email Sequences** -- Multi-step drip campaigns with personalization, delay scheduling, and send-time optimization.
 
-### Email Sequences
-Multi-step automated outreach triggered by signals. Template variables ({{firstName}}, {{company}}, {{pqaScore}}), enrollment management, open/click tracking.
+**Outbound Webhooks** -- Subscribe to 8 event types (signal.created, contact.created, score.changed, and more) with HMAC-SHA256 signing. Native Zapier and Make integration via REST Hooks.
 
-### Custom Dashboards
-10 widget types across stat cards, list widgets, and chart widgets. Drag to arrange, auto-saves. The "open every morning" feature.
+**Real-time WebSocket Updates** -- Live signal feed with JWT-authenticated, organization-scoped broadcast.
 
-### Workflow Automation
-Signal-driven workflows with 4 triggers and 6 action types:
-- **Triggers:** signal_received, contact_created, deal_stage_changed, score_changed
-- **Actions:** create_deal, update_deal_stage, send_webhook, send_slack, add_tag, log
+**GraphQL + REST API** -- Full GraphQL API with DataLoader (11 loaders) plus REST endpoints. API key authentication for programmatic access.
 
-### Interactive Slack Bot
-Block Kit notifications with action buttons: claim account, snooze, view brief, dismiss. 5 alert types: hot accounts, signups, deal changes, workflow failures, weekly digest.
-
-### CRM Import
-4-step wizard for migrating from HubSpot or Salesforce. Auto-detects CSV format, maps fields, upserts with deduplication.
-
-### More
-- **Saved Views** -- Custom filtered views per entity type, shareable
-- **Audit Log** -- Enterprise compliance trail (who did what, when)
-- **Team Members + RBAC** -- OWNER > ADMIN > MEMBER > VIEWER hierarchy
-- **Full-text Search** -- PostgreSQL tsvector with weighted relevance
-- **Real-time Updates** -- WebSocket push for signals and deal events
-- **Bulk Operations** -- Delete, tag, CSV export across all entities
-- **GraphQL API** -- Apollo Server with DataLoader for N+1 prevention
-- **API Keys** -- Scoped API key authentication for external integrations
-
-## Quick Start
-
-### Prerequisites
-
-- Node.js 20+
-- PostgreSQL 16+
-- Redis 7+
-
-### Setup
-
-```bash
-# Clone
-git clone https://github.com/nerobypaul/headless-crm.git
-cd headless-crm
-
-# Install all workspaces
-npm install
-
-# Backend
-cd backend
-cp .env.example .env  # Edit DATABASE_URL, REDIS_URL, JWT_SECRET
-npx prisma generate
-npx prisma db push
-npm run dev
-
-# Frontend (new terminal)
-cd frontend
-npm run dev
-```
-
-### Docker
-
-```bash
-docker compose up -d
-```
-
-Starts PostgreSQL, Redis, the backend API, and the frontend.
-
-### Send Your First Signal
-
-```typescript
-import { DevSignal } from '@devsignal/node';
-
-const ds = new DevSignal({
-  apiKey: 'ds_live_...',
-  baseUrl: 'http://localhost:3001',
-});
-
-await ds.signals.track({
-  type: 'repo_clone',
-  anonymousId: 'user-fingerprint',
-  metadata: { repo: 'acme/sdk', ref: 'main' },
-});
-```
+**Node.js SDK** -- Zero-dependency `@devsignal/node` package for signal ingestion and data access.
 
 ## Architecture
 
 ```
-frontend/          React 18 + Vite + TailwindCSS
-backend/           Express + TypeScript + Prisma + PostgreSQL + Redis + BullMQ
-packages/sdk/      @devsignal/node TypeScript SDK (zero deps)
-e2e/               Playwright test suite (38 tests)
+Frontend    React 18 + Vite + TailwindCSS + React Router v6
+               |
+API         Express + Apollo GraphQL + WebSocket (ws)
+               |
+Services    Prisma ORM + BullMQ (16 queues) + Redis cache
+               |
+Data        PostgreSQL + Redis
+               |
+External    13 connectors + Resend email + Claude AI + Sentry
 ```
 
-### Backend Stack
+**By the numbers:**
 
-- **Express** with JWT + refresh tokens + API key authentication
-- **Prisma** ORM with PostgreSQL (24 models)
-- **Redis** for caching and BullMQ job queues (7 queues)
-- **BullMQ** for async workers: signal sync, workflow execution, webhook delivery, email sends
-- **WebSocket** (ws) for real-time updates with JWT auth
-- **GraphQL** (Apollo Server) with DataLoader (11 loaders)
-- **Claude API** for AI briefs, enrichment, next-best-actions
+| Metric | Count |
+|---|---|
+| Prisma models | 33 |
+| BullMQ job queues | 16 |
+| Data source connectors | 13 |
+| GraphQL DataLoaders | 11 |
+| Tests passing | 288 |
+| Frontend pages | 35+ (code-split, 250KB initial bundle) |
 
-### API Endpoints
+## Quick Start
 
-| Category | Endpoints |
-|----------|-----------|
-| Auth | Register, login, refresh, profile |
-| Contacts | CRUD, search, bulk import, timeline |
-| Companies | CRUD, search, Account 360 |
-| Deals | CRUD, pipeline management, inline editing |
-| Signals | Ingest, query, batch, connectors |
-| Search | Global full-text search |
-| AI | Account briefs, enrichment, next-best-actions |
-| Sequences | Email sequence CRUD, enrollment, stats |
-| Dashboards | Custom dashboard CRUD, widget data |
-| Workflows | Automation rules with triggers and actions |
-| Webhooks | Outbound event delivery with retry |
-| Connectors | npm, PyPI, GitHub, Segment sources |
-| Import | CSV import, HubSpot/Salesforce migration |
-| Bulk | Delete, tag, CSV export |
-| Notifications | In-app + Slack with Block Kit |
-| Members | RBAC team management |
-| Audit | Enterprise compliance log |
-| Billing | Stripe integration, usage tracking |
-| Analytics | Time-series metrics, pipeline analytics |
-| Saved Views | Custom filtered views |
+### Docker (recommended)
 
-Full API docs at `/api-docs` (Swagger UI) or `/api/openapi.json` (raw spec).
+```bash
+# 1. Clone the repo
+git clone https://github.com/nerobypaul/headless-crm.git
+cd headless-crm
+
+# 2. Configure environment
+cp .env.example .env
+# Edit .env -- at minimum set JWT_SECRET and JWT_REFRESH_SECRET
+
+# 3. Start everything
+docker compose -f docker-compose.prod.yml up -d --build
+
+# 4. Open the app
+open http://localhost:3000
+```
+
+This starts four containers: PostgreSQL 16, Redis 7, the API server (serving the static frontend), and BullMQ workers. The app runs database migrations automatically on first boot.
+
+### Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start PostgreSQL and Redis
+docker compose up -d postgres redis
+
+# Run database migrations
+cd backend && npx prisma migrate deploy && cd ..
+
+# Start backend and frontend in parallel
+npm run dev --workspace=backend &
+npm run dev --workspace=frontend
+```
+
+The frontend dev server proxies `/api` requests to the backend at `http://localhost:3000`.
+
+## SDK Usage
+
+```bash
+npm install @devsignal/node
+```
+
+```typescript
+import { DevSignal } from '@devsignal/node';
+
+const ds = new DevSignal({ apiKey: 'ds_live_xxxxxxxxxxxx' });
+
+// Ingest a signal from your application
+await ds.signals.ingest({
+  type: 'feature_used',
+  sourceId: 'app',
+  metadata: { feature: 'dashboard', action: 'viewed' },
+});
+
+// Query top accounts by PQA score
+const top = await ds.scores.topAccounts({ limit: 10, tier: 'HOT' });
+
+// Create or update a contact
+await ds.contacts.upsert({
+  email: 'dev@company.com',
+  firstName: 'Jane',
+  lastName: 'Doe',
+  company: 'Acme Corp',
+});
+```
+
+The SDK also exposes `companies`, `deals`, and `scores` resources. See [`packages/sdk/`](packages/sdk/) for the full API.
 
 ## Pricing
 
-| | Free | Pro | Scale |
-|---|---|---|---|
-| Contacts | 1,000 | 25,000 | Unlimited |
-| Signals/mo | 5,000 | 100,000 | Unlimited |
-| Users | 1 | 10 | Unlimited |
-| AI Briefs | -- | Yes | Yes |
-| Email Sequences | -- | Yes | Yes |
-| Slack Bot | -- | Yes | Yes |
-| Custom Dashboards | -- | Yes | Yes |
-| CRM Import | -- | Yes | Yes |
-| Audit Log | -- | -- | Yes |
-| SSO | -- | -- | Yes |
-| Support | Community | Priority | Dedicated |
-| Price | **$0/mo** | **$79/mo** | **$299/mo** |
+DevSignal is open-source and free to self-host. Managed hosting tiers:
 
-## Project Status
+| | Free | Pro | Growth | Scale |
+|---|---|---|---|---|
+| **Price** | $0/mo | $79/mo | $199/mo | $299/mo |
+| **Contacts** | 1,000 | 25,000 | 100,000 | Unlimited |
+| **Signals/mo** | 5,000 | 100,000 | 500,000 | Unlimited |
+| **Users** | 1 | 10 | 25 | Unlimited |
+| **Signal Sources** | 3 | All 13 | All 13 | All 13 |
+| **AI Briefs** | -- | 50/mo | 500/mo | Unlimited |
+| **CRM Sync** | -- | HubSpot | HubSpot + Salesforce | HubSpot + Salesforce |
+| **SSO/SAML** | -- | -- | -- | Yes |
+| **SLA** | -- | -- | -- | 99.9% |
 
-### Completed (P0-P26)
-- [x] Core CRM: contacts, companies, deals, activities, tags, auth, API keys
-- [x] Signal engine: ingest, identity resolution, append-only event log
-- [x] PQA scoring: 6-factor model with auto-tiering
-- [x] PLG pipeline: devtool-native deal stages
-- [x] GraphQL API with DataLoader (11 loaders)
-- [x] Node SDK (`@devsignal/node`, zero deps)
-- [x] GitHub connector: stars, forks, issues, PRs
-- [x] npm connector: download stats, registry metadata, company matching
-- [x] PyPI connector: package downloads, version tracking
-- [x] Segment connector: all 5 call types with HMAC verification
-- [x] CSV import with field mapping
-- [x] HubSpot/Salesforce CRM import wizard
-- [x] Full-text search (PostgreSQL tsvector, weighted relevance)
-- [x] WebSocket real-time updates
-- [x] AI engine: account briefs, contact enrichment, next-best-actions
-- [x] Account 360: 5-tab company intelligence hub
-- [x] Workflow automation: 4 triggers, 6 action types
-- [x] BullMQ async workers: signal sync, workflow execution, webhooks, email
-- [x] Interactive Slack bot: Block Kit alerts with action buttons
-- [x] Email sequence automation with template variables
-- [x] Custom dashboard builder (10 widget types)
-- [x] Saved views with sharing
-- [x] Bulk operations: delete, tag, CSV export
-- [x] In-app notifications with real-time bell
-- [x] Team members with RBAC (OWNER/ADMIN/MEMBER/VIEWER)
-- [x] Audit log for enterprise compliance
-- [x] Stripe billing with usage enforcement
-- [x] Onboarding flow with demo data seeder
-- [x] Docker (multi-stage builds)
-- [x] CI/CD (GitHub Actions, 5 jobs)
-- [x] Playwright E2E tests (38 tests, 6 suites)
-- [x] Landing page, Use Cases, Pricing pages
-- [x] API docs (Swagger UI + OpenAPI spec)
+## Tech Stack
 
-### Up Next
-- [ ] CRM bi-directional sync (Salesforce + HubSpot live sync via OAuth)
-- [ ] Customizable lead scoring builder (no-code)
-- [ ] Multi-tenant SSO (SAML/OIDC)
-- [ ] API developer portal with interactive docs
+| Layer | Technology |
+|---|---|
+| Frontend | React 18, Vite, TailwindCSS, React Router v6 |
+| API | Express, Apollo Server (GraphQL), WebSocket (ws) |
+| Database | PostgreSQL 16, Prisma ORM (33 models) |
+| Cache and Queue | Redis 7, BullMQ (16 queues) |
+| Auth | JWT + refresh tokens, API keys, SAML SSO, OIDC (PKCE), GitHub OAuth, Google OAuth |
+| AI | Claude API (account briefs, contact enrichment, next-best-actions) |
+| Email | Resend SDK |
+| Search | PostgreSQL tsvector with weighted relevance (A/B/C/D) |
+| Monitoring | Sentry (backend + frontend) |
+| SDK | @devsignal/node (TypeScript, zero dependencies) |
+| Deployment | Docker multi-stage build (4 stages), docker-compose, Railway |
+| Testing | Jest (unit, 288 tests), Playwright (E2E, 38 specs) |
 
-## Competitive Positioning
+## Project Structure
 
-DevSignal is **Developer Pipeline Intelligence** -- not a CRM, not a community tool.
+```
+devsignal/
+  backend/
+    src/
+      controllers/      # Request handlers
+      services/         # Business logic + 13 connectors
+      routes/           # REST API endpoints
+      graphql/          # Schema, resolvers, DataLoaders
+      jobs/             # BullMQ queues, workers, scheduler
+      middleware/       # Auth, RBAC, rate limiting
+    prisma/             # Schema (33 models) + migrations
+  frontend/
+    src/
+      pages/            # 35+ route pages (code-split with React.lazy)
+      components/       # Shared UI components
+      lib/              # API client, utilities
+  packages/
+    sdk/                # @devsignal/node SDK
+  e2e/                  # Playwright end-to-end tests
+  docker-compose.prod.yml
+  Dockerfile            # Multi-stage production build
+```
 
-| vs. | DevSignal Advantage |
-|-----|---------------------|
-| **HubSpot/Salesforce** | Native developer signals. No custom setup needed. |
-| **Common Room** ($1K+/mo) | 12x cheaper. Purpose-built for devtools, not community management. |
-| **Reo.Dev** | Self-serve in 10 minutes. No sales call required. $79/mo transparent pricing. |
-| **Spreadsheets** | AI scoring, real-time signals, automated workflows. |
+## Contributing
+
+Contributions are welcome. Please open an issue first to discuss what you would like to change.
+
+```bash
+# Run unit tests
+npm test --workspace=backend
+
+# Run E2E tests
+npx playwright test --config=e2e/playwright.config.ts
+
+# Lint
+npm run lint --workspace=backend
+npm run lint --workspace=frontend
+```
 
 ## License
 
-MIT
+[MIT](LICENSE)
+
+---
+
+<div align="center">
+
+Built for devtool companies that want to know who loves their product.
+
+</div>
