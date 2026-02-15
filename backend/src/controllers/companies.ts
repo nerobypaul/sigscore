@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as companyService from '../services/companies';
 import { logAudit } from '../services/audit';
+import { fireCompanyCreated } from '../services/webhook-events';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
 
@@ -55,6 +56,10 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
       entityId: company.id,
       entityName: company.name,
     }).catch(() => {});
+
+    // Webhook event to Zapier/Make subscribers (fire-and-forget)
+    fireCompanyCreated(organizationId, company as unknown as Record<string, unknown>)
+      .catch((err) => logger.error('Webhook fire error (company.created):', err));
 
     res.status(201).json(company);
   } catch (error) {

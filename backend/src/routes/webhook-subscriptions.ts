@@ -1,0 +1,183 @@
+import { Router } from 'express';
+import type { Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
+import { authenticate, requireOrganization } from '../middleware/auth';
+import { apiKeyAuth } from '../middleware/api-key-auth';
+import { validate } from '../middleware/validate';
+import {
+  createSubscription,
+  deleteSubscription,
+  listSubscriptions,
+  getSubscription,
+  toggleSubscription,
+  deliverToSubscription,
+  getTestPayload,
+  WEBHOOK_EVENT_TYPES,
+} from '../services/webhook-subscriptions';
+import { logger } from '../utils/logger';
+
+const router = Router();
+
+// ---------------------------------------------------------------------------
+// Auth: Support both API key (Zapier) and JWT (UI) authentication.
+// apiKeyAuth runs first — if an API key is found and valid, it sets
+// req.organizationId and skips JWT auth. Otherwise, falls through to
+// authenticate + requireOrganization.
+// ---------------------------------------------------------------------------
+
+const flexAuth = [
+  apiKeyAuth,
+  (req: Request, res: Response, next: NextFunction): void => {
+    // If already authenticated via API key, skip JWT auth
+    if (req.apiKeyAuth && req.organizationId) {
+      next();
+      return;
+    }
+    authenticate(req, res, next);
+  },
+  (req: Request, res: Response, next: NextFunction): void => {
+    if (req.apiKeyAuth && req.organizationId) {
+      next();
+      return;
+    }
+    requireOrganization(req, res, next);
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Validation schemas
+// ---------------------------------------------------------------------------
+
+const createSubscriptionSchema = z.object({
+  targetUrl: z.string().url('targetUrl must be a valid URL'),
+  event: z.enum(WEBHOOK_EVENT_TYPES as unknown as [string, ...string[]], {
+    errorMap: () => ({
+      message: `event must be one of: ${WEBHOOK_EVENT_TYPES.join(', ')}`,
+    }),
+  }),
+  hookId: z.string().optional(),
+});
+
+const toggleActiveSchema = z.object({
+  active: z.boolean(),
+});
+
+// ---------------------------------------------------------------------------
+// Routes
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /webhooks/subscribe — list all subscriptions for the org
+ */
+router.get('/', ...flexAuth, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const organizationId = req.organizationId!;
+    const subscriptions = await listSubscriptions(organizationId);
+    res.json({ subscriptions });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /webhooks/subscribe/events — list supported event types
+ */
+router.get('/events', (_req: Request, res: Response): void => {
+  res.json({ events: WEBHOOK_EVENT_TYPES });
+});
+
+/**
+ * GET /webhooks/subscribe/:id — get a single subscription
+ */
+router.get('/:id', ...flexAuth, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const organizationId = req.organizationId!;
+    const subscription = await getSubscription(organizationId, req.params.id);
+    res.json(subscription);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /webhooks/subscribe — create a new subscription (Zapier REST Hook pattern)
+ */
+router.post('/', ...flexAuth, validate(createSubscriptionSchema), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const organizationId = req.organizationId!;
+    const subscription = await createSubscription(organizationId, req.body);
+    logger.info(`Webhook subscription created: ${subscription.id} → ${subscription.targetUrl} [${subscription.event}]`);
+    res.status(201).json(subscription);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * PATCH /webhooks/subscribe/:id — toggle active status
+ */
+router.patch('/:id', ...flexAuth, validate(toggleActiveSchema), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const organizationId = req.organizationId!;
+    const subscription = await toggleSubscription(organizationId, req.params.id, req.body.active);
+    logger.info(`Webhook subscription ${subscription.active ? 'activated' : 'deactivated'}: ${subscription.id}`);
+    res.json(subscription);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * DELETE /webhooks/subscribe/:id — remove a subscription
+ */
+router.delete('/:id', ...flexAuth, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const organizationId = req.organizationId!;
+    await deleteSubscription(organizationId, req.params.id);
+    logger.info(`Webhook subscription deleted: ${req.params.id}`);
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /webhooks/subscribe/:id/test — send a test payload
+ */
+router.post('/:id/test', ...flexAuth, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const organizationId = req.organizationId!;
+    const subscription = await getSubscription(organizationId, req.params.id);
+
+    const testPayload = {
+      event: subscription.event,
+      timestamp: new Date().toISOString(),
+      organizationId,
+      data: getTestPayload(subscription.event),
+      _test: true,
+    };
+
+    const result = await deliverToSubscription(
+      subscription.targetUrl,
+      subscription.secret,
+      subscription.event,
+      testPayload,
+    );
+
+    logger.info(`Webhook test delivery to ${subscription.targetUrl}: ${result.success ? 'OK' : 'FAILED'}`, {
+      subscriptionId: subscription.id,
+      ...result,
+    });
+
+    res.json({
+      success: result.success,
+      statusCode: result.statusCode,
+      error: result.error,
+      payload: testPayload,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+export default router;

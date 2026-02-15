@@ -2,6 +2,8 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { broadcastSignalCreated } from './websocket';
 import { resolveSignalIdentity } from './identity-resolution';
+import { fireSignalCreated } from './webhook-events';
+import { logger } from '../utils/logger';
 
 export interface SignalInput {
   sourceId: string;
@@ -54,6 +56,10 @@ export const ingestSignal = async (organizationId: string, data: SignalInput) =>
   });
 
   broadcastSignalCreated(organizationId, signal);
+
+  // Fire webhook event to Zapier/Make subscribers (fire-and-forget)
+  fireSignalCreated(organizationId, signal as unknown as Record<string, unknown>)
+    .catch((err) => logger.error('Webhook fire error (signal.created):', err));
 
   return signal;
 };

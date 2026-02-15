@@ -4,6 +4,7 @@ import { enqueueWorkflowExecution } from '../jobs/producers';
 import { notifyOrgUsers } from '../services/notifications';
 import { sendDealAlert } from '../services/slack-notifications';
 import { logAudit } from '../services/audit';
+import { fireDealCreated, fireDealStageChanged } from '../services/webhook-events';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
 
@@ -70,6 +71,10 @@ export const createDeal = async (req: Request, res: Response, next: NextFunction
       excludeUserId: req.user?.id,
     }).catch((err) => logger.error('Notification error:', err));
 
+    // Webhook event to Zapier/Make subscribers (fire-and-forget)
+    fireDealCreated(organizationId, deal as unknown as Record<string, unknown>)
+      .catch((err) => logger.error('Webhook fire error (deal.created):', err));
+
     res.status(201).json(deal);
   } catch (error) {
     next(error);
@@ -128,6 +133,10 @@ export const updateDeal = async (req: Request, res: Response, next: NextFunction
       // Rich Slack deal stage alert (fire-and-forget)
       sendDealAlert(organizationId, deal.id, oldStage, deal.stage)
         .catch((err) => logger.error('Slack deal alert failed', { err }));
+
+      // Webhook event to Zapier/Make subscribers (fire-and-forget)
+      fireDealStageChanged(organizationId, deal as unknown as Record<string, unknown>, oldStage)
+        .catch((err) => logger.error('Webhook fire error (deal.stage_changed):', err));
     }
 
     res.json(deal);

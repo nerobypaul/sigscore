@@ -4,6 +4,7 @@ import { enqueueWorkflowExecution } from '../jobs/producers';
 import { notifyOrgUsers } from '../services/notifications';
 import { sendSignupAlert } from '../services/slack-notifications';
 import { logAudit } from '../services/audit';
+import { fireContactCreated, fireContactUpdated } from '../services/webhook-events';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
 
@@ -82,6 +83,10 @@ export const createContact = async (req: Request, res: Response, next: NextFunct
     sendSignupAlert(organizationId, contact.id)
       .catch((err) => logger.error('Slack signup alert failed', { err }));
 
+    // Webhook event to Zapier/Make subscribers (fire-and-forget)
+    fireContactCreated(organizationId, contact as unknown as Record<string, unknown>)
+      .catch((err) => logger.error('Webhook fire error (contact.created):', err));
+
     res.status(201).json(contact);
   } catch (error) {
     next(error);
@@ -105,6 +110,10 @@ export const updateContact = async (req: Request, res: Response, next: NextFunct
       entityId: contact.id,
       entityName: `${contact.firstName} ${contact.lastName}`,
     }).catch(() => {});
+
+    // Webhook event to Zapier/Make subscribers (fire-and-forget)
+    fireContactUpdated(organizationId, contact as unknown as Record<string, unknown>)
+      .catch((err) => logger.error('Webhook fire error (contact.updated):', err));
 
     res.json(contact);
   } catch (error) {

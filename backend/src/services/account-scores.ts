@@ -4,6 +4,7 @@ import { logger } from '../utils/logger';
 import { notifyTierChange, sendAccountAlert } from './slack-notifications';
 import { enqueueWorkflowExecution } from '../jobs/producers';
 import { getScoringConfig, computeTierWithThresholds, type TierThresholds } from './scoring-rules';
+import { fireScoreChanged } from './webhook-events';
 
 interface ScoreFactor {
   name: string;
@@ -206,6 +207,19 @@ export const computeAccountScore = async (organizationId: string, accountId: str
       account: { select: { id: true, name: true, domain: true } },
     },
   });
+
+  // Fire webhook event if score changed (fire-and-forget)
+  const oldScore = existingScore?.score ?? null;
+  if (oldScore === null || oldScore !== totalScore) {
+    fireScoreChanged(
+      organizationId,
+      accountId,
+      oldScore,
+      totalScore,
+      existingScore?.tier ?? null,
+      tier,
+    ).catch((err) => logger.error('Webhook fire error (score.changed):', err));
+  }
 
   // Notify Slack on tier change (fire-and-forget)
   const oldTier = existingScore?.tier;

@@ -77,6 +77,7 @@ model Organization {
   emailSequences     EmailSequence[]
   dashboards         Dashboard[]
   ssoConnections     SsoConnection[]
+  webhookSubscriptions WebhookSubscription[]
 
   @@index([slug])
   @@map("organizations")
@@ -418,6 +419,8 @@ enum SignalSourceType {
   DISCORD
   TWITTER
   STACKOVERFLOW
+  REDDIT
+  POSTHOG
   CUSTOM_WEBHOOK
 }
 
@@ -532,6 +535,7 @@ enum IdentityType {
   DOMAIN
   DISCORD
   STACKOVERFLOW
+  POSTHOG
 }
 
 // ============================================================
@@ -658,6 +662,29 @@ model WebhookDelivery {
 
   @@index([endpointId, createdAt(sort: Desc)])
   @@map("webhook_deliveries")
+}
+
+// ============================================================
+// WEBHOOK SUBSCRIPTIONS — Zapier/Make REST Hook pattern
+// ============================================================
+
+model WebhookSubscription {
+  id              String   @id @default(cuid())
+  organizationId  String
+  targetUrl       String
+  event           String
+  hookId          String?  // Zapier's hook ID for reference
+  secret          String   // HMAC signing secret (auto-generated)
+  active          Boolean  @default(true)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, event])
+  @@index([organizationId, active])
+  @@map("webhook_subscriptions")
 }
 
 // ============================================================

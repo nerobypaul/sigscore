@@ -50,6 +50,7 @@ import discordConnectorRoutes from './routes/discord-connector';
 import stackoverflowConnectorRoutes from './routes/stackoverflow-connector';
 import twitterConnectorRoutes from './routes/twitter-connector';
 import redditConnectorRoutes from './routes/reddit-connector';
+import posthogConnectorRoutes from './routes/posthog-connector';
 import ssoRoutes from './routes/sso';
 import oauthRoutes from './routes/oauth';
 import enrichmentRoutes from './routes/enrichment';
@@ -177,6 +178,7 @@ app.use('/api/v1/connectors/discord', discordConnectorRoutes);
 app.use('/api/v1/connectors/stackoverflow', stackoverflowConnectorRoutes);
 app.use('/api/v1/connectors/twitter', twitterConnectorRoutes);
 app.use('/api/v1/connectors/reddit', redditConnectorRoutes);
+app.use('/api/v1/connectors/posthog', posthogConnectorRoutes);
 
 // API routes — Bulk Operations & CSV Export
 app.use('/api/v1/bulk', bulkRoutes);
