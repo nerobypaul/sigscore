@@ -11,6 +11,9 @@ import {
   hubspotSyncQueue,
   discordSyncQueue,
   salesforceSyncQueue,
+  stackoverflowSyncQueue,
+  twitterSyncQueue,
+  bulkEnrichmentQueue,
   SignalProcessingJobData,
   ScoreComputationJobData,
   WebhookDeliveryJobData,
@@ -21,6 +24,9 @@ import {
   HubSpotSyncJobData,
   DiscordSyncJobData,
   SalesforceSyncJobData,
+  StackOverflowSyncJobData,
+  TwitterSyncJobData,
+  BulkEnrichmentJobData,
 } from './queue';
 
 // ---------------------------------------------------------------------------
@@ -263,5 +269,74 @@ export const enqueueSalesforceSync = async (
     },
   );
   logger.debug('Enqueued Salesforce sync', { jobId: job.id, organizationId, fullSync });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// Stack Overflow Sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue a Stack Overflow sync job for a specific organization.
+ */
+export const enqueueStackOverflowSync = async (
+  organizationId: string,
+  type: 'full' | 'incremental' = 'incremental',
+): Promise<Job<StackOverflowSyncJobData>> => {
+  const job = await stackoverflowSyncQueue.add(
+    'stackoverflow-sync',
+    { organizationId, type },
+    {
+      // Deduplication: only one pending sync per org at a time
+      jobId: `stackoverflow-sync-${organizationId}`,
+    },
+  );
+  logger.debug('Enqueued Stack Overflow sync', { jobId: job.id, organizationId, type });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// Twitter Sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue a Twitter/X sync job for a specific organization.
+ */
+export const enqueueTwitterSync = async (
+  organizationId: string,
+): Promise<Job<TwitterSyncJobData>> => {
+  const job = await twitterSyncQueue.add(
+    'twitter-sync',
+    { organizationId },
+    {
+      // Deduplication: only one pending sync per org at a time
+      jobId: `twitter-sync-${organizationId}`,
+    },
+  );
+  logger.debug('Enqueued Twitter sync', { jobId: job.id, organizationId });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// Bulk Enrichment (Clearbit)
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue a bulk enrichment job for companies or contacts.
+ * Per-org deduplication prevents duplicate bulk runs.
+ */
+export const enqueueBulkEnrichment = async (
+  organizationId: string,
+  type: 'companies' | 'contacts',
+): Promise<Job<BulkEnrichmentJobData>> => {
+  const job = await bulkEnrichmentQueue.add(
+    `bulk-enrich-${type}`,
+    { organizationId, type },
+    {
+      // Deduplication: only one pending bulk enrichment per org + type
+      jobId: `bulk-enrich-${type}-${organizationId}`,
+    },
+  );
+  logger.debug('Enqueued bulk enrichment', { jobId: job.id, organizationId, type });
   return job;
 };

@@ -47,8 +47,11 @@ import playbookRoutes from './routes/playbooks';
 import scoringRoutes from './routes/scoring';
 import identityRoutes from './routes/identity';
 import discordConnectorRoutes from './routes/discord-connector';
+import stackoverflowConnectorRoutes from './routes/stackoverflow-connector';
+import twitterConnectorRoutes from './routes/twitter-connector';
 import ssoRoutes from './routes/sso';
 import oauthRoutes from './routes/oauth';
+import enrichmentRoutes from './routes/enrichment';
 import { sentryErrorHandler } from './utils/sentry';
 
 const app = express();
@@ -166,6 +169,8 @@ app.use('/api/v1/workflows', workflowRoutes);
 // API routes — Connectors
 app.use('/api/v1/connectors', connectorRoutes);
 app.use('/api/v1/connectors/discord', discordConnectorRoutes);
+app.use('/api/v1/connectors/stackoverflow', stackoverflowConnectorRoutes);
+app.use('/api/v1/connectors/twitter', twitterConnectorRoutes);
 
 // API routes — Bulk Operations & CSV Export
 app.use('/api/v1/bulk', bulkRoutes);
@@ -212,6 +217,9 @@ app.use('/api/v1/scoring', scoringRoutes);
 
 // API routes — Identity Resolution
 app.use('/api/v1/identity', identityRoutes);
+
+// API routes — Clearbit Enrichment
+app.use('/api/v1/enrichment', enrichmentRoutes);
 
 // API routes — SSO (SAML / OIDC)
 app.use('/api/v1/sso', ssoRoutes);

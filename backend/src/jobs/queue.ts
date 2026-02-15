@@ -16,6 +16,9 @@ export const QUEUE_NAMES = {
   HUBSPOT_SYNC: 'hubspot-sync',
   DISCORD_SYNC: 'discord-sync',
   SALESFORCE_SYNC: 'salesforce-sync',
+  STACKOVERFLOW_SYNC: 'stackoverflow-sync',
+  TWITTER_SYNC: 'twitter-sync',
+  ENRICHMENT_BULK: 'enrichment-bulk',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -82,6 +85,20 @@ export interface DiscordSyncJobData {
 export interface SalesforceSyncJobData {
   organizationId: string;
   fullSync?: boolean;
+}
+
+export interface StackOverflowSyncJobData {
+  organizationId: string;
+  type: 'full' | 'incremental';
+}
+
+export interface TwitterSyncJobData {
+  organizationId: string;
+}
+
+export interface BulkEnrichmentJobData {
+  organizationId: string;
+  type: 'companies' | 'contacts';
 }
 
 // ---------------------------------------------------------------------------
@@ -196,6 +213,42 @@ export const salesforceSyncQueue = new Queue<SalesforceSyncJobData>(
   },
 );
 
+export const stackoverflowSyncQueue = new Queue<StackOverflowSyncJobData>(
+  QUEUE_NAMES.STACKOVERFLOW_SYNC,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 5_000 },
+    },
+  },
+);
+
+export const twitterSyncQueue = new Queue<TwitterSyncJobData>(
+  QUEUE_NAMES.TWITTER_SYNC,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 10_000 },
+    },
+  },
+);
+
+export const bulkEnrichmentQueue = new Queue<BulkEnrichmentJobData>(
+  QUEUE_NAMES.ENRICHMENT_BULK,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 2,
+      backoff: { type: 'exponential' as const, delay: 5_000 },
+    },
+  },
+);
+
 // ---------------------------------------------------------------------------
 // Convenience: all queues in a single array
 // ---------------------------------------------------------------------------
@@ -210,6 +263,9 @@ const allQueues: Queue[] = [
   hubspotSyncQueue,
   discordSyncQueue,
   salesforceSyncQueue,
+  stackoverflowSyncQueue,
+  twitterSyncQueue,
+  bulkEnrichmentQueue,
 ];
 
 /**

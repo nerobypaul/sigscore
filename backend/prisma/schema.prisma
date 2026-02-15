@@ -416,6 +416,7 @@ enum SignalSourceType {
   PRODUCT_API
   SEGMENT
   DISCORD
+  TWITTER
   CUSTOM_WEBHOOK
 }
 

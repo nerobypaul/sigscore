@@ -10,7 +10,10 @@ import { processEvent } from '../services/workflows';
 import { runSync } from '../services/hubspot-sync';
 import { runSync as runSalesforceSync } from '../services/salesforce-sync';
 import { syncDiscordServer } from '../services/discord-connector';
-import { enqueueHubSpotSyncForAllConnected, enqueueDiscordSyncForAllConnected, enqueueSalesforceSyncForAllConnected } from './scheduler';
+import { syncStackOverflow } from '../services/stackoverflow-connector';
+import { syncTwitterMentions } from '../services/twitter-connector';
+import { bulkEnrichCompanies, bulkEnrichContacts } from '../services/clearbit-enrichment';
+import { enqueueHubSpotSyncForAllConnected, enqueueDiscordSyncForAllConnected, enqueueSalesforceSyncForAllConnected, enqueueStackOverflowSyncForAllConnected, enqueueTwitterSyncForAllConnected, enqueueClearbitEnrichmentForAllConnected } from './scheduler';
 import {
   QUEUE_NAMES,
   SignalProcessingJobData,
@@ -23,6 +26,9 @@ import {
   HubSpotSyncJobData,
   DiscordSyncJobData,
   SalesforceSyncJobData,
+  StackOverflowSyncJobData,
+  TwitterSyncJobData,
+  BulkEnrichmentJobData,
 } from './queue';
 import { processEmailStep } from '../services/email-sequences';
 
@@ -334,6 +340,135 @@ function createSalesforceSyncWorker(): Worker<SalesforceSyncJobData> {
 }
 
 // ---------------------------------------------------------------------------
+// Stack Overflow Sync Worker
+// ---------------------------------------------------------------------------
+function createStackOverflowSyncWorker(): Worker<StackOverflowSyncJobData> {
+  return new Worker<StackOverflowSyncJobData>(
+    QUEUE_NAMES.STACKOVERFLOW_SYNC,
+    async (job: Job<StackOverflowSyncJobData>) => {
+      const { organizationId } = job.data;
+
+      // Handle scheduler sentinel: enqueue individual jobs for connected orgs
+      if (organizationId === '__scheduler__') {
+        logger.info('Stack Overflow sync scheduler triggered', { jobId: job.id });
+        await enqueueStackOverflowSyncForAllConnected();
+        return { scheduled: true };
+      }
+
+      logger.info('Stack Overflow sync started', {
+        jobId: job.id,
+        organizationId,
+        attempt: job.attemptsMade + 1,
+      });
+
+      const result = await syncStackOverflow(organizationId);
+
+      logger.info('Stack Overflow sync completed', {
+        jobId: job.id,
+        organizationId,
+        questionsProcessed: result.questionsProcessed,
+        answersProcessed: result.answersProcessed,
+        signalsCreated: result.signalsCreated,
+        contactsResolved: result.contactsResolved,
+        errors: result.errors.length,
+      });
+      return result;
+    },
+    {
+      connection: bullConnection,
+      concurrency: 2,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Twitter Sync Worker
+// ---------------------------------------------------------------------------
+function createTwitterSyncWorker(): Worker<TwitterSyncJobData> {
+  return new Worker<TwitterSyncJobData>(
+    QUEUE_NAMES.TWITTER_SYNC,
+    async (job: Job<TwitterSyncJobData>) => {
+      const { organizationId } = job.data;
+
+      // Handle scheduler sentinel: enqueue individual jobs for connected orgs
+      if (organizationId === '__scheduler__') {
+        logger.info('Twitter sync scheduler triggered', { jobId: job.id });
+        await enqueueTwitterSyncForAllConnected();
+        return { scheduled: true };
+      }
+
+      logger.info('Twitter sync started', {
+        jobId: job.id,
+        organizationId,
+        attempt: job.attemptsMade + 1,
+      });
+
+      const result = await syncTwitterMentions(organizationId);
+
+      logger.info('Twitter sync completed', {
+        jobId: job.id,
+        organizationId,
+        tweetsProcessed: result.tweetsProcessed,
+        signalsCreated: result.signalsCreated,
+        contactsResolved: result.contactsResolved,
+        sentiment: result.sentimentBreakdown,
+        errors: result.errors.length,
+      });
+      return result;
+    },
+    {
+      connection: bullConnection,
+      concurrency: 2,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Bulk Enrichment Worker (Clearbit)
+// ---------------------------------------------------------------------------
+function createBulkEnrichmentWorker(): Worker<BulkEnrichmentJobData> {
+  return new Worker<BulkEnrichmentJobData>(
+    QUEUE_NAMES.ENRICHMENT_BULK,
+    async (job: Job<BulkEnrichmentJobData>) => {
+      const { organizationId, type } = job.data;
+
+      // Handle scheduler sentinel: enqueue individual jobs for connected orgs
+      if (organizationId === '__scheduler__') {
+        logger.info('Clearbit enrichment scheduler triggered', { jobId: job.id });
+        await enqueueClearbitEnrichmentForAllConnected();
+        return { scheduled: true };
+      }
+
+      logger.info('Bulk enrichment started', {
+        jobId: job.id,
+        organizationId,
+        type,
+        attempt: job.attemptsMade + 1,
+      });
+
+      const result = type === 'companies'
+        ? await bulkEnrichCompanies(organizationId)
+        : await bulkEnrichContacts(organizationId);
+
+      logger.info('Bulk enrichment completed', {
+        jobId: job.id,
+        organizationId,
+        type,
+        total: result.total,
+        enriched: result.enriched,
+        skipped: result.skipped,
+        failed: result.failed,
+      });
+      return result;
+    },
+    {
+      connection: bullConnection,
+      concurrency: 1, // Only one bulk enrichment at a time to respect rate limits
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Email Send Worker
 // ---------------------------------------------------------------------------
 function createEmailSendWorker(): Worker<EmailSendJobData> {
@@ -397,8 +532,11 @@ export const startWorkers = (): void => {
   const hubspotSyncWorker = createHubSpotSyncWorker();
   const discordSyncWorker = createDiscordSyncWorker();
   const salesforceSyncWorker = createSalesforceSyncWorker();
+  const stackoverflowSyncWorker = createStackOverflowSyncWorker();
+  const twitterSyncWorker = createTwitterSyncWorker();
+  const bulkEnrichmentWorker = createBulkEnrichmentWorker();
 
-  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker].forEach((w) => {
+  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, bulkEnrichmentWorker].forEach((w) => {
     attachLogging(w);
     workers.push(w);
   });

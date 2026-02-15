@@ -115,7 +115,40 @@ interface DiscordChannel {
   isBotChannel: boolean;
 }
 
-type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord';
+interface StackOverflowStatus {
+  connected: boolean;
+  trackedTags: string[];
+  hasApiKey: boolean;
+  lastSyncAt: string | null;
+  lastSyncResult: {
+    questionsProcessed: number;
+    answersProcessed: number;
+    signalsCreated: number;
+    contactsResolved: number;
+    errors: string[];
+  } | null;
+  sourceId: string | null;
+}
+
+interface TwitterStatus {
+  connected: boolean;
+  keywords: string[];
+  lastSyncAt: string | null;
+  lastSyncResult: {
+    tweetsProcessed: number;
+    signalsCreated: number;
+    contactsResolved: number;
+    sentimentBreakdown: {
+      positive: number;
+      negative: number;
+      neutral: number;
+    };
+    errors: string[];
+  } | null;
+  sourceId: string | null;
+}
+
+type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord' | 'stackoverflow' | 'twitter' | 'clearbit';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'api-keys', label: 'API Keys' },
@@ -126,6 +159,9 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'hubspot', label: 'HubSpot' },
   { id: 'salesforce', label: 'Salesforce' },
   { id: 'discord', label: 'Discord' },
+  { id: 'stackoverflow', label: 'Stack Overflow' },
+  { id: 'twitter', label: 'Twitter / X' },
+  { id: 'clearbit', label: 'Clearbit' },
 ];
 
 const ALL_SCOPES = [
@@ -3192,6 +3228,675 @@ function DiscordTab() {
 }
 
 // ---------------------------------------------------------------------------
+// Tab: Twitter / X
+// ---------------------------------------------------------------------------
+
+function TwitterTab() {
+  const toast = useToast();
+  const [status, setStatus] = useState<TwitterStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [bearerToken, setBearerToken] = useState('');
+  const [keywordsInput, setKeywordsInput] = useState('');
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get('/connectors/twitter/status');
+      setStatus(data);
+    } catch {
+      setStatus({
+        connected: false,
+        keywords: [],
+        lastSyncAt: null,
+        lastSyncResult: null,
+        sourceId: null,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStatus();
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
+    };
+  }, [fetchStatus]);
+
+  async function handleConnect() {
+    if (!bearerToken.trim()) {
+      toast.error('Please enter a Twitter Bearer token.');
+      return;
+    }
+    const keywords = keywordsInput
+      .split(',')
+      .map((k) => k.trim())
+      .filter(Boolean);
+    if (keywords.length === 0) {
+      toast.error('Please enter at least one keyword to track.');
+      return;
+    }
+
+    setConnecting(true);
+    try {
+      await api.post('/connectors/twitter/connect', {
+        bearerToken: bearerToken.trim(),
+        keywords,
+      });
+      setBearerToken('');
+      toast.success('Twitter/X connected successfully.');
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      await api.post('/connectors/twitter/sync');
+      toast.success('Twitter sync queued.');
+      if (!pollRef.current) {
+        pollRef.current = setInterval(async () => {
+          await fetchStatus();
+        }, 5000);
+        setTimeout(() => {
+          if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+        }, 120_000);
+      }
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    if (!window.confirm('Disconnect Twitter/X? Signal data will remain, but syncing will stop.')) {
+      return;
+    }
+
+    setDisconnecting(true);
+    try {
+      await api.delete('/connectors/twitter/disconnect');
+      toast.success('Twitter/X disconnected.');
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  // Not connected state
+  if (!status?.connected) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
+              <TwitterIcon />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                Connect Twitter / X
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Monitor tweets mentioning your product. Track sentiment, questions,
+                praise, and complaints from the developer community in real time.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bearer Token
+                  </label>
+                  <input
+                    type="password"
+                    value={bearerToken}
+                    onChange={(e) => setBearerToken(e.target.value)}
+                    placeholder="Enter your Twitter API v2 Bearer token"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Get your Bearer token from the{' '}
+                    <a
+                      href="https://developer.twitter.com/en/portal/dashboard"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-indigo-600 hover:text-indigo-700"
+                    >
+                      Twitter Developer Portal
+                    </a>
+                    . Requires at least Basic tier API access.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Keywords to Track
+                  </label>
+                  <input
+                    type="text"
+                    value={keywordsInput}
+                    onChange={(e) => setKeywordsInput(e.target.value)}
+                    placeholder="@vercel, vercel, nextjs, next.js"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Comma-separated terms. Include your product name, @handle, and
+                    related keywords.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleConnect}
+                  disabled={connecting || !bearerToken.trim() || !keywordsInput.trim()}
+                  className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {connecting ? 'Connecting...' : 'Connect Twitter/X'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Setup instructions */}
+        <div className="rounded-lg bg-gray-50 border border-gray-100 p-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">
+            Setup instructions
+          </h4>
+          <ol className="text-xs text-gray-500 space-y-1 list-decimal list-inside">
+            <li>Go to the Twitter Developer Portal and create a project + app</li>
+            <li>Subscribe to at least the Basic tier ($100/mo) for search access</li>
+            <li>Generate a Bearer Token under &quot;Keys and Tokens&quot;</li>
+            <li>Paste the Bearer token above and add keywords to track</li>
+            <li>DevSignal will check for new mentions every 30 minutes</li>
+          </ol>
+        </div>
+      </div>
+    );
+  }
+
+  // Connected state
+  const sr = status.lastSyncResult;
+  const totalSentiment = sr
+    ? sr.sentimentBreakdown.positive + sr.sentimentBreakdown.negative + sr.sentimentBreakdown.neutral
+    : 0;
+
+  return (
+    <div className="space-y-6">
+      {/* Connection info */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
+            <TwitterIcon />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Twitter / X
+              </h3>
+              <Badge color="green">Connected</Badge>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {status.keywords.map((kw) => (
+                <Badge key={kw} color="blue">{kw}</Badge>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Sync status + sentiment */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <h4 className="text-sm font-medium text-gray-900 mb-3">Sync Status</h4>
+
+        {sr && (
+          <>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">Tweets Processed</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {sr.tweetsProcessed}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">Signals Created</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {sr.signalsCreated}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">Contacts Resolved</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {sr.contactsResolved}
+                </p>
+              </div>
+            </div>
+
+            {/* Sentiment breakdown */}
+            {totalSentiment > 0 && (
+              <div className="mb-4">
+                <p className="text-xs font-medium text-gray-700 mb-2">Sentiment Breakdown</p>
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                    <span className="text-xs text-gray-600">
+                      Positive: {sr.sentimentBreakdown.positive}
+                    </span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                    <span className="text-xs text-gray-600">
+                      Negative: {sr.sentimentBreakdown.negative}
+                    </span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-gray-400" />
+                    <span className="text-xs text-gray-600">
+                      Neutral: {sr.sentimentBreakdown.neutral}
+                    </span>
+                  </span>
+                </div>
+                {/* Sentiment bar */}
+                <div className="flex h-2 rounded-full overflow-hidden mt-2 bg-gray-100">
+                  {sr.sentimentBreakdown.positive > 0 && (
+                    <div
+                      className="bg-green-500"
+                      style={{ width: `${(sr.sentimentBreakdown.positive / totalSentiment) * 100}%` }}
+                    />
+                  )}
+                  {sr.sentimentBreakdown.neutral > 0 && (
+                    <div
+                      className="bg-gray-400"
+                      style={{ width: `${(sr.sentimentBreakdown.neutral / totalSentiment) * 100}%` }}
+                    />
+                  )}
+                  {sr.sentimentBreakdown.negative > 0 && (
+                    <div
+                      className="bg-red-500"
+                      style={{ width: `${(sr.sentimentBreakdown.negative / totalSentiment) * 100}%` }}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {sr.errors && sr.errors.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-xs font-medium text-red-700 mb-1">Sync Errors</p>
+                <ul className="text-xs text-red-600 space-y-0.5">
+                  {sr.errors.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+
+        <p className="text-xs text-gray-400 mb-4">
+          Last synced: {formatDateTime(status.lastSyncAt)}
+        </p>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {syncing ? 'Syncing...' : 'Sync Now'}
+          </button>
+          <button
+            onClick={handleDisconnect}
+            disabled={disconnecting}
+            className="px-4 py-2 text-red-600 text-sm font-medium hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ml-auto"
+          >
+            {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+          </button>
+        </div>
+
+        {/* Info */}
+        <div className="rounded-lg bg-gray-50 border border-gray-100 p-4 mt-4">
+          <p className="text-xs text-gray-500">
+            Automatic sync runs every 30 minutes. DevSignal searches for tweets
+            mentioning your keywords, classifies sentiment (positive/negative/neutral),
+            and creates signals for each mention. Signal types include: mentions,
+            questions, complaints, and praise.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Clearbit Enrichment Tab
+// ---------------------------------------------------------------------------
+
+interface ClearbitStatus {
+  connected: boolean;
+  connectedAt: string | null;
+  lastEnrichmentAt: string | null;
+  companies: {
+    total: number;
+    enriched: number;
+    unenriched: number;
+    coveragePercent: number;
+  };
+  contacts: {
+    total: number;
+    enriched: number;
+    unenriched: number;
+    coveragePercent: number;
+  };
+}
+
+function ClearbitTab() {
+  const toast = useToast();
+  const [status, setStatus] = useState<ClearbitStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [enrichingCompanies, setEnrichingCompanies] = useState(false);
+  const [enrichingContacts, setEnrichingContacts] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get('/enrichment/status');
+      setStatus(data);
+    } catch {
+      setStatus({
+        connected: false,
+        connectedAt: null,
+        lastEnrichmentAt: null,
+        companies: { total: 0, enriched: 0, unenriched: 0, coveragePercent: 0 },
+        contacts: { total: 0, enriched: 0, unenriched: 0, coveragePercent: 0 },
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  async function handleConnect() {
+    if (!apiKey.trim()) {
+      toast.error('Please enter your Clearbit API key.');
+      return;
+    }
+    setConnecting(true);
+    try {
+      await api.post('/enrichment/connect', { apiKey: apiKey.trim() });
+      setApiKey('');
+      await fetchStatus();
+      toast.success('Clearbit connected successfully.');
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function handleBulkEnrichCompanies() {
+    setEnrichingCompanies(true);
+    try {
+      await api.post('/enrichment/bulk/companies');
+      toast.success('Bulk company enrichment queued. This may take a few minutes.');
+      setTimeout(fetchStatus, 3000);
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setEnrichingCompanies(false);
+    }
+  }
+
+  async function handleBulkEnrichContacts() {
+    setEnrichingContacts(true);
+    try {
+      await api.post('/enrichment/bulk/contacts');
+      toast.success('Bulk contact enrichment queued. This may take a few minutes.');
+      setTimeout(fetchStatus, 3000);
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setEnrichingContacts(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    if (!window.confirm('Disconnect Clearbit? Existing enrichment data will remain.')) {
+      return;
+    }
+    setDisconnecting(true);
+    try {
+      await api.delete('/enrichment/disconnect');
+      await fetchStatus();
+      toast.success('Clearbit disconnected.');
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!status?.connected) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="px-6 py-5 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">
+                  Connect Clearbit
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Automatically enrich company and contact records with firmographic
+                  data, tech stacks, funding info, and more.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-6 py-5 space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Clearbit API Key
+              </label>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk_..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <p className="mt-1 text-xs text-gray-400">
+                Get your API key at{' '}
+                <a
+                  href="https://dashboard.clearbit.com/api"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline"
+                >
+                  dashboard.clearbit.com
+                </a>
+              </p>
+            </div>
+
+            <button
+              onClick={handleConnect}
+              disabled={connecting || !apiKey.trim()}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {connecting ? 'Connecting...' : 'Connect Clearbit'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="px-6 py-5 border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">
+                  Clearbit Connected
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Connected {status.connectedAt ? formatDate(status.connectedAt) : ''}
+                  {status.lastEnrichmentAt && (
+                    <span> &middot; Last enrichment: {formatDateTime(status.lastEnrichmentAt)}</span>
+                  )}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleDisconnect}
+              disabled={disconnecting}
+              className="px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50"
+            >
+              {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Company Enrichment</h3>
+          <div className="flex items-end justify-between mb-2">
+            <span className="text-2xl font-bold text-gray-900">
+              {status.companies.coveragePercent}%
+            </span>
+            <span className="text-xs text-gray-500">
+              {status.companies.enriched} / {status.companies.total} companies
+            </span>
+          </div>
+          <div className="w-full bg-gray-100 rounded-full h-2 mb-4">
+            <div
+              className="bg-blue-600 rounded-full h-2 transition-all duration-500"
+              style={{ width: `${status.companies.coveragePercent}%` }}
+            />
+          </div>
+          <p className="text-xs text-gray-500 mb-3">
+            {status.companies.unenriched} companies awaiting enrichment
+          </p>
+          <button
+            onClick={handleBulkEnrichCompanies}
+            disabled={enrichingCompanies || status.companies.unenriched === 0}
+            className="w-full px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {enrichingCompanies ? 'Queuing...' : 'Enrich All Companies'}
+          </button>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Contact Enrichment</h3>
+          <div className="flex items-end justify-between mb-2">
+            <span className="text-2xl font-bold text-gray-900">
+              {status.contacts.coveragePercent}%
+            </span>
+            <span className="text-xs text-gray-500">
+              {status.contacts.enriched} / {status.contacts.total} contacts
+            </span>
+          </div>
+          <div className="w-full bg-gray-100 rounded-full h-2 mb-4">
+            <div
+              className="bg-indigo-600 rounded-full h-2 transition-all duration-500"
+              style={{ width: `${status.contacts.coveragePercent}%` }}
+            />
+          </div>
+          <p className="text-xs text-gray-500 mb-3">
+            {status.contacts.unenriched} contacts awaiting enrichment
+          </p>
+          <button
+            onClick={handleBulkEnrichContacts}
+            disabled={enrichingContacts || status.contacts.unenriched === 0}
+            className="w-full px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {enrichingContacts ? 'Queuing...' : 'Enrich All Contacts'}
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+        <h4 className="text-sm font-medium text-blue-900 mb-1">What gets enriched?</h4>
+        <div className="grid grid-cols-2 gap-4 text-xs text-blue-800">
+          <div>
+            <p className="font-medium mb-1">Companies:</p>
+            <ul className="space-y-0.5 list-disc list-inside">
+              <li>Industry, sector, sub-industry</li>
+              <li>Employee count & company size</li>
+              <li>Annual revenue & total funding</li>
+              <li>Tech stack (valuable for devtools!)</li>
+              <li>Location, social handles</li>
+              <li>Founded year, logo</li>
+            </ul>
+          </div>
+          <div>
+            <p className="font-medium mb-1">Contacts:</p>
+            <ul className="space-y-0.5 list-disc list-inside">
+              <li>Name, title, avatar</li>
+              <li>Seniority & role</li>
+              <li>Company association</li>
+              <li>Location</li>
+              <li>Twitter & LinkedIn handles</li>
+            </ul>
+          </div>
+        </div>
+        <p className="text-xs text-blue-700 mt-2">
+          New companies are automatically enriched daily at 3 AM.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Settings page
 // ---------------------------------------------------------------------------
 
@@ -3270,6 +3975,21 @@ export default function Settings() {
       {loadedTabsRef.current.has('discord') && (
         <div className={activeTab === 'discord' ? '' : 'hidden'}>
           <DiscordTab />
+        </div>
+      )}
+      {loadedTabsRef.current.has('stackoverflow') && (
+        <div className={activeTab === 'stackoverflow' ? '' : 'hidden'}>
+          <StackOverflowTab />
+        </div>
+      )}
+      {loadedTabsRef.current.has('clearbit') && (
+        <div className={activeTab === 'clearbit' ? '' : 'hidden'}>
+          <ClearbitTab />
+        </div>
+      )}
+      {loadedTabsRef.current.has('twitter') && (
+        <div className={activeTab === 'twitter' ? '' : 'hidden'}>
+          <TwitterTab />
         </div>
       )}
     </div>
@@ -3366,6 +4086,21 @@ function DiscordIcon() {
       <path
         d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"
         fill="#5865F2"
+      />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Twitter / X icon (inline SVG)
+// ---------------------------------------------------------------------------
+
+function TwitterIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+        fill="#FFFFFF"
       />
     </svg>
   );
