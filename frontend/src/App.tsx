@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth';
 import { ToastProvider } from './components/Toast';
@@ -5,41 +6,51 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Spinner from './components/Spinner';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Onboarding from './pages/Onboarding';
-import Dashboard from './pages/Dashboard';
-import Contacts from './pages/Contacts';
-import ContactDetail from './pages/ContactDetail';
-import Companies from './pages/Companies';
-import CompanyDetail from './pages/CompanyDetail';
-import Deals from './pages/Deals';
-import Activities from './pages/Activities';
-import Signals from './pages/Signals';
-import PQADashboard from './pages/PQADashboard';
-import Settings from './pages/Settings';
-import Billing from './pages/Billing';
-import Workflows from './pages/Workflows';
-import DealDetail from './pages/DealDetail';
-import Landing from './pages/Landing';
-import UseCases from './pages/UseCases';
-import Pricing from './pages/Pricing';
-import ApiDocs from './pages/ApiDocs';
-import TeamMembers from './pages/TeamMembers';
-import AuditLog from './pages/AuditLog';
-import EmailSequences from './pages/EmailSequences';
-import EmailSequenceDetail from './pages/EmailSequenceDetail';
-import DashboardBuilder from './pages/DashboardBuilder';
-import CrmImport from './pages/CrmImport';
-import Playbooks from './pages/Playbooks';
-import ScoringBuilder from './pages/ScoringBuilder';
-import Analytics from './pages/Analytics';
-import DevPortal from './pages/DevPortal';
-import SsoSettings from './pages/SsoSettings';
-import SsoCallback from './pages/SsoCallback';
-import OAuthCallback from './pages/OAuthCallback';
-import WebhookManager from './pages/WebhookManager';
-import NotFound from './pages/NotFound';
+
+// Lazy-loaded pages — each becomes its own chunk for faster initial load
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Contacts = lazy(() => import('./pages/Contacts'));
+const ContactDetail = lazy(() => import('./pages/ContactDetail'));
+const Companies = lazy(() => import('./pages/Companies'));
+const CompanyDetail = lazy(() => import('./pages/CompanyDetail'));
+const Deals = lazy(() => import('./pages/Deals'));
+const Activities = lazy(() => import('./pages/Activities'));
+const Signals = lazy(() => import('./pages/Signals'));
+const PQADashboard = lazy(() => import('./pages/PQADashboard'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Billing = lazy(() => import('./pages/Billing'));
+const Workflows = lazy(() => import('./pages/Workflows'));
+const DealDetail = lazy(() => import('./pages/DealDetail'));
+const Landing = lazy(() => import('./pages/Landing'));
+const UseCases = lazy(() => import('./pages/UseCases'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const ApiDocs = lazy(() => import('./pages/ApiDocs'));
+const TeamMembers = lazy(() => import('./pages/TeamMembers'));
+const AuditLog = lazy(() => import('./pages/AuditLog'));
+const EmailSequences = lazy(() => import('./pages/EmailSequences'));
+const EmailSequenceDetail = lazy(() => import('./pages/EmailSequenceDetail'));
+const DashboardBuilder = lazy(() => import('./pages/DashboardBuilder'));
+const CrmImport = lazy(() => import('./pages/CrmImport'));
+const Playbooks = lazy(() => import('./pages/Playbooks'));
+const ScoringBuilder = lazy(() => import('./pages/ScoringBuilder'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const DevPortal = lazy(() => import('./pages/DevPortal'));
+const SsoSettings = lazy(() => import('./pages/SsoSettings'));
+const SsoCallback = lazy(() => import('./pages/SsoCallback'));
+const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
+const WebhookManager = lazy(() => import('./pages/WebhookManager'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+
+function PageLoader() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <Spinner size="lg" />
+    </div>
+  );
+}
 
 /**
  * Wrapper that redirects authenticated users with no organization to /onboarding.
@@ -68,73 +79,75 @@ function AppRoutes() {
   }
 
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/landing" element={<Landing />} />
-      <Route path="/use-cases" element={<UseCases />} />
-      <Route path="/pricing" element={<Pricing />} />
-      <Route path="/docs" element={<ApiDocs />} />
-      <Route path="/developers" element={<DevPortal />} />
-      <Route path="/sso/callback" element={<SsoCallback />} />
-      <Route path="/oauth/callback" element={<OAuthCallback />} />
-      <Route
-        path="/login"
-        element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
-      />
-      <Route
-        path="/register"
-        element={isAuthenticated ? <Navigate to="/" replace /> : <Register />}
-      />
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/landing" element={<Landing />} />
+        <Route path="/use-cases" element={<UseCases />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/docs" element={<ApiDocs />} />
+        <Route path="/developers" element={<DevPortal />} />
+        <Route path="/sso/callback" element={<SsoCallback />} />
+        <Route path="/oauth/callback" element={<OAuthCallback />} />
+        <Route
+          path="/login"
+          element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
+        />
+        <Route
+          path="/register"
+          element={isAuthenticated ? <Navigate to="/" replace /> : <Register />}
+        />
 
-      {/* Onboarding: must be logged in, shown when user has no org */}
-      <Route
-        path="/onboarding"
-        element={
-          <ProtectedRoute>
-            <Onboarding />
-          </ProtectedRoute>
-        }
-      />
+        {/* Onboarding: must be logged in, shown when user has no org */}
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <Onboarding />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Protected routes (require org) */}
-      <Route
-        element={
-          <ProtectedRoute>
-            <RequireOrg>
-              <Layout />
-            </RequireOrg>
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/contacts" element={<Contacts />} />
-        <Route path="/contacts/:id" element={<ContactDetail />} />
-        <Route path="/companies" element={<Companies />} />
-        <Route path="/companies/:id" element={<CompanyDetail />} />
-        <Route path="/deals" element={<Deals />} />
-        <Route path="/deals/:id" element={<DealDetail />} />
-        <Route path="/activities" element={<Activities />} />
-        <Route path="/signals" element={<Signals />} />
-        <Route path="/scores" element={<PQADashboard />} />
-        <Route path="/scoring" element={<ScoringBuilder />} />
-        <Route path="/workflows" element={<Workflows />} />
-        <Route path="/playbooks" element={<Playbooks />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/billing" element={<Billing />} />
-        <Route path="/team" element={<TeamMembers />} />
-        <Route path="/audit" element={<AuditLog />} />
-        <Route path="/sequences" element={<EmailSequences />} />
-        <Route path="/sequences/:id" element={<EmailSequenceDetail />} />
-        <Route path="/dashboard-builder" element={<DashboardBuilder />} />
-        <Route path="/import/crm" element={<CrmImport />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/webhooks" element={<WebhookManager />} />
-        <Route path="/sso-settings" element={<SsoSettings />} />
-      </Route>
+        {/* Protected routes (require org) */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <RequireOrg>
+                <Layout />
+              </RequireOrg>
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/contacts" element={<Contacts />} />
+          <Route path="/contacts/:id" element={<ContactDetail />} />
+          <Route path="/companies" element={<Companies />} />
+          <Route path="/companies/:id" element={<CompanyDetail />} />
+          <Route path="/deals" element={<Deals />} />
+          <Route path="/deals/:id" element={<DealDetail />} />
+          <Route path="/activities" element={<Activities />} />
+          <Route path="/signals" element={<Signals />} />
+          <Route path="/scores" element={<PQADashboard />} />
+          <Route path="/scoring" element={<ScoringBuilder />} />
+          <Route path="/workflows" element={<Workflows />} />
+          <Route path="/playbooks" element={<Playbooks />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/billing" element={<Billing />} />
+          <Route path="/team" element={<TeamMembers />} />
+          <Route path="/audit" element={<AuditLog />} />
+          <Route path="/sequences" element={<EmailSequences />} />
+          <Route path="/sequences/:id" element={<EmailSequenceDetail />} />
+          <Route path="/dashboard-builder" element={<DashboardBuilder />} />
+          <Route path="/import/crm" element={<CrmImport />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/webhooks" element={<WebhookManager />} />
+          <Route path="/sso-settings" element={<SsoSettings />} />
+        </Route>
 
-      {/* 404 catch-all */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        {/* 404 catch-all */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   );
 }
 
