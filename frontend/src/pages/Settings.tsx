@@ -179,7 +179,7 @@ interface PostHogStatus {
   sourceId: string | null;
 }
 
-type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord' | 'stackoverflow' | 'twitter' | 'reddit' | 'posthog' | 'clearbit';
+type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord' | 'stackoverflow' | 'twitter' | 'reddit' | 'linkedin' | 'posthog' | 'clearbit';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'api-keys', label: 'API Keys' },
@@ -193,6 +193,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'stackoverflow', label: 'Stack Overflow' },
   { id: 'twitter', label: 'Twitter / X' },
   { id: 'reddit', label: 'Reddit' },
+  { id: 'linkedin', label: 'LinkedIn' },
   { id: 'posthog', label: 'PostHog' },
   { id: 'clearbit', label: 'Clearbit' },
 ];
@@ -4030,6 +4031,11 @@ export default function Settings() {
           <RedditTab />
         </div>
       )}
+      {loadedTabsRef.current.has('linkedin') && (
+        <div className={activeTab === 'linkedin' ? '' : 'hidden'}>
+          <LinkedInTab />
+        </div>
+      )}
       {loadedTabsRef.current.has('posthog') && (
         <div className={activeTab === 'posthog' ? '' : 'hidden'}>
           <PostHogTab />
@@ -4898,6 +4904,553 @@ function PostHogIcon() {
       <circle cx="72" cy="64" r="6" fill="#1D4AFF" />
       <rect x="48" y="74" width="32" height="6" rx="3" fill="#1D4AFF" />
     </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// LinkedIn icon (inline SVG)
+// ---------------------------------------------------------------------------
+
+function LinkedInIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+      <rect width="24" height="24" rx="4" fill="#0A66C2" />
+      <path
+        d="M7.5 9.5h2v7h-2v-7zm1-3.2a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4zm3.5 3.2h1.9v1h.03c.27-.5.92-1 1.87-1 2 0 2.37 1.32 2.37 3.03v3.47h-2v-3.07c0-.73-.01-1.67-1.02-1.67-1.02 0-1.18.8-1.18 1.62v3.12H12v-7h2z"
+        fill="#FFF"
+      />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// LinkedIn Status interface
+// ---------------------------------------------------------------------------
+
+interface LinkedInStatus {
+  connected: boolean;
+  companyPageUrl: string | null;
+  trackEmployees: boolean;
+  webhookSecret: string | null;
+  webhookUrl: string | null;
+  lastSyncAt: string | null;
+  lastSyncResult: {
+    employeesImported: number;
+    signalsCreated: number;
+    contactsResolved: number;
+    errors: string[];
+  } | null;
+  sourceId: string | null;
+  signalStats: {
+    total: number;
+    pageViews: number;
+    postEngagements: number;
+    employeeActivity: number;
+    companyFollows: number;
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Tab: LinkedIn
+// ---------------------------------------------------------------------------
+
+function LinkedInTab() {
+  const toast = useToast();
+  const [status, setStatus] = useState<LinkedInStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [companyUrl, setCompanyUrl] = useState('');
+  const [trackEmployees, setTrackEmployees] = useState(false);
+  const [csvInput, setCsvInput] = useState('');
+  const [manualName, setManualName] = useState('');
+  const [manualTitle, setManualTitle] = useState('');
+  const [manualProfileUrl, setManualProfileUrl] = useState('');
+  const [manualEmail, setManualEmail] = useState('');
+  const [manualEmployees, setManualEmployees] = useState<Array<{name: string; title: string; profileUrl: string; email?: string}>>([]);
+  const [webhookCopied, setWebhookCopied] = useState(false);
+  const [secretCopied, setSecretCopied] = useState(false);
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get('/connectors/linkedin/status');
+      setStatus(data);
+    } catch {
+      setStatus({
+        connected: false,
+        companyPageUrl: null,
+        trackEmployees: false,
+        webhookSecret: null,
+        webhookUrl: null,
+        lastSyncAt: null,
+        lastSyncResult: null,
+        sourceId: null,
+        signalStats: { total: 0, pageViews: 0, postEngagements: 0, employeeActivity: 0, companyFollows: 0 },
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  async function handleConnect() {
+    if (!companyUrl.trim()) {
+      toast.error('Please enter a LinkedIn company page URL.');
+      return;
+    }
+    if (!companyUrl.includes('linkedin.com/company/') && !companyUrl.includes('linkedin.com/showcase/')) {
+      toast.error('Please enter a valid LinkedIn company or showcase page URL.');
+      return;
+    }
+    setConnecting(true);
+    try {
+      await api.post('/connectors/linkedin/connect', {
+        companyPageUrl: companyUrl.trim(),
+        trackEmployees,
+      });
+      setCompanyUrl('');
+      toast.success('LinkedIn connected successfully.');
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  function addManualEmployee() {
+    if (!manualName.trim() || !manualTitle.trim() || !manualProfileUrl.trim()) {
+      toast.error('Name, title, and profile URL are required.');
+      return;
+    }
+    setManualEmployees([...manualEmployees, {
+      name: manualName.trim(),
+      title: manualTitle.trim(),
+      profileUrl: manualProfileUrl.trim(),
+      email: manualEmail.trim() || undefined,
+    }]);
+    setManualName('');
+    setManualTitle('');
+    setManualProfileUrl('');
+    setManualEmail('');
+  }
+
+  function removeManualEmployee(index: number) {
+    setManualEmployees(manualEmployees.filter((_, i) => i !== index));
+  }
+
+  function parseCsvEmployees(): Array<{name: string; title: string; profileUrl: string; email?: string}> {
+    const lines = csvInput.trim().split('\n').filter(Boolean);
+    const employees: Array<{name: string; title: string; profileUrl: string; email?: string}> = [];
+    for (const line of lines) {
+      const parts = line.split(',').map(s => s.trim());
+      if (parts.length >= 3) {
+        employees.push({
+          name: parts[0],
+          title: parts[1],
+          profileUrl: parts[2],
+          email: parts[3] || undefined,
+        });
+      }
+    }
+    return employees;
+  }
+
+  async function handleImport() {
+    // Combine CSV and manual entries
+    const csvEmployees = csvInput.trim() ? parseCsvEmployees() : [];
+    const allEmployees = [...csvEmployees, ...manualEmployees];
+
+    if (allEmployees.length === 0) {
+      toast.error('Add at least one employee to import (via CSV or manual entry).');
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const { data } = await api.post('/connectors/linkedin/import', {
+        employees: allEmployees,
+      });
+      toast.success(data.message || `Imported ${allEmployees.length} employees.`);
+      setCsvInput('');
+      setManualEmployees([]);
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    if (!window.confirm('Disconnect LinkedIn? Signal data will remain, but syncing and webhook ingestion will stop.')) {
+      return;
+    }
+    setDisconnecting(true);
+    try {
+      await api.delete('/connectors/linkedin/disconnect');
+      toast.success('LinkedIn disconnected.');
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  function copyToClipboard(text: string, type: 'webhook' | 'secret') {
+    navigator.clipboard.writeText(text);
+    if (type === 'webhook') {
+      setWebhookCopied(true);
+      setTimeout(() => setWebhookCopied(false), 2000);
+    } else {
+      setSecretCopied(true);
+      setTimeout(() => setSecretCopied(false), 2000);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  // Not connected state
+  if (!status?.connected) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+              <LinkedInIcon />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                Connect LinkedIn
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Track LinkedIn company page activity, post engagement, and employee signals.
+                Import contacts from your company page and receive webhook events for real-time tracking.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Company Page URL
+                  </label>
+                  <input
+                    type="text"
+                    value={companyUrl}
+                    onChange={(e) => setCompanyUrl(e.target.value)}
+                    placeholder="https://www.linkedin.com/company/your-company"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Your LinkedIn company or showcase page URL.
+                  </p>
+                </div>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={trackEmployees}
+                    onChange={(e) => setTrackEmployees(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">
+                    Track employee activity signals
+                  </span>
+                </label>
+
+                <button
+                  onClick={handleConnect}
+                  disabled={connecting}
+                  className="px-4 py-2 bg-[#0A66C2] text-white text-sm font-medium rounded-lg hover:bg-[#004182] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {connecting ? 'Connecting...' : 'Connect LinkedIn'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* How it works */}
+          <div className="mt-6 border-t pt-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">How it works</h4>
+            <ol className="list-decimal list-inside text-xs text-gray-500 space-y-1">
+              <li>Enter your LinkedIn company page URL to connect</li>
+              <li>Manually import employees or contacts who interact with your page</li>
+              <li>Use the webhook URL to receive real-time events from LinkedIn integrations (Zapier, Make, etc.)</li>
+              <li>DevSignal creates signals for page views, post engagement, follows, and employee activity</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Connected state
+  const sr = status.lastSyncResult;
+  const stats = status.signalStats;
+  const fullWebhookUrl = `${window.location.origin}${status.webhookUrl}`;
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        {/* Header */}
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <LinkedInIcon />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-gray-900">LinkedIn Connected</h3>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                Active
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Tracking: <span className="font-medium text-gray-700">{status.companyPageUrl}</span>
+            </p>
+            {status.trackEmployees && (
+              <p className="text-xs text-blue-600 mt-0.5">Employee tracking enabled</p>
+            )}
+          </div>
+        </div>
+
+        {/* Signal Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
+          <div className="bg-gray-50 rounded-lg p-3 text-center">
+            <p className="text-xl font-bold text-gray-900">{stats.total}</p>
+            <p className="text-xs text-gray-500">Total Signals</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-3 text-center">
+            <p className="text-xl font-bold text-blue-600">{stats.pageViews}</p>
+            <p className="text-xs text-gray-500">Page Views</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-3 text-center">
+            <p className="text-xl font-bold text-indigo-600">{stats.postEngagements}</p>
+            <p className="text-xs text-gray-500">Post Engagements</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-3 text-center">
+            <p className="text-xl font-bold text-purple-600">{stats.employeeActivity}</p>
+            <p className="text-xs text-gray-500">Employee Activity</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-3 text-center">
+            <p className="text-xl font-bold text-green-600">{stats.companyFollows}</p>
+            <p className="text-xs text-gray-500">Company Follows</p>
+          </div>
+        </div>
+
+        {/* Last sync info */}
+        {sr && (
+          <>
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4">
+              <p className="text-xs font-medium text-blue-700 mb-1">Last Sync Results</p>
+              <div className="grid grid-cols-3 gap-2 text-xs text-blue-600">
+                <span>Imported: {sr.employeesImported}</span>
+                <span>Signals: {sr.signalsCreated}</span>
+                <span>Resolved: {sr.contactsResolved}</span>
+              </div>
+            </div>
+            {sr.errors && sr.errors.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-xs font-medium text-red-700 mb-1">Sync Errors</p>
+                <ul className="text-xs text-red-600 space-y-0.5">
+                  {sr.errors.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+
+        <p className="text-xs text-gray-400 mb-4">
+          Last synced: {formatDateTime(status.lastSyncAt)}
+        </p>
+
+        {/* Webhook URL section */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">Webhook Endpoint</h4>
+          <p className="text-xs text-gray-500 mb-2">
+            Use this URL to send LinkedIn events from Zapier, Make, or custom integrations.
+          </p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-xs bg-white border border-gray-200 rounded px-2 py-1.5 text-gray-700 truncate">
+                {fullWebhookUrl}
+              </code>
+              <button
+                onClick={() => copyToClipboard(fullWebhookUrl, 'webhook')}
+                className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors flex-shrink-0"
+              >
+                {webhookCopied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            {status.webhookSecret && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 flex-shrink-0">Secret:</span>
+                <code className="flex-1 text-xs bg-white border border-gray-200 rounded px-2 py-1.5 text-gray-700 truncate">
+                  {status.webhookSecret}
+                </code>
+                <button
+                  onClick={() => copyToClipboard(status.webhookSecret!, 'secret')}
+                  className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors flex-shrink-0"
+                >
+                  {secretCopied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+            )}
+            <p className="text-xs text-gray-400">
+              Sign payloads with HMAC-SHA256 using the secret. Send the signature in the <code className="bg-gray-100 px-1 rounded">X-LinkedIn-Signature</code> header.
+            </p>
+          </div>
+        </div>
+
+        {/* Webhook payload example */}
+        <details className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+          <summary className="text-sm font-medium text-gray-700 cursor-pointer">
+            Webhook Payload Format
+          </summary>
+          <pre className="mt-2 text-xs text-gray-600 overflow-x-auto whitespace-pre-wrap">
+{`{
+  "type": "linkedin_page_view | linkedin_post_engagement | linkedin_employee_activity | linkedin_company_follow",
+  "actor": {
+    "name": "Jane Smith",
+    "email": "jane@company.com",
+    "profileUrl": "https://linkedin.com/in/janesmith",
+    "title": "VP Engineering",
+    "company": "Acme Corp"
+  },
+  "metadata": { "postUrl": "...", "engagementType": "like" },
+  "timestamp": "2026-02-15T12:00:00Z"
+}`}
+          </pre>
+        </details>
+
+        {/* Manual Import section */}
+        <div className="border-t pt-4 mb-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Import Employees / Contacts</h4>
+
+          {/* CSV paste area */}
+          <div className="mb-4">
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Paste CSV (name, title, profileUrl, email)
+            </label>
+            <textarea
+              value={csvInput}
+              onChange={(e) => setCsvInput(e.target.value)}
+              placeholder={`Jane Smith, VP Engineering, https://linkedin.com/in/janesmith, jane@company.com\nJohn Doe, CTO, https://linkedin.com/in/johndoe`}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="text-xs text-gray-400 mt-1">One person per line. Email column is optional.</p>
+          </div>
+
+          {/* Manual add form */}
+          <div className="mb-3">
+            <p className="text-xs font-medium text-gray-600 mb-2">Or add one-by-one:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <input
+                type="text"
+                value={manualName}
+                onChange={(e) => setManualName(e.target.value)}
+                placeholder="Full name"
+                className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                value={manualTitle}
+                onChange={(e) => setManualTitle(e.target.value)}
+                placeholder="Title"
+                className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                value={manualProfileUrl}
+                onChange={(e) => setManualProfileUrl(e.target.value)}
+                placeholder="LinkedIn URL"
+                className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <div className="flex gap-1">
+                <input
+                  type="email"
+                  value={manualEmail}
+                  onChange={(e) => setManualEmail(e.target.value)}
+                  placeholder="Email (optional)"
+                  className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <button
+                  onClick={addManualEmployee}
+                  className="px-2 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors flex-shrink-0"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Queued manual employees */}
+          {manualEmployees.length > 0 && (
+            <div className="mb-3">
+              <p className="text-xs text-gray-500 mb-1">
+                Queued for import ({manualEmployees.length}):
+              </p>
+              <div className="space-y-1 max-h-40 overflow-y-auto">
+                {manualEmployees.map((emp, i) => (
+                  <div key={i} className="flex items-center justify-between bg-blue-50 rounded px-2 py-1 text-xs">
+                    <span className="text-gray-700">
+                      {emp.name} - {emp.title} ({emp.profileUrl.substring(0, 40)}...)
+                    </span>
+                    <button
+                      onClick={() => removeManualEmployee(i)}
+                      className="text-red-500 hover:text-red-700 ml-2"
+                    >
+                      x
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={handleImport}
+            disabled={importing || (csvInput.trim() === '' && manualEmployees.length === 0)}
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {importing ? 'Importing...' : 'Import Employees'}
+          </button>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-3 border-t pt-4">
+          <button
+            onClick={handleDisconnect}
+            disabled={disconnecting}
+            className="px-4 py-2 text-red-600 text-sm font-medium hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ml-auto"
+          >
+            {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+          </button>
+        </div>
+
+        {/* Info box */}
+        <div className="rounded-lg bg-gray-50 border border-gray-100 p-4 mt-4">
+          <p className="text-xs text-gray-500">
+            LinkedIn signals are captured via manual import and webhook ingestion.
+            Signal types tracked: page views, post engagement (likes, comments, shares),
+            employee activity, and company follows. Use Zapier or Make to connect
+            LinkedIn&apos;s API to the webhook endpoint for automated signal capture.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 

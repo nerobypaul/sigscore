@@ -1,11 +1,12 @@
 import { logger } from '../utils/logger';
-import { signalSyncQueue, hubspotSyncQueue, discordSyncQueue, salesforceSyncQueue, stackoverflowSyncQueue, twitterSyncQueue, redditSyncQueue, posthogSyncQueue, bulkEnrichmentQueue } from './queue';
+import { signalSyncQueue, hubspotSyncQueue, discordSyncQueue, salesforceSyncQueue, stackoverflowSyncQueue, twitterSyncQueue, redditSyncQueue, linkedinSyncQueue, posthogSyncQueue, bulkEnrichmentQueue } from './queue';
 import { getConnectedOrganizations } from '../services/hubspot-sync';
 import { getConnectedOrganizations as getSalesforceConnectedOrganizations } from '../services/salesforce-sync';
 import { getDiscordConnectedOrganizations } from '../services/discord-connector';
 import { getStackOverflowConnectedOrganizations } from '../services/stackoverflow-connector';
 import { getTwitterConnectedOrganizations } from '../services/twitter-connector';
 import { getRedditConnectedOrganizations } from '../services/reddit-connector';
+import { getLinkedInConnectedOrganizations } from '../services/linkedin-connector';
 import { getPostHogConnectedOrganizations } from '../services/posthog-connector';
 import { getConnectedOrganizations as getClearbitConnectedOrganizations } from '../services/clearbit-enrichment';
 
@@ -101,6 +102,17 @@ export const setupScheduler = async (): Promise<void> => {
     },
   );
 
+  // LinkedIn sync every 6 hours for all connected organizations.
+  // LinkedIn is primarily webhook/import driven; this is a periodic housekeeping sweep.
+  await linkedinSyncQueue.add(
+    'linkedin-sync-scheduler',
+    { organizationId: '__scheduler__' },
+    {
+      repeat: { pattern: '0 */6 * * *' },
+      jobId: 'scheduled-linkedin-sync',
+    },
+  );
+
   // PostHog sync every hour for all connected organizations.
   // Product analytics events are valuable and time-sensitive.
   await posthogSyncQueue.add(
@@ -132,6 +144,7 @@ export const setupScheduler = async (): Promise<void> => {
       { name: 'stackoverflow-sync', schedule: 'every 6 hours' },
       { name: 'twitter-sync', schedule: 'every 30 minutes' },
       { name: 'reddit-sync', schedule: 'every 2 hours' },
+      { name: 'linkedin-sync', schedule: 'every 6 hours' },
       { name: 'posthog-sync', schedule: 'every hour' },
       { name: 'clearbit-enrichment', schedule: 'daily at 3 AM' },
     ],
@@ -242,6 +255,24 @@ export async function enqueueRedditSyncForAllConnected(): Promise<void> {
     );
   }
   logger.info('Scheduled Reddit sync enqueued for connected orgs', {
+    count: orgIds.length,
+  });
+}
+
+/**
+ * Resolve scheduled LinkedIn sync into per-org jobs.
+ * Called by the LinkedIn sync worker when it sees the scheduler sentinel.
+ */
+export async function enqueueLinkedInSyncForAllConnected(): Promise<void> {
+  const orgIds = await getLinkedInConnectedOrganizations();
+  for (const orgId of orgIds) {
+    await linkedinSyncQueue.add(
+      'linkedin-sync',
+      { organizationId: orgId },
+      { jobId: `linkedin-sync-${orgId}-${Date.now()}` },
+    );
+  }
+  logger.info('Scheduled LinkedIn sync enqueued for connected orgs', {
     count: orgIds.length,
   });
 }

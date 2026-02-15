@@ -15,6 +15,7 @@ import {
   twitterSyncQueue,
   redditSyncQueue,
   posthogSyncQueue,
+  linkedinSyncQueue,
   bulkEnrichmentQueue,
   SignalProcessingJobData,
   ScoreComputationJobData,
@@ -30,6 +31,7 @@ import {
   TwitterSyncJobData,
   RedditSyncJobData,
   PostHogSyncJobData,
+  LinkedInSyncJobData,
   BulkEnrichmentJobData,
 } from './queue';
 
@@ -362,6 +364,28 @@ export const enqueuePostHogSync = async (
     },
   );
   logger.debug('Enqueued PostHog sync', { jobId: job.id, organizationId });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// LinkedIn Sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue a LinkedIn sync job for a specific organization.
+ */
+export const enqueueLinkedInSync = async (
+  organizationId: string,
+): Promise<Job<LinkedInSyncJobData>> => {
+  const job = await linkedinSyncQueue.add(
+    'linkedin-sync',
+    { organizationId },
+    {
+      // Deduplication: only one pending sync per org at a time
+      jobId: `linkedin-sync-${organizationId}`,
+    },
+  );
+  logger.debug('Enqueued LinkedIn sync', { jobId: job.id, organizationId });
   return job;
 };
 

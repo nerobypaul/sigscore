@@ -13,9 +13,10 @@ import { syncDiscordServer } from '../services/discord-connector';
 import { syncStackOverflow } from '../services/stackoverflow-connector';
 import { syncTwitterMentions } from '../services/twitter-connector';
 import { syncReddit } from '../services/reddit-connector';
+import { syncLinkedIn } from '../services/linkedin-connector';
 import { syncPostHogEvents } from '../services/posthog-connector';
 import { bulkEnrichCompanies, bulkEnrichContacts } from '../services/clearbit-enrichment';
-import { enqueueHubSpotSyncForAllConnected, enqueueDiscordSyncForAllConnected, enqueueSalesforceSyncForAllConnected, enqueueStackOverflowSyncForAllConnected, enqueueTwitterSyncForAllConnected, enqueueRedditSyncForAllConnected, enqueuePostHogSyncForAllConnected, enqueueClearbitEnrichmentForAllConnected } from './scheduler';
+import { enqueueHubSpotSyncForAllConnected, enqueueDiscordSyncForAllConnected, enqueueSalesforceSyncForAllConnected, enqueueStackOverflowSyncForAllConnected, enqueueTwitterSyncForAllConnected, enqueueRedditSyncForAllConnected, enqueueLinkedInSyncForAllConnected, enqueuePostHogSyncForAllConnected, enqueueClearbitEnrichmentForAllConnected } from './scheduler';
 import {
   QUEUE_NAMES,
   SignalProcessingJobData,
@@ -31,6 +32,7 @@ import {
   StackOverflowSyncJobData,
   TwitterSyncJobData,
   RedditSyncJobData,
+  LinkedInSyncJobData,
   PostHogSyncJobData,
   BulkEnrichmentJobData,
 } from './queue';
@@ -470,6 +472,47 @@ function createRedditSyncWorker(): Worker<RedditSyncJobData> {
 }
 
 // ---------------------------------------------------------------------------
+// LinkedIn Sync Worker
+// ---------------------------------------------------------------------------
+function createLinkedInSyncWorker(): Worker<LinkedInSyncJobData> {
+  return new Worker<LinkedInSyncJobData>(
+    QUEUE_NAMES.LINKEDIN_SYNC,
+    async (job: Job<LinkedInSyncJobData>) => {
+      const { organizationId } = job.data;
+
+      // Handle scheduler sentinel: enqueue individual jobs for connected orgs
+      if (organizationId === '__scheduler__') {
+        logger.info('LinkedIn sync scheduler triggered', { jobId: job.id });
+        await enqueueLinkedInSyncForAllConnected();
+        return { scheduled: true };
+      }
+
+      logger.info('LinkedIn sync started', {
+        jobId: job.id,
+        organizationId,
+        attempt: job.attemptsMade + 1,
+      });
+
+      const result = await syncLinkedIn(organizationId);
+
+      logger.info('LinkedIn sync completed', {
+        jobId: job.id,
+        organizationId,
+        employeesImported: result.employeesImported,
+        signalsCreated: result.signalsCreated,
+        contactsResolved: result.contactsResolved,
+        errors: result.errors.length,
+      });
+      return result;
+    },
+    {
+      connection: bullConnection,
+      concurrency: 2,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // PostHog Sync Worker
 // ---------------------------------------------------------------------------
 function createPostHogSyncWorker(): Worker<PostHogSyncJobData> {
@@ -622,10 +665,11 @@ export const startWorkers = (): void => {
   const stackoverflowSyncWorker = createStackOverflowSyncWorker();
   const twitterSyncWorker = createTwitterSyncWorker();
   const redditSyncWorker = createRedditSyncWorker();
+  const linkedinSyncWorker = createLinkedInSyncWorker();
   const posthogSyncWorker = createPostHogSyncWorker();
   const bulkEnrichmentWorker = createBulkEnrichmentWorker();
 
-  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, redditSyncWorker, posthogSyncWorker, bulkEnrichmentWorker].forEach((w) => {
+  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, redditSyncWorker, linkedinSyncWorker, posthogSyncWorker, bulkEnrichmentWorker].forEach((w) => {
     attachLogging(w);
     workers.push(w);
   });
