@@ -141,19 +141,19 @@ const integrations = [
 
 const testimonials = [
   {
-    quote: 'DevSignal showed us that 5 engineers at [Company] were evaluating our CLI tool. We closed a $50K deal in 2 weeks.',
-    role: 'Head of Growth, Series B devtool',
-    initials: 'JM',
+    quote: 'Imagine discovering 5 engineers at one company are evaluating your CLI tool — and closing a deal in 2 weeks.',
+    role: 'What devtool growth teams tell us they need',
+    initials: 'DS',
   },
   {
-    quote: 'We replaced Common Room and saved $900/month. The GitHub onboarding took 90 seconds.',
-    role: 'Founder, open-source infra company',
-    initials: 'SK',
+    quote: 'Common Room costs $1,000+/mo. DevSignal starts free and onboards in 90 seconds via GitHub.',
+    role: 'Why teams switch to DevSignal',
+    initials: 'DS',
   },
   {
-    quote: "The PQA scoring is magic. We went from 'who's using us?' to 'here are your top 10 accounts' in one day.",
-    role: 'VP Growth, API platform',
-    initials: 'AR',
+    quote: "Go from 'who's using us?' to 'here are your top 10 accounts' in one day with PQA scoring.",
+    role: 'The DevSignal difference',
+    initials: 'DS',
   },
 ];
 
@@ -422,9 +422,9 @@ export default function Landing() {
 
             {/* Social proof pills */}
             <div className="mt-12">
-              <p className="text-sm text-gray-500 mb-4">Trusted by developer-first companies</p>
+              <p className="text-sm text-gray-500 mb-4">Built for developer-first companies like</p>
               <div className="flex flex-wrap items-center justify-center gap-3">
-                {['Resend', 'Railway', 'Neon', 'Supabase', 'Upstash'].map((name) => (
+                {['CLI Tools', 'API Platforms', 'Open Source', 'SDKs', 'Dev Infrastructure'].map((name) => (
                   <span
                     key={name}
                     className="inline-flex items-center px-4 py-1.5 rounded-full bg-gray-800/60 border border-gray-700/60 text-sm text-gray-400 font-medium"

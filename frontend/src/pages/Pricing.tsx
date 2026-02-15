@@ -277,7 +277,7 @@ const faqs: FAQItem[] = [
   {
     question: 'Can I self-host?',
     answer:
-      "Not currently. We're considering self-hosted options for Enterprise customers. Contact us if you're interested.",
+      "Yes. DevSignal ships with a Docker Compose configuration for self-hosting on your own infrastructure. The Scale plan includes priority support for self-hosted deployments.",
   },
   {
     question: 'How does billing work?',
