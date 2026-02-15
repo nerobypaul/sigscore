@@ -4,6 +4,7 @@ import { useAuth } from '../lib/auth';
 import GlobalSearch from './GlobalSearch';
 import NotificationBell from './NotificationBell';
 import KeyboardShortcuts from './KeyboardShortcuts';
+import DemoModeBanner from './DemoModeBanner';
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts';
 
 // --- Grouped Navigation Structure ---
@@ -117,7 +118,9 @@ export default function Layout() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50">
+      <DemoModeBanner />
+      <div className="flex flex-1 overflow-hidden">
       {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
@@ -270,6 +273,7 @@ export default function Layout() {
       {showShortcuts && (
         <KeyboardShortcuts onClose={() => setShowShortcuts(false)} />
       )}
+      </div>
     </div>
   );
 }

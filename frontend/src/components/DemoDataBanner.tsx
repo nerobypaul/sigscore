@@ -10,7 +10,7 @@ export default function DemoDataBanner() {
     let cancelled = false;
 
     api
-      .get('/demo/status')
+      .get('/demo/org-status')
       .then(({ data }) => {
         if (!cancelled) {
           setHasDemoData(data.hasDemoData === true);
@@ -31,7 +31,7 @@ export default function DemoDataBanner() {
   const handleClear = async () => {
     setClearing(true);
     try {
-      await api.delete('/demo/seed');
+      await api.delete('/demo/org-seed');
       setHasDemoData(false);
       // Reload the page so dashboard reflects the cleared data
       window.location.reload();
