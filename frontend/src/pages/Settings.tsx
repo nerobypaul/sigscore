@@ -4092,6 +4092,344 @@ function DiscordIcon() {
 }
 
 // ---------------------------------------------------------------------------
+// Stack Overflow icon (inline SVG)
+// ---------------------------------------------------------------------------
+
+function StackOverflowIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+      <path d="M17.36 20.2V14.82h1.79V22H3.2v-7.18H5v5.38h12.36z" fill="#BCBBBB" />
+      <path
+        d="M6.77 14.44l.37-1.76 8.79 1.84-.37 1.76-8.79-1.84zm1.16-4.18l.74-1.63 8.14 3.69-.74 1.63-8.14-3.69zm2.26-3.97l1.1-1.39 6.9 5.57-1.1 1.39-6.9-5.57zM14.63 2l-1.4 1.04 5.36 7.21 1.4-1.04L14.63 2zM6.59 18.42h8.98v1.8H6.59v-1.8z"
+        fill="#F48024"
+      />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tab: Stack Overflow
+// ---------------------------------------------------------------------------
+
+function StackOverflowTab() {
+  const toast = useToast();
+  const [status, setStatus] = useState<StackOverflowStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [tagsInput, setTagsInput] = useState('');
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get('/connectors/stackoverflow/status');
+      setStatus(data);
+    } catch {
+      setStatus({
+        connected: false,
+        trackedTags: [],
+        hasApiKey: false,
+        lastSyncAt: null,
+        lastSyncResult: null,
+        sourceId: null,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStatus();
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
+    };
+  }, [fetchStatus]);
+
+  async function handleConnect() {
+    const tags = tagsInput
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    if (tags.length === 0) {
+      toast.error('Please enter at least one Stack Overflow tag to track.');
+      return;
+    }
+
+    setConnecting(true);
+    try {
+      await api.post('/connectors/stackoverflow/connect', {
+        trackedTags: tags,
+        apiKey: apiKeyInput.trim() || null,
+      });
+      setTagsInput('');
+      setApiKeyInput('');
+      toast.success(`Stack Overflow tracking configured for: ${tags.join(', ')}`);
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      await api.post('/connectors/stackoverflow/sync');
+      toast.success('Stack Overflow sync queued.');
+      if (!pollRef.current) {
+        pollRef.current = setInterval(async () => {
+          await fetchStatus();
+        }, 5000);
+        setTimeout(() => {
+          if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+        }, 120_000);
+      }
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    if (!window.confirm('Disconnect Stack Overflow? Signal data will remain, but syncing will stop.')) {
+      return;
+    }
+
+    setDisconnecting(true);
+    try {
+      await api.delete('/connectors/stackoverflow/disconnect');
+      toast.success('Stack Overflow disconnected.');
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  // Not connected state
+  if (!status?.connected) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0">
+              <StackOverflowIcon />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                Connect Stack Overflow
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Track developer questions and answers tagged with your product on Stack Overflow.
+                Monitor community engagement, identify power users, and spot trends.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tags to Monitor
+                  </label>
+                  <input
+                    type="text"
+                    value={tagsInput}
+                    onChange={(e) => setTagsInput(e.target.value)}
+                    placeholder="e.g. reactjs, nextjs, vercel"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Comma-separated list of Stack Overflow tags to track. Use the exact tag names from
+                    stackoverflow.com.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    API Key (optional)
+                  </label>
+                  <input
+                    type="password"
+                    value={apiKeyInput}
+                    onChange={(e) => setApiKeyInput(e.target.value)}
+                    placeholder="Stack Exchange API key"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Register at{' '}
+                    <a
+                      href="https://stackapps.com/apps/oauth/register"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-orange-600 hover:text-orange-700"
+                    >
+                      stackapps.com
+                    </a>
+                    {' '}for 10,000 requests/day (vs 300 without).
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleConnect}
+                  disabled={connecting || !tagsInput.trim()}
+                  className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {connecting ? 'Connecting...' : 'Start Tracking'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">How it works</h4>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
+            <li>Enter the Stack Overflow tags associated with your product</li>
+            <li>DevSignal syncs questions and answers matching those tags every 6 hours</li>
+            <li>Each question and answer creates a signal with metadata (score, views, answers)</li>
+            <li>Identity resolution links Stack Overflow users to your existing contacts</li>
+            <li>Optionally register for a free API key to increase the daily request quota</li>
+          </ol>
+        </div>
+      </div>
+    );
+  }
+
+  // Connected state
+  const lastSync = status.lastSyncResult;
+
+  return (
+    <div className="space-y-6">
+      {/* Connected header */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <StackOverflowIcon />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Stack Overflow Connected
+              </h3>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Active
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {status.trackedTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+            <p className="text-sm text-gray-500">
+              {status.hasApiKey ? 'API key configured (10K requests/day)' : 'No API key (300 requests/day)'}
+              {status.lastSyncAt && (
+                <>
+                  {' '}&middot; Last synced {new Date(status.lastSyncAt).toLocaleString()}
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Sync stats */}
+      {lastSync && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{lastSync.questionsProcessed}</p>
+            <p className="text-xs text-gray-500">Questions Processed</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{lastSync.answersProcessed}</p>
+            <p className="text-xs text-gray-500">Answers Processed</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{lastSync.signalsCreated}</p>
+            <p className="text-xs text-gray-500">Signals Created</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{lastSync.contactsResolved}</p>
+            <p className="text-xs text-gray-500">Contacts Resolved</p>
+          </div>
+        </div>
+      )}
+
+      {lastSync?.errors && lastSync.errors.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h4 className="text-sm font-medium text-red-800 mb-2">Sync Errors</h4>
+          <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+            {lastSync.errors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Update tags */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <h4 className="text-sm font-medium text-gray-700 mb-3">Update Tracked Tags</h4>
+        <div className="flex gap-3">
+          <input
+            type="text"
+            value={tagsInput || status.trackedTags.join(', ')}
+            onChange={(e) => setTagsInput(e.target.value)}
+            placeholder="e.g. reactjs, nextjs, vercel"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+          />
+          <button
+            onClick={handleConnect}
+            disabled={connecting}
+            className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {connecting ? 'Saving...' : 'Update'}
+          </button>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-3">
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {syncing ? 'Syncing...' : 'Sync Now'}
+        </button>
+        <button
+          onClick={handleDisconnect}
+          disabled={disconnecting}
+          className="px-4 py-2 bg-white text-red-600 text-sm font-medium rounded-lg border border-red-300 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Twitter / X icon (inline SVG)
 // ---------------------------------------------------------------------------
 
