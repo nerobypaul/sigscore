@@ -157,7 +157,7 @@ export default function CompanyDetail() {
 
   if (error || !company) {
     return (
-      <div className="p-6 lg:p-8 max-w-3xl mx-auto">
+      <div className="px-4 py-6 md:px-6 lg:px-8 max-w-3xl mx-auto">
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
           <p className="text-red-700">{error || 'Company not found'}</p>
           <Link to="/companies" className="mt-3 inline-block text-sm text-indigo-600 hover:text-indigo-500">
@@ -174,7 +174,7 @@ export default function CompanyDetail() {
   const tags = company.tags || [];
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
+    <div className="px-4 py-6 md:px-6 lg:px-8 max-w-6xl mx-auto">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
         <Link to="/companies" className="hover:text-gray-700">Companies</Link>
@@ -236,7 +236,7 @@ export default function CompanyDetail() {
         </div>
 
         {/* Quick actions */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
           <button
             onClick={() => handleTabChange('ai')}
             className="px-3 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1.5"
@@ -264,13 +264,13 @@ export default function CompanyDetail() {
       {/* ================================================================= */}
       {/* TAB NAVIGATION                                                    */}
       {/* ================================================================= */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex gap-6" aria-label="Account tabs">
+      <div className="border-b border-gray-200 mb-6 -mx-4 px-4 md:mx-0 md:px-0">
+        <nav className="-mb-px flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide" aria-label="Account tabs">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
                 activeTab === tab.id
                   ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -307,7 +307,7 @@ export default function CompanyDetail() {
       {/* TIMELINE TAB */}
       {loadedTabsRef.current.has('timeline') && (
         <div className={activeTab === 'timeline' ? '' : 'hidden'}>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Activity Timeline</h2>
             <AccountTimeline
               companyId={id!}
@@ -360,11 +360,11 @@ interface OverviewTabProps {
 
 function OverviewTab({ company, score, signals, activities, contacts, deals, tags, totalDealValue }: OverviewTabProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
       {/* LEFT COLUMN (2/3) */}
-      <div className="lg:col-span-2 space-y-6">
+      <div className="lg:col-span-2 space-y-4 sm:space-y-6">
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <StatCard label="Signals (30d)" value={String(signals.length)} icon="bolt" color="amber" />
           <StatCard label="Contacts" value={String(contacts.length)} icon="users" color="blue" />
           <StatCard label="Deals" value={String(deals.length)} icon="dollar" color="purple" />
@@ -372,7 +372,7 @@ function OverviewTab({ company, score, signals, activities, contacts, deals, tag
         </div>
 
         {/* Company Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
           <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Company Information</h2>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <InfoField label="Domain" value={company.domain} />
@@ -391,7 +391,7 @@ function OverviewTab({ company, score, signals, activities, contacts, deals, tag
         </div>
 
         {/* Recent Signals */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
           <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Recent Signals</h2>
           {signals.length === 0 ? (
             <p className="text-sm text-gray-400 py-4 text-center">No signals recorded</p>
@@ -416,7 +416,7 @@ function OverviewTab({ company, score, signals, activities, contacts, deals, tag
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
           <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Recent Activity</h2>
           {activities.length === 0 ? (
             <p className="text-sm text-gray-400 py-4 text-center">No activities yet</p>
@@ -464,7 +464,7 @@ function OverviewTab({ company, score, signals, activities, contacts, deals, tag
       </div>
 
       {/* RIGHT COLUMN (1/3) */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* PQA Score Card */}
         {score ? (
           <AccountScoreCard score={score} />
@@ -863,9 +863,9 @@ function StatCard({ label, value, icon, color }: { label: string; value: string;
   const colors = colorMap[color] || colorMap.blue;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-lg ${colors.bg} ${colors.text} flex items-center justify-center flex-shrink-0`}>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${colors.bg} ${colors.text} flex items-center justify-center flex-shrink-0`}>
           {icon === 'bolt' && (
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
@@ -888,8 +888,8 @@ function StatCard({ label, value, icon, color }: { label: string; value: string;
           )}
         </div>
         <div>
-          <p className="text-xs text-gray-500">{label}</p>
-          <p className="text-lg font-bold text-gray-900">{value}</p>
+          <p className="text-xs text-gray-500 truncate">{label}</p>
+          <p className="text-base sm:text-lg font-bold text-gray-900 truncate">{value}</p>
         </div>
       </div>
     </div>

@@ -164,39 +164,42 @@ export default function Contacts() {
   };
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-4 py-6 md:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
           <p className="mt-1 text-sm text-gray-500">
             {pagination ? `${pagination.total} total contacts` : ''}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={handleExport}
             disabled={bulkLoading}
-            className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+            className="border border-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
-            Export CSV
+            <span className="hidden sm:inline">Export CSV</span>
+            <span className="sm:hidden">Export</span>
           </button>
           <button
             onClick={() => setShowImport(true)}
-            className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"
+            className="border border-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
             </svg>
-            Import CSV
+            <span className="hidden sm:inline">Import CSV</span>
+            <span className="sm:hidden">Import</span>
           </button>
           <button
             onClick={() => setShowCreate(true)}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
+            className="bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
           >
-            Add Contact
+            <span className="hidden sm:inline">Add Contact</span>
+            <span className="sm:hidden">Add</span>
           </button>
         </div>
       </div>
@@ -215,17 +218,17 @@ export default function Contacts() {
           placeholder="Search contacts by name or email..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          className="w-full max-w-md px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+          className="w-full sm:max-w-md px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
         />
       </div>
 
       {/* Bulk action toolbar */}
       {selectedIds.size > 0 && (
-        <div className="mb-4 flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
+        <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-3 sm:px-4 py-3">
           <span className="text-sm font-medium text-indigo-900">
             {selectedIds.size} selected
           </span>
-          <div className="h-4 w-px bg-indigo-300" />
+          <div className="hidden sm:block h-4 w-px bg-indigo-300" />
           <button
             onClick={() => setBulkAction('delete')}
             disabled={bulkLoading}
@@ -238,32 +241,34 @@ export default function Contacts() {
             disabled={bulkLoading}
             className="text-sm font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
           >
-            Add Tag
+            Tag
           </button>
           <button
             onClick={handleExport}
             disabled={bulkLoading}
             className="text-sm font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
           >
-            Export Selected
+            Export
           </button>
           <button
             onClick={() => setSelectedIds(new Set())}
             className="ml-auto text-sm text-gray-500 hover:text-gray-700"
           >
-            Clear selection
+            Clear
           </button>
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {loading ? (
+      {/* Contact List */}
+      {loading ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="flex items-center justify-center py-16">
             <Spinner />
           </div>
-        ) : contacts.length === 0 ? (
-          search ? (
+        </div>
+      ) : contacts.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          {search ? (
             <div className="py-12 text-center text-gray-400 text-sm">
               No contacts match your search
             </div>
@@ -279,9 +284,73 @@ export default function Contacts() {
               actionLabel="Add Contact"
               onAction={() => setShowCreate(true)}
             />
-          )
-        ) : (
-          <>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Mobile card view (< md) */}
+          <div className="md:hidden space-y-3">
+            {/* Select all on mobile */}
+            <div className="flex items-center gap-3 px-1">
+              <input
+                type="checkbox"
+                checked={allOnPageSelected}
+                onChange={toggleSelectAll}
+                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="text-xs text-gray-500">Select all</span>
+            </div>
+            {contacts.map((contact) => (
+              <div
+                key={contact.id}
+                className={`bg-white rounded-xl shadow-sm border border-gray-200 p-4 transition-all ${
+                  selectedIds.has(contact.id) ? 'ring-2 ring-indigo-500 bg-indigo-50/30' : ''
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(contact.id)}
+                    onChange={() => toggleSelect(contact.id)}
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mt-1 flex-shrink-0"
+                  />
+                  <div
+                    className="flex-1 min-w-0 cursor-pointer"
+                    onClick={() => navigate(`/contacts/${contact.id}`)}
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                        {contact.firstName?.[0]}
+                        {contact.lastName?.[0]}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {contact.firstName} {contact.lastName}
+                        </p>
+                        {contact.title && (
+                          <p className="text-xs text-gray-500 truncate">{contact.title}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                      {contact.email && (
+                        <span className="truncate max-w-[200px]">{contact.email}</span>
+                      )}
+                      {contact.company && (
+                        <span className="text-indigo-600 font-medium">{contact.company.name}</span>
+                      )}
+                      <span className="text-gray-400">
+                        {new Date(contact.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table view (>= md) */}
+          <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -351,34 +420,34 @@ export default function Contacts() {
                 </tbody>
               </table>
             </div>
+          </div>
 
-            {/* Pagination */}
-            {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50">
-                <p className="text-sm text-gray-600">
-                  Page {pagination.page} of {pagination.totalPages}
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page <= 1}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setPage((p) => p + 1)}
-                    disabled={page >= (pagination?.totalPages ?? 1)}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
-                </div>
+          {/* Pagination */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1 md:px-4 py-3 md:bg-white md:rounded-xl md:shadow-sm md:border md:border-gray-200">
+              <p className="text-sm text-gray-600">
+                Page {pagination.page} of {pagination.totalPages}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page >= (pagination?.totalPages ?? 1)}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
               </div>
-            )}
-          </>
-        )}
-      </div>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Bulk Delete Confirmation Modal */}
       {bulkAction === 'delete' && (

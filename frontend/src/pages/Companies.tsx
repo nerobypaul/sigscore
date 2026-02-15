@@ -123,15 +123,15 @@ export default function Companies() {
   };
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-4 py-6 md:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Companies</h1>
           <p className="mt-1 text-sm text-gray-500">
             {pagination ? `${pagination.total} total companies` : ''}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={() => {
               if (selectMode) {
@@ -140,7 +140,7 @@ export default function Companies() {
                 setSelectMode(true);
               }
             }}
-            className={`border px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${
+            className={`border px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${
               selectMode
                 ? 'border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
                 : 'border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -159,11 +159,12 @@ export default function Companies() {
                 d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            {selectMode ? 'Exit Select' : 'Select'}
+            <span className="hidden sm:inline">{selectMode ? 'Exit Select' : 'Select'}</span>
+            <span className="sm:hidden">{selectMode ? 'Exit' : 'Select'}</span>
           </button>
           <button
             onClick={() => setShowImport(true)}
-            className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"
+            className="border border-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
             <svg
               className="w-4 h-4"
@@ -178,13 +179,15 @@ export default function Companies() {
                 d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
               />
             </svg>
-            Import CSV
+            <span className="hidden sm:inline">Import CSV</span>
+            <span className="sm:hidden">Import</span>
           </button>
           <button
             onClick={() => setShowCreate(true)}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
+            className="bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
           >
-            Add Company
+            <span className="hidden sm:inline">Add Company</span>
+            <span className="sm:hidden">Add</span>
           </button>
         </div>
       </div>
@@ -203,24 +206,24 @@ export default function Companies() {
           placeholder="Search companies..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          className="w-full max-w-md px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+          className="w-full sm:max-w-md px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
         />
       </div>
 
       {/* Bulk action toolbar */}
       {selectMode && selectedIds.size > 0 && (
-        <div className="mb-4 flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
+        <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-3 sm:px-4 py-3">
           <span className="text-sm font-medium text-indigo-900">
             {selectedIds.size} selected
           </span>
-          <div className="h-4 w-px bg-indigo-300" />
+          <div className="hidden sm:block h-4 w-px bg-indigo-300" />
           <button
             onClick={toggleSelectAll}
             className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
           >
-            {allOnPageSelected ? 'Deselect all' : 'Select all on page'}
+            {allOnPageSelected ? 'Deselect all' : 'Select all'}
           </button>
-          <div className="h-4 w-px bg-indigo-300" />
+          <div className="hidden sm:block h-4 w-px bg-indigo-300" />
           <button
             onClick={() => setBulkAction('delete')}
             disabled={bulkLoading}
@@ -232,7 +235,7 @@ export default function Companies() {
             onClick={() => setSelectedIds(new Set())}
             className="ml-auto text-sm text-gray-500 hover:text-gray-700"
           >
-            Clear selection
+            Clear
           </button>
         </div>
       )}
@@ -305,7 +308,7 @@ export default function Companies() {
 
       {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6">
           <p className="text-sm text-gray-600">
             Page {pagination.page} of {pagination.totalPages}
           </p>

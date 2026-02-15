@@ -116,7 +116,7 @@ export default function Dashboard() {
   // -- New user: show onboarding hero instead of stat cards --
   if (isNewUser) {
     return (
-      <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      <div className="px-4 py-6 md:px-6 lg:px-8 max-w-7xl mx-auto">
         <DemoDataBanner />
         <GettingStarted />
 
@@ -178,7 +178,7 @@ export default function Dashboard() {
   const topRisingAccount = stats.hotAccounts.find((a) => a.trend === 'RISING') || stats.hotAccounts[0];
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="px-4 py-6 md:px-6 lg:px-8 max-w-7xl mx-auto">
       {/* Demo data banner */}
       <DemoDataBanner />
 
@@ -294,7 +294,7 @@ export default function Dashboard() {
 
 function OnboardingHero() {
   return (
-    <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-8 lg:p-10 text-white">
+    <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-5 sm:p-8 lg:p-10 text-white">
       <div className="max-w-2xl">
         <h2 className="text-2xl lg:text-3xl font-bold mb-3">
           Welcome to DevSignal!
