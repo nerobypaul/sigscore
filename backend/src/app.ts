@@ -49,9 +49,12 @@ import identityRoutes from './routes/identity';
 import discordConnectorRoutes from './routes/discord-connector';
 import stackoverflowConnectorRoutes from './routes/stackoverflow-connector';
 import twitterConnectorRoutes from './routes/twitter-connector';
+import redditConnectorRoutes from './routes/reddit-connector';
 import ssoRoutes from './routes/sso';
 import oauthRoutes from './routes/oauth';
 import enrichmentRoutes from './routes/enrichment';
+import webhookSubscriptionRoutes from './routes/webhook-subscriptions';
+import advancedAnalyticsRoutes from './routes/advanced-analytics';
 import { sentryErrorHandler } from './utils/sentry';
 
 const app = express();
@@ -143,6 +146,7 @@ app.use('/api/v1/sources', signalSourceRoutes);
 app.use('/api/v1/webhooks/github', githubWebhookRoutes);
 app.use('/api/v1/webhooks/segment', segmentWebhookRoutes);
 app.use('/api/v1/webhooks/slack', slackInteractionsRoutes);
+app.use('/api/v1/webhooks/subscribe', webhookSubscriptionRoutes);
 
 app.use('/api/v1/webhooks', webhookRoutes);
 
@@ -164,6 +168,7 @@ app.use('/api/v1/billing', billingRoutes);
 
 // API routes — Analytics & Workflows
 app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/analytics/advanced', advancedAnalyticsRoutes);
 app.use('/api/v1/workflows', workflowRoutes);
 
 // API routes — Connectors
@@ -171,6 +176,7 @@ app.use('/api/v1/connectors', connectorRoutes);
 app.use('/api/v1/connectors/discord', discordConnectorRoutes);
 app.use('/api/v1/connectors/stackoverflow', stackoverflowConnectorRoutes);
 app.use('/api/v1/connectors/twitter', twitterConnectorRoutes);
+app.use('/api/v1/connectors/reddit', redditConnectorRoutes);
 
 // API routes — Bulk Operations & CSV Export
 app.use('/api/v1/bulk', bulkRoutes);

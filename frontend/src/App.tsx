@@ -33,10 +33,12 @@ import DashboardBuilder from './pages/DashboardBuilder';
 import CrmImport from './pages/CrmImport';
 import Playbooks from './pages/Playbooks';
 import ScoringBuilder from './pages/ScoringBuilder';
+import Analytics from './pages/Analytics';
 import DevPortal from './pages/DevPortal';
 import SsoSettings from './pages/SsoSettings';
 import SsoCallback from './pages/SsoCallback';
 import OAuthCallback from './pages/OAuthCallback';
+import WebhookManager from './pages/WebhookManager';
 import NotFound from './pages/NotFound';
 
 /**
@@ -125,6 +127,8 @@ function AppRoutes() {
         <Route path="/sequences/:id" element={<EmailSequenceDetail />} />
         <Route path="/dashboard-builder" element={<DashboardBuilder />} />
         <Route path="/import/crm" element={<CrmImport />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/webhooks" element={<WebhookManager />} />
         <Route path="/sso-settings" element={<SsoSettings />} />
       </Route>
 
