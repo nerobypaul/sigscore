@@ -12,8 +12,10 @@ import { runSync as runSalesforceSync } from '../services/salesforce-sync';
 import { syncDiscordServer } from '../services/discord-connector';
 import { syncStackOverflow } from '../services/stackoverflow-connector';
 import { syncTwitterMentions } from '../services/twitter-connector';
+import { syncReddit } from '../services/reddit-connector';
+import { syncPostHogEvents } from '../services/posthog-connector';
 import { bulkEnrichCompanies, bulkEnrichContacts } from '../services/clearbit-enrichment';
-import { enqueueHubSpotSyncForAllConnected, enqueueDiscordSyncForAllConnected, enqueueSalesforceSyncForAllConnected, enqueueStackOverflowSyncForAllConnected, enqueueTwitterSyncForAllConnected, enqueueClearbitEnrichmentForAllConnected } from './scheduler';
+import { enqueueHubSpotSyncForAllConnected, enqueueDiscordSyncForAllConnected, enqueueSalesforceSyncForAllConnected, enqueueStackOverflowSyncForAllConnected, enqueueTwitterSyncForAllConnected, enqueueRedditSyncForAllConnected, enqueuePostHogSyncForAllConnected, enqueueClearbitEnrichmentForAllConnected } from './scheduler';
 import {
   QUEUE_NAMES,
   SignalProcessingJobData,
@@ -28,6 +30,8 @@ import {
   SalesforceSyncJobData,
   StackOverflowSyncJobData,
   TwitterSyncJobData,
+  RedditSyncJobData,
+  PostHogSyncJobData,
   BulkEnrichmentJobData,
 } from './queue';
 import { processEmailStep } from '../services/email-sequences';
@@ -424,6 +428,89 @@ function createTwitterSyncWorker(): Worker<TwitterSyncJobData> {
 }
 
 // ---------------------------------------------------------------------------
+// Reddit Sync Worker
+// ---------------------------------------------------------------------------
+function createRedditSyncWorker(): Worker<RedditSyncJobData> {
+  return new Worker<RedditSyncJobData>(
+    QUEUE_NAMES.REDDIT_SYNC,
+    async (job: Job<RedditSyncJobData>) => {
+      const { organizationId } = job.data;
+
+      // Handle scheduler sentinel: enqueue individual jobs for connected orgs
+      if (organizationId === '__scheduler__') {
+        logger.info('Reddit sync scheduler triggered', { jobId: job.id });
+        await enqueueRedditSyncForAllConnected();
+        return { scheduled: true };
+      }
+
+      logger.info('Reddit sync started', {
+        jobId: job.id,
+        organizationId,
+        attempt: job.attemptsMade + 1,
+      });
+
+      const result = await syncReddit(organizationId);
+
+      logger.info('Reddit sync completed', {
+        jobId: job.id,
+        organizationId,
+        postsProcessed: result.postsProcessed,
+        commentsProcessed: result.commentsProcessed,
+        signalsCreated: result.signalsCreated,
+        contactsResolved: result.contactsResolved,
+        errors: result.errors.length,
+      });
+      return result;
+    },
+    {
+      connection: bullConnection,
+      concurrency: 2,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PostHog Sync Worker
+// ---------------------------------------------------------------------------
+function createPostHogSyncWorker(): Worker<PostHogSyncJobData> {
+  return new Worker<PostHogSyncJobData>(
+    QUEUE_NAMES.POSTHOG_SYNC,
+    async (job: Job<PostHogSyncJobData>) => {
+      const { organizationId } = job.data;
+
+      // Handle scheduler sentinel: enqueue individual jobs for connected orgs
+      if (organizationId === '__scheduler__') {
+        logger.info('PostHog sync scheduler triggered', { jobId: job.id });
+        await enqueuePostHogSyncForAllConnected();
+        return { scheduled: true };
+      }
+
+      logger.info('PostHog sync started', {
+        jobId: job.id,
+        organizationId,
+        attempt: job.attemptsMade + 1,
+      });
+
+      const result = await syncPostHogEvents(organizationId);
+
+      logger.info('PostHog sync completed', {
+        jobId: job.id,
+        organizationId,
+        eventsProcessed: result.eventsProcessed,
+        signalsCreated: result.signalsCreated,
+        contactsResolved: result.contactsResolved,
+        errors: result.errors.length,
+      });
+      return result;
+    },
+    {
+      connection: bullConnection,
+      concurrency: 2,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Bulk Enrichment Worker (Clearbit)
 // ---------------------------------------------------------------------------
 function createBulkEnrichmentWorker(): Worker<BulkEnrichmentJobData> {
@@ -534,9 +621,11 @@ export const startWorkers = (): void => {
   const salesforceSyncWorker = createSalesforceSyncWorker();
   const stackoverflowSyncWorker = createStackOverflowSyncWorker();
   const twitterSyncWorker = createTwitterSyncWorker();
+  const redditSyncWorker = createRedditSyncWorker();
+  const posthogSyncWorker = createPostHogSyncWorker();
   const bulkEnrichmentWorker = createBulkEnrichmentWorker();
 
-  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, bulkEnrichmentWorker].forEach((w) => {
+  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, redditSyncWorker, posthogSyncWorker, bulkEnrichmentWorker].forEach((w) => {
     attachLogging(w);
     workers.push(w);
   });

@@ -148,7 +148,38 @@ interface TwitterStatus {
   sourceId: string | null;
 }
 
-type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord' | 'stackoverflow' | 'twitter' | 'clearbit';
+interface RedditStatus {
+  connected: boolean;
+  keywords: string[];
+  subreddits: string[];
+  lastSyncAt: string | null;
+  lastSyncResult: {
+    postsProcessed: number;
+    commentsProcessed: number;
+    signalsCreated: number;
+    contactsResolved: number;
+    errors: string[];
+  } | null;
+  sourceId: string | null;
+}
+
+interface PostHogStatus {
+  connected: boolean;
+  host: string | null;
+  projectId: string | null;
+  trackedEvents: string[];
+  webhookUrl: string | null;
+  lastSyncAt: string | null;
+  lastSyncResult: {
+    eventsProcessed: number;
+    signalsCreated: number;
+    contactsResolved: number;
+    errors: string[];
+  } | null;
+  sourceId: string | null;
+}
+
+type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord' | 'stackoverflow' | 'twitter' | 'reddit' | 'posthog' | 'clearbit';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'api-keys', label: 'API Keys' },
@@ -161,6 +192,8 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'discord', label: 'Discord' },
   { id: 'stackoverflow', label: 'Stack Overflow' },
   { id: 'twitter', label: 'Twitter / X' },
+  { id: 'reddit', label: 'Reddit' },
+  { id: 'posthog', label: 'PostHog' },
   { id: 'clearbit', label: 'Clearbit' },
 ];
 
@@ -3992,6 +4025,16 @@ export default function Settings() {
           <TwitterTab />
         </div>
       )}
+      {loadedTabsRef.current.has('reddit') && (
+        <div className={activeTab === 'reddit' ? '' : 'hidden'}>
+          <RedditTab />
+        </div>
+      )}
+      {loadedTabsRef.current.has('posthog') && (
+        <div className={activeTab === 'posthog' ? '' : 'hidden'}>
+          <PostHogTab />
+        </div>
+      )}
     </div>
   );
 }
@@ -4104,6 +4147,401 @@ function StackOverflowIcon() {
         fill="#F48024"
       />
     </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tab: PostHog
+// ---------------------------------------------------------------------------
+
+function PostHogTab() {
+  const toast = useToast();
+  const [status, setStatus] = useState<PostHogStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [hostInput, setHostInput] = useState('app.posthog.com');
+  const [projectIdInput, setProjectIdInput] = useState('');
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [eventsInput, setEventsInput] = useState('$pageview, signup, feature_used');
+  const [webhookSecretInput, setWebhookSecretInput] = useState('');
+  const [copied, setCopied] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get('/connectors/posthog/status');
+      setStatus(data);
+    } catch {
+      setStatus({
+        connected: false,
+        host: null,
+        projectId: null,
+        trackedEvents: [],
+        webhookUrl: null,
+        lastSyncAt: null,
+        lastSyncResult: null,
+        sourceId: null,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStatus();
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
+    };
+  }, [fetchStatus]);
+
+  async function handleConnect() {
+    if (!projectIdInput.trim()) {
+      toast.error('Please enter your PostHog Project ID.');
+      return;
+    }
+    if (!apiKeyInput.trim()) {
+      toast.error('Please enter your PostHog Personal API Key.');
+      return;
+    }
+
+    const trackedEvents = eventsInput
+      .split(',')
+      .map((e) => e.trim())
+      .filter(Boolean);
+
+    setConnecting(true);
+    try {
+      const { data } = await api.post('/connectors/posthog/connect', {
+        host: hostInput.trim() || 'app.posthog.com',
+        projectId: projectIdInput.trim(),
+        personalApiKey: apiKeyInput.trim(),
+        trackedEvents: trackedEvents.length > 0 ? trackedEvents : undefined,
+        webhookSecret: webhookSecretInput.trim() || undefined,
+      });
+      setApiKeyInput('');
+      setWebhookSecretInput('');
+      toast.success('PostHog connected successfully.');
+      if (data.webhookUrl) {
+        setStatus((prev) => prev ? { ...prev, webhookUrl: data.webhookUrl, connected: true } : prev);
+      }
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      await api.post('/connectors/posthog/sync');
+      toast.success('PostHog sync queued.');
+      if (!pollRef.current) {
+        pollRef.current = setInterval(async () => {
+          await fetchStatus();
+        }, 5000);
+        setTimeout(() => {
+          if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+        }, 120_000);
+      }
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    if (!window.confirm('Disconnect PostHog? Signal data will remain, but syncing will stop.')) {
+      return;
+    }
+
+    setDisconnecting(true);
+    try {
+      await api.delete('/connectors/posthog/disconnect');
+      toast.success('PostHog disconnected.');
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  function copyWebhookUrl() {
+    if (status?.webhookUrl) {
+      navigator.clipboard.writeText(status.webhookUrl).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  // Not connected state
+  if (!status?.connected) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+              <PostHogIcon />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                Connect PostHog
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Import product analytics events from PostHog as signals. Track pageviews,
+                signups, feature usage, and custom events to identify high-intent accounts.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    PostHog Host
+                  </label>
+                  <input
+                    type="text"
+                    value={hostInput}
+                    onChange={(e) => setHostInput(e.target.value)}
+                    placeholder="app.posthog.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Use <code className="font-mono">app.posthog.com</code> for PostHog Cloud, or enter your self-hosted URL.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Project ID
+                  </label>
+                  <input
+                    type="text"
+                    value={projectIdInput}
+                    onChange={(e) => setProjectIdInput(e.target.value)}
+                    placeholder="e.g. 12345"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Find this in PostHog under Project Settings &gt; Project ID.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Personal API Key
+                  </label>
+                  <input
+                    type="password"
+                    value={apiKeyInput}
+                    onChange={(e) => setApiKeyInput(e.target.value)}
+                    placeholder="phx_..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Create one at{' '}
+                    <a
+                      href="https://app.posthog.com/settings/user-api-keys"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      PostHog &gt; Settings &gt; Personal API Keys
+                    </a>
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tracked Events
+                  </label>
+                  <input
+                    type="text"
+                    value={eventsInput}
+                    onChange={(e) => setEventsInput(e.target.value)}
+                    placeholder="$pageview, signup, feature_used, api_call"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Comma-separated list of PostHog event names to import as signals.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Webhook Secret (optional)
+                  </label>
+                  <input
+                    type="password"
+                    value={webhookSecretInput}
+                    onChange={(e) => setWebhookSecretInput(e.target.value)}
+                    placeholder="Optional HMAC secret for webhook verification"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <button
+                  onClick={handleConnect}
+                  disabled={connecting || !projectIdInput.trim() || !apiKeyInput.trim()}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {connecting ? 'Connecting...' : 'Connect PostHog'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">How it works</h4>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
+            <li>Enter your PostHog host, project ID, and API key</li>
+            <li>Choose which event types to import (pageviews, signups, feature usage, etc.)</li>
+            <li>DevSignal syncs events hourly via the PostHog API</li>
+            <li>Each event creates a signal with user and session metadata</li>
+            <li>Identity resolution links PostHog users to your existing contacts via email</li>
+            <li>Optionally set up a PostHog webhook for real-time signal ingestion</li>
+          </ol>
+        </div>
+      </div>
+    );
+  }
+
+  // Connected state
+  const lastSync = status.lastSyncResult;
+
+  return (
+    <div className="space-y-6">
+      {/* Connected header */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <PostHogIcon />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-semibold text-gray-900">
+                PostHog Connected
+              </h3>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Active
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 mb-2">
+              Host: <span className="font-mono text-gray-700">{status.host}</span>
+              {' '}&middot; Project: <span className="font-mono text-gray-700">{status.projectId}</span>
+            </p>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {status.trackedEvents.map((evt) => (
+                <span
+                  key={evt}
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                >
+                  {evt}
+                </span>
+              ))}
+            </div>
+            <p className="text-sm text-gray-500">
+              {status.lastSyncAt && (
+                <>Last synced {new Date(status.lastSyncAt).toLocaleString()}</>
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Webhook URL */}
+      {status.webhookUrl && (
+        <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
+          <h4 className="text-sm font-medium text-blue-800 mb-2">Webhook URL (for real-time events)</h4>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 px-3 py-2 bg-white border border-blue-200 rounded-lg text-xs font-mono text-gray-800 truncate">
+              {status.webhookUrl}
+            </code>
+            <button
+              onClick={copyWebhookUrl}
+              className="px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+            >
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <p className="text-xs text-blue-700 mt-2">
+            Paste this URL in PostHog under Project Settings &gt; Webhooks to receive events in real-time.
+          </p>
+        </div>
+      )}
+
+      {/* Sync stats */}
+      {lastSync && (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{lastSync.eventsProcessed}</p>
+            <p className="text-xs text-gray-500">Events Processed</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{lastSync.signalsCreated}</p>
+            <p className="text-xs text-gray-500">Signals Created</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{lastSync.contactsResolved}</p>
+            <p className="text-xs text-gray-500">Contacts Resolved</p>
+          </div>
+        </div>
+      )}
+
+      {lastSync?.errors && lastSync.errors.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h4 className="text-sm font-medium text-red-800 mb-2">Sync Errors</h4>
+          <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+            {lastSync.errors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-3">
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {syncing ? 'Syncing...' : 'Sync Now'}
+        </button>
+        <button
+          onClick={handleDisconnect}
+          disabled={disconnecting}
+          className="px-4 py-2 bg-white text-red-600 text-sm font-medium rounded-lg border border-red-300 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+        </button>
+      </div>
+
+      <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
+        <p className="text-xs text-blue-700">
+          PostHog events are synced automatically every hour via the API. For real-time ingestion,
+          configure the webhook URL above in your PostHog project settings.
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -4441,5 +4879,461 @@ function TwitterIcon() {
         fill="#FFFFFF"
       />
     </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PostHog icon (inline SVG — hedgehog logo simplified)
+// ---------------------------------------------------------------------------
+
+function PostHogIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 128 128" fill="none">
+      <rect width="128" height="128" rx="16" fill="#1D4AFF" />
+      <path
+        d="M36 80L64 36L92 80H36Z"
+        fill="#F9BD2B"
+      />
+      <circle cx="56" cy="64" r="6" fill="#1D4AFF" />
+      <circle cx="72" cy="64" r="6" fill="#1D4AFF" />
+      <rect x="48" y="74" width="32" height="6" rx="3" fill="#1D4AFF" />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Reddit icon (inline SVG)
+// ---------------------------------------------------------------------------
+
+function RedditIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="#FF4500" />
+      <path
+        d="M16.5 13.38c0-1.4-2.01-2.54-4.5-2.54s-4.5 1.14-4.5 2.54c0 .83.68 1.58 1.77 2.1.1.05.2.1.31.14A6.73 6.73 0 0 0 12 16.17c.85 0 1.65-.13 2.37-.35.11-.04.21-.09.31-.14 1.09-.52 1.77-1.27 1.77-2.1h.05z"
+        fill="#FFF"
+      />
+      <circle cx="9.5" cy="13" r=".9" fill="#FF4500" />
+      <circle cx="14.5" cy="13" r=".9" fill="#FF4500" />
+      <path
+        d="M10.5 15.5c.4.4 1 .6 1.5.6s1.1-.2 1.5-.6"
+        stroke="#FF4500"
+        strokeWidth=".6"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <circle cx="17.5" cy="8" r="1.2" fill="#FFF" />
+      <path
+        d="M18.5 10.5c.83 0 1.5-.45 1.5-1s-.67-1-1.5-1c-.38 0-.72.12-1 .32"
+        fill="#FFF"
+      />
+      <path
+        d="M5.5 10.5c-.83 0-1.5-.45-1.5-1s.67-1 1.5-1c.38 0 .72.12 1 .32"
+        fill="#FFF"
+      />
+      <path d="M14.5 5l1.5-2" stroke="#FFF" strokeWidth=".8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tab: Reddit
+// ---------------------------------------------------------------------------
+
+const SUGGESTED_SUBREDDITS = [
+  'programming',
+  'webdev',
+  'devops',
+  'node',
+  'reactjs',
+  'golang',
+  'rust',
+  'python',
+  'typescript',
+  'javascript',
+  'docker',
+  'kubernetes',
+  'aws',
+  'selfhosted',
+];
+
+function RedditTab() {
+  const toast = useToast();
+  const [status, setStatus] = useState<RedditStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [keywordsInput, setKeywordsInput] = useState('');
+  const [subredditsInput, setSubredditsInput] = useState('');
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get('/connectors/reddit/status');
+      setStatus(data);
+    } catch {
+      setStatus({
+        connected: false,
+        keywords: [],
+        subreddits: [],
+        lastSyncAt: null,
+        lastSyncResult: null,
+        sourceId: null,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStatus();
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
+    };
+  }, [fetchStatus]);
+
+  async function handleConnect() {
+    const keywords = keywordsInput
+      .split(',')
+      .map((k) => k.trim())
+      .filter(Boolean);
+
+    if (keywords.length === 0) {
+      toast.error('Please enter at least one keyword (product name) to track.');
+      return;
+    }
+
+    const subreddits = subredditsInput
+      .split(',')
+      .map((s) => s.trim().replace(/^r\//, ''))
+      .filter(Boolean);
+
+    setConnecting(true);
+    try {
+      await api.post('/connectors/reddit/connect', {
+        keywords,
+        subreddits,
+      });
+      setKeywordsInput('');
+      setSubredditsInput('');
+      toast.success(`Reddit tracking configured for: ${keywords.join(', ')}`);
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      await api.post('/connectors/reddit/sync');
+      toast.success('Reddit sync queued.');
+      if (!pollRef.current) {
+        pollRef.current = setInterval(async () => {
+          await fetchStatus();
+        }, 5000);
+        setTimeout(() => {
+          if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+        }, 120_000);
+      }
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    if (!window.confirm('Disconnect Reddit? Signal data will remain, but syncing will stop.')) {
+      return;
+    }
+
+    setDisconnecting(true);
+    try {
+      await api.delete('/connectors/reddit/disconnect');
+      toast.success('Reddit disconnected.');
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  function addSuggestedSubreddit(sub: string) {
+    const current = subredditsInput
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!current.includes(sub)) {
+      setSubredditsInput([...current, sub].join(', '));
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  // Not connected state
+  if (!status?.connected) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0">
+              <RedditIcon />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                Connect Reddit
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Track developer discussions mentioning your product across Reddit. Monitor
+                subreddits, identify questions, and discover community sentiment.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Keywords to Monitor
+                  </label>
+                  <input
+                    type="text"
+                    value={keywordsInput}
+                    onChange={(e) => setKeywordsInput(e.target.value)}
+                    placeholder="e.g. Resend, React Email, resend.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Comma-separated product names or keywords to search across all of Reddit.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Subreddits to Monitor (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={subredditsInput}
+                    onChange={(e) => setSubredditsInput(e.target.value)}
+                    placeholder="e.g. programming, webdev, devops, node"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Comma-separated subreddit names (without r/ prefix). Posts in these subreddits
+                    matching your keywords will be tracked.
+                  </p>
+
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {SUGGESTED_SUBREDDITS.map((sub) => (
+                      <button
+                        key={sub}
+                        type="button"
+                        onClick={() => addSuggestedSubreddit(sub)}
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 hover:bg-orange-100 hover:text-orange-700 transition-colors cursor-pointer"
+                      >
+                        r/{sub}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleConnect}
+                  disabled={connecting || !keywordsInput.trim()}
+                  className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {connecting ? 'Connecting...' : 'Start Tracking'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">How it works</h4>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
+            <li>Enter your product name(s) as keywords to search across Reddit</li>
+            <li>Optionally add specific subreddits to monitor for keyword mentions</li>
+            <li>DevSignal syncs matching posts every 2 hours using the Reddit public JSON API</li>
+            <li>Each post creates a signal classified as question, showcase, or discussion</li>
+            <li>Identity resolution links Reddit usernames to your existing contacts</li>
+            <li>No Reddit account or API key required -- uses public data only</li>
+          </ol>
+        </div>
+      </div>
+    );
+  }
+
+  // Connected state
+  const lastSync = status.lastSyncResult;
+
+  return (
+    <div className="space-y-6">
+      {/* Connected header */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <RedditIcon />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Reddit Connected
+              </h3>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Active
+              </span>
+            </div>
+            <div className="mb-2">
+              <p className="text-xs font-medium text-gray-500 mb-1">Keywords</p>
+              <div className="flex flex-wrap gap-1.5">
+                {status.keywords.map((kw) => (
+                  <span
+                    key={kw}
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800"
+                  >
+                    {kw}
+                  </span>
+                ))}
+              </div>
+            </div>
+            {status.subreddits.length > 0 && (
+              <div className="mb-2">
+                <p className="text-xs font-medium text-gray-500 mb-1">Subreddits</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {status.subreddits.map((sub) => (
+                    <span
+                      key={sub}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
+                    >
+                      r/{sub}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <p className="text-sm text-gray-500">
+              Public API (no auth required)
+              {status.lastSyncAt && (
+                <>
+                  {' '}&middot; Last synced {new Date(status.lastSyncAt).toLocaleString()}
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Sync stats */}
+      {lastSync && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{lastSync.postsProcessed}</p>
+            <p className="text-xs text-gray-500">Posts Processed</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{lastSync.commentsProcessed}</p>
+            <p className="text-xs text-gray-500">Comments Processed</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{lastSync.signalsCreated}</p>
+            <p className="text-xs text-gray-500">Signals Created</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{lastSync.contactsResolved}</p>
+            <p className="text-xs text-gray-500">Contacts Resolved</p>
+          </div>
+        </div>
+      )}
+
+      {lastSync?.errors && lastSync.errors.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h4 className="text-sm font-medium text-red-800 mb-2">Sync Errors</h4>
+          <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+            {lastSync.errors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Update config */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <h4 className="text-sm font-medium text-gray-700 mb-3">Update Configuration</h4>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Keywords</label>
+            <input
+              type="text"
+              value={keywordsInput || status.keywords.join(', ')}
+              onChange={(e) => setKeywordsInput(e.target.value)}
+              placeholder="e.g. Resend, React Email"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Subreddits</label>
+            <input
+              type="text"
+              value={subredditsInput || status.subreddits.join(', ')}
+              onChange={(e) => setSubredditsInput(e.target.value)}
+              placeholder="e.g. programming, webdev"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            />
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {SUGGESTED_SUBREDDITS.map((sub) => (
+                <button
+                  key={sub}
+                  type="button"
+                  onClick={() => addSuggestedSubreddit(sub)}
+                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 hover:bg-orange-100 hover:text-orange-700 transition-colors cursor-pointer"
+                >
+                  r/{sub}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={handleConnect}
+            disabled={connecting}
+            className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {connecting ? 'Saving...' : 'Update'}
+          </button>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-3">
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {syncing ? 'Syncing...' : 'Sync Now'}
+        </button>
+        <button
+          onClick={handleDisconnect}
+          disabled={disconnecting}
+          className="px-4 py-2 bg-white text-red-600 text-sm font-medium rounded-lg border border-red-300 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+        </button>
+      </div>
+    </div>
   );
 }

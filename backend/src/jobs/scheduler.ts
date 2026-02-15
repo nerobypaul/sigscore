@@ -1,10 +1,12 @@
 import { logger } from '../utils/logger';
-import { signalSyncQueue, hubspotSyncQueue, discordSyncQueue, salesforceSyncQueue, stackoverflowSyncQueue, twitterSyncQueue, bulkEnrichmentQueue } from './queue';
+import { signalSyncQueue, hubspotSyncQueue, discordSyncQueue, salesforceSyncQueue, stackoverflowSyncQueue, twitterSyncQueue, redditSyncQueue, posthogSyncQueue, bulkEnrichmentQueue } from './queue';
 import { getConnectedOrganizations } from '../services/hubspot-sync';
 import { getConnectedOrganizations as getSalesforceConnectedOrganizations } from '../services/salesforce-sync';
 import { getDiscordConnectedOrganizations } from '../services/discord-connector';
 import { getStackOverflowConnectedOrganizations } from '../services/stackoverflow-connector';
 import { getTwitterConnectedOrganizations } from '../services/twitter-connector';
+import { getRedditConnectedOrganizations } from '../services/reddit-connector';
+import { getPostHogConnectedOrganizations } from '../services/posthog-connector';
 import { getConnectedOrganizations as getClearbitConnectedOrganizations } from '../services/clearbit-enrichment';
 
 /**
@@ -88,6 +90,28 @@ export const setupScheduler = async (): Promise<void> => {
     },
   );
 
+  // Reddit sync every 2 hours for all connected organizations.
+  // Reddit content is less time-sensitive than real-time chat.
+  await redditSyncQueue.add(
+    'reddit-sync-scheduler',
+    { organizationId: '__scheduler__' },
+    {
+      repeat: { pattern: '0 */2 * * *' },
+      jobId: 'scheduled-reddit-sync',
+    },
+  );
+
+  // PostHog sync every hour for all connected organizations.
+  // Product analytics events are valuable and time-sensitive.
+  await posthogSyncQueue.add(
+    'posthog-sync-scheduler',
+    { organizationId: '__scheduler__' },
+    {
+      repeat: { pattern: '0 * * * *' },
+      jobId: 'scheduled-posthog-sync',
+    },
+  );
+
   // Clearbit enrichment daily at 3 AM — auto-enrich new companies missing data.
   await bulkEnrichmentQueue.add(
     'clearbit-enrichment-scheduler',
@@ -107,6 +131,8 @@ export const setupScheduler = async (): Promise<void> => {
       { name: 'salesforce-sync', schedule: 'every 15 minutes' },
       { name: 'stackoverflow-sync', schedule: 'every 6 hours' },
       { name: 'twitter-sync', schedule: 'every 30 minutes' },
+      { name: 'reddit-sync', schedule: 'every 2 hours' },
+      { name: 'posthog-sync', schedule: 'every hour' },
       { name: 'clearbit-enrichment', schedule: 'daily at 3 AM' },
     ],
   });
@@ -198,6 +224,42 @@ export async function enqueueTwitterSyncForAllConnected(): Promise<void> {
     );
   }
   logger.info('Scheduled Twitter sync enqueued for connected orgs', {
+    count: orgIds.length,
+  });
+}
+
+/**
+ * Resolve scheduled Reddit sync into per-org jobs.
+ * Called by the Reddit sync worker when it sees the scheduler sentinel.
+ */
+export async function enqueueRedditSyncForAllConnected(): Promise<void> {
+  const orgIds = await getRedditConnectedOrganizations();
+  for (const orgId of orgIds) {
+    await redditSyncQueue.add(
+      'reddit-sync',
+      { organizationId: orgId },
+      { jobId: `reddit-sync-${orgId}-${Date.now()}` },
+    );
+  }
+  logger.info('Scheduled Reddit sync enqueued for connected orgs', {
+    count: orgIds.length,
+  });
+}
+
+/**
+ * Resolve scheduled PostHog sync into per-org jobs.
+ * Called by the PostHog sync worker when it sees the scheduler sentinel.
+ */
+export async function enqueuePostHogSyncForAllConnected(): Promise<void> {
+  const orgIds = await getPostHogConnectedOrganizations();
+  for (const orgId of orgIds) {
+    await posthogSyncQueue.add(
+      'posthog-sync',
+      { organizationId: orgId },
+      { jobId: `posthog-sync-${orgId}-${Date.now()}` },
+    );
+  }
+  logger.info('Scheduled PostHog sync enqueued for connected orgs', {
     count: orgIds.length,
   });
 }

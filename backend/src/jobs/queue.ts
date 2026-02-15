@@ -18,7 +18,9 @@ export const QUEUE_NAMES = {
   SALESFORCE_SYNC: 'salesforce-sync',
   STACKOVERFLOW_SYNC: 'stackoverflow-sync',
   TWITTER_SYNC: 'twitter-sync',
+  REDDIT_SYNC: 'reddit-sync',
   ENRICHMENT_BULK: 'enrichment-bulk',
+  POSTHOG_SYNC: 'posthog-sync',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -93,6 +95,14 @@ export interface StackOverflowSyncJobData {
 }
 
 export interface TwitterSyncJobData {
+  organizationId: string;
+}
+
+export interface RedditSyncJobData {
+  organizationId: string;
+}
+
+export interface PostHogSyncJobData {
   organizationId: string;
 }
 
@@ -237,6 +247,30 @@ export const twitterSyncQueue = new Queue<TwitterSyncJobData>(
   },
 );
 
+export const redditSyncQueue = new Queue<RedditSyncJobData>(
+  QUEUE_NAMES.REDDIT_SYNC,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 5_000 },
+    },
+  },
+);
+
+export const posthogSyncQueue = new Queue<PostHogSyncJobData>(
+  QUEUE_NAMES.POSTHOG_SYNC,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 5_000 },
+    },
+  },
+);
+
 export const bulkEnrichmentQueue = new Queue<BulkEnrichmentJobData>(
   QUEUE_NAMES.ENRICHMENT_BULK,
   {
@@ -265,6 +299,8 @@ const allQueues: Queue[] = [
   salesforceSyncQueue,
   stackoverflowSyncQueue,
   twitterSyncQueue,
+  redditSyncQueue,
+  posthogSyncQueue,
   bulkEnrichmentQueue,
 ];
 

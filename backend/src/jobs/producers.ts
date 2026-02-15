@@ -13,6 +13,8 @@ import {
   salesforceSyncQueue,
   stackoverflowSyncQueue,
   twitterSyncQueue,
+  redditSyncQueue,
+  posthogSyncQueue,
   bulkEnrichmentQueue,
   SignalProcessingJobData,
   ScoreComputationJobData,
@@ -26,6 +28,8 @@ import {
   SalesforceSyncJobData,
   StackOverflowSyncJobData,
   TwitterSyncJobData,
+  RedditSyncJobData,
+  PostHogSyncJobData,
   BulkEnrichmentJobData,
 } from './queue';
 
@@ -314,6 +318,50 @@ export const enqueueTwitterSync = async (
     },
   );
   logger.debug('Enqueued Twitter sync', { jobId: job.id, organizationId });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// Reddit Sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue a Reddit sync job for a specific organization.
+ */
+export const enqueueRedditSync = async (
+  organizationId: string,
+): Promise<Job<RedditSyncJobData>> => {
+  const job = await redditSyncQueue.add(
+    'reddit-sync',
+    { organizationId },
+    {
+      // Deduplication: only one pending sync per org at a time
+      jobId: `reddit-sync-${organizationId}`,
+    },
+  );
+  logger.debug('Enqueued Reddit sync', { jobId: job.id, organizationId });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// PostHog Sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue a PostHog sync job for a specific organization.
+ */
+export const enqueuePostHogSync = async (
+  organizationId: string,
+): Promise<Job<PostHogSyncJobData>> => {
+  const job = await posthogSyncQueue.add(
+    'posthog-sync',
+    { organizationId },
+    {
+      // Deduplication: only one pending sync per org at a time
+      jobId: `posthog-sync-${organizationId}`,
+    },
+  );
+  logger.debug('Enqueued PostHog sync', { jobId: job.id, organizationId });
   return job;
 };
 

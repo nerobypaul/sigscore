@@ -535,6 +535,7 @@ enum IdentityType {
   DOMAIN
   DISCORD
   STACKOVERFLOW
+  REDDIT
   POSTHOG
 }
 
