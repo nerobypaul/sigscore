@@ -11,6 +11,7 @@ export const redis = new Redis({
   password: config.redis.password,
   maxRetriesPerRequest: null, // Required by BullMQ
   enableReadyCheck: false,
+  family: 0, // Dual-stack (IPv4 + IPv6) for Railway/cloud internal networking
 });
 
 redis.on('connect', () => {
@@ -30,4 +31,5 @@ export const bullConnection = {
   host: config.redis.host,
   port: config.redis.port,
   password: config.redis.password,
+  family: 0, // Dual-stack (IPv4 + IPv6) for Railway/cloud internal networking
 };

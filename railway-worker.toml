@@ -1,0 +1,9 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+watchPatterns = ["backend/**", "package.json", "package-lock.json"]
+
+[deploy]
+startCommand = "node dist/worker.js"
+restartPolicyType = "ALWAYS"
+restartPolicyMaxRetries = 5

@@ -1,0 +1,11 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+watchPatterns = ["backend/**", "frontend/**", "package.json", "package-lock.json"]
+
+[deploy]
+startCommand = "npx prisma migrate deploy --schema ./prisma/schema.prisma && node dist/server.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ALWAYS"
+restartPolicyMaxRetries = 5
