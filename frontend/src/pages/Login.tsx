@@ -117,13 +117,12 @@ export default function Login() {
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                   Password
                 </label>
-                <a
-                  href="#"
+                <Link
+                  to="/forgot-password"
                   className="text-xs text-indigo-600 hover:text-indigo-500 font-medium"
-                  onClick={(e) => e.preventDefault()}
                 >
                   Forgot password?
-                </a>
+                </Link>
               </div>
               <input
                 id="password"

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, refresh, logout, me } from '../controllers/auth';
+import { register, login, refresh, logout, me, forgotPassword, handleResetPassword } from '../controllers/auth';
 import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
@@ -21,6 +21,15 @@ const loginSchema = z.object({
 
 const refreshSchema = z.object({
   refreshToken: z.string(),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8),
 });
 
 /**
@@ -262,5 +271,81 @@ router.post('/logout', authenticate, logout);
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/me', authenticate, me);
+
+/**
+ * @openapi
+ * /auth/forgot-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Request a password reset email
+ *     description: Sends a password reset link to the provided email address. Always returns 200 to avoid leaking whether the email exists.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Reset email sent (if account exists)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationError'
+ */
+router.post('/forgot-password', validate(forgotPasswordSchema), forgotPassword);
+
+/**
+ * @openapi
+ * /auth/reset-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Reset password using a token
+ *     description: Sets a new password using the token from the reset email.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, password]
+ *             properties:
+ *               token:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Invalid or expired token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/reset-password', validate(resetPasswordSchema), handleResetPassword);
 
 export default router;

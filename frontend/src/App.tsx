@@ -42,6 +42,8 @@ const SsoSettings = lazy(() => import('./pages/SsoSettings'));
 const SsoCallback = lazy(() => import('./pages/SsoCallback'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 const WebhookManager = lazy(() => import('./pages/WebhookManager'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
@@ -96,6 +98,14 @@ function AppRoutes() {
         <Route
           path="/register"
           element={isAuthenticated ? <Navigate to="/" replace /> : <Register />}
+        />
+        <Route
+          path="/forgot-password"
+          element={isAuthenticated ? <Navigate to="/" replace /> : <ForgotPassword />}
+        />
+        <Route
+          path="/reset-password"
+          element={isAuthenticated ? <Navigate to="/" replace /> : <ResetPassword />}
         />
 
         {/* Onboarding: must be logged in, shown when user has no org */}

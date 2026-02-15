@@ -4,6 +4,7 @@ import { hashPassword, comparePassword } from '../utils/password';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { logger } from '../utils/logger';
 import { prisma } from '../config/database';
+import { requestPasswordReset, resetPassword as resetPasswordService, ResetTokenError } from '../services/password-reset';
 
 /** One-way SHA-256 hash for refresh tokens before DB storage. */
 function hashToken(token: string): string {
@@ -218,6 +219,33 @@ export const me = async (req: Request, res: Response, next: NextFunction): Promi
 
     res.json(user);
   } catch (error) {
+    next(error);
+  }
+};
+
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email } = req.body;
+    await requestPasswordReset(email);
+
+    // Always return 200 regardless of whether the email exists
+    res.json({ message: 'If that email is registered, we sent a password reset link.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const handleResetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { token, password } = req.body;
+    await resetPasswordService(token, password);
+
+    res.json({ message: 'Password has been reset successfully.' });
+  } catch (error) {
+    if (error instanceof ResetTokenError) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
     next(error);
   }
 };
