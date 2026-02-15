@@ -258,8 +258,13 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'DevSignal API Docs',
 }));
 
-// 404 handler
-app.use((_req, res) => {
+// 404 handler for API routes only.
+// Non-API routes are handled by the SPA fallback in server.ts (production)
+// or by the Vite dev server (development).
+app.use('/api', (_req, res) => {
+  res.status(404).json({ error: 'Not Found' });
+});
+app.use('/graphql', (_req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
 

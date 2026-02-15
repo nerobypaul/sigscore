@@ -1,8 +1,8 @@
-# Dependencies (each Dockerfile copies what it needs)
+# Dependencies (each stage copies what it needs)
 node_modules
 **/node_modules
 
-# Build output
+# Build output (rebuilt inside Docker)
 backend/dist
 frontend/dist
 
@@ -35,9 +35,16 @@ coverage/
 **/__tests__/
 **/*.test.ts
 **/*.spec.ts
+jest.config.*
+
+# E2E tests
+e2e/
+playwright-report/
+playwright.config.ts
 
 # Documentation (not needed in images)
-*.md
+README.md
+ARCHITECTURE.md
 LICENSE
 docs/
 
@@ -48,9 +55,12 @@ claude-flow-md/
 nero.sh
 .changelog/
 
-# Docker files themselves
+# Docker files themselves (prevent recursive context)
 docker-compose*.yml
-.dockerignore
+Dockerfile
+backend/Dockerfile
+frontend/Dockerfile
+**/.dockerignore
 
-# SDK package (not needed for backend/frontend images)
+# SDK package (not needed in the unified image)
 packages/
