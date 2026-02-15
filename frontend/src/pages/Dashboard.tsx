@@ -35,7 +35,7 @@ export default function Dashboard() {
           api.get('/companies', { params: { limit: 1 } }),
           api.get('/deals', { params: { limit: 100 } }),
           api.get('/activities', { params: { limit: 5 } }),
-          api.get('/signals', { params: { limit: 8 } }).catch(() => ({ data: { signals: [] } })),
+          api.get('/signals', { params: { limit: 10 } }).catch(() => ({ data: { signals: [] } })),
           api.get('/signals/scores', { params: { tier: 'HOT', limit: 5 } }).catch(() => ({ data: { scores: [] } })),
         ]);
 
@@ -111,6 +111,34 @@ export default function Dashboard() {
 
   if (!stats) return null;
 
+  const isNewUser = stats.contacts.total < 5;
+
+  // -- New user: show onboarding hero instead of stat cards --
+  if (isNewUser) {
+    return (
+      <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+        <DemoDataBanner />
+        <GettingStarted />
+
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500">Overview of your signal intelligence</p>
+        </div>
+
+        {/* Hero onboarding banner */}
+        <OnboardingHero />
+
+        {/* Still show any signals or hot accounts that might exist from demo data */}
+        {stats.signals.recent.length > 0 && (
+          <div className="mt-8">
+            <RecentActivityFeed signals={stats.signals.recent} activities={stats.activities.recent} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // -- Active user: full dashboard --
   const statCards = [
     {
       label: 'Total Contacts',
@@ -138,6 +166,17 @@ export default function Dashboard() {
     },
   ];
 
+  // Compute daily digest numbers
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todaySignalCount = stats.signals.recent.filter(
+    (s) => s.timestamp && s.timestamp.slice(0, 10) === todayStr
+  ).length;
+  const todayContactCount = stats.contacts.recent.filter(
+    (c) => c.createdAt && c.createdAt.slice(0, 10) === todayStr
+  ).length;
+  // Find the hottest rising account for the insight line
+  const topRisingAccount = stats.hotAccounts.find((a) => a.trend === 'RISING') || stats.hotAccounts[0];
+
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Demo data banner */}
@@ -148,8 +187,16 @@ export default function Dashboard() {
 
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">Overview of your pipeline intelligence</p>
+        <p className="mt-1 text-sm text-gray-500">Overview of your signal intelligence</p>
       </div>
+
+      {/* Daily Digest Card */}
+      <DailyDigest
+        signalCount={todaySignalCount}
+        contactCount={todayContactCount}
+        topAccount={topRisingAccount}
+        totalSignals={stats.signals.recent.length}
+      />
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -174,9 +221,12 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Recent Activity Feed */}
+      <RecentActivityFeed signals={stats.signals.recent} activities={stats.activities.recent} />
+
       {/* Analytics Charts */}
       {analytics && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 mt-8">
           {/* Signal Trends */}
           <SignalTrendsChart trends={analytics.trends} />
 
@@ -186,36 +236,11 @@ export default function Dashboard() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Hot Accounts */}
+        <HotAccountsSection accounts={stats.hotAccounts} />
+
         {/* Deal pipeline summary */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Deal Pipeline</h2>
-            <Link to="/deals" className="text-sm text-indigo-600 hover:text-indigo-500">
-              View all
-            </Link>
-          </div>
-          {Object.keys(stats.deals.byStage).length === 0 ? (
-            <p className="text-sm text-gray-500 py-4">No deals yet</p>
-          ) : (
-            <div className="space-y-3">
-              {Object.entries(stats.deals.byStage).map(([stage, count]) => {
-                const stageKey = stage as keyof typeof STAGE_LABELS;
-                return (
-                  <div key={stage} className="flex items-center justify-between">
-                    <span
-                      className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                        STAGE_COLORS[stageKey] || 'bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      {STAGE_LABELS[stageKey] || stage}
-                    </span>
-                    <span className="text-sm font-semibold text-gray-700">{count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <DealPipelineSection deals={stats.deals} />
 
         {/* Recent contacts */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -258,89 +283,308 @@ export default function Dashboard() {
         {analytics && analytics.topSignals.length > 0 && (
           <TopSignalTypesChart topSignals={analytics.topSignals} />
         )}
+      </div>
+    </div>
+  );
+}
 
-        {/* Recent Signal + Activity Feed */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-            <div className="flex gap-3">
-              <Link to="/signals" className="text-sm text-indigo-600 hover:text-indigo-500">Signals</Link>
-              <Link to="/activities" className="text-sm text-indigo-600 hover:text-indigo-500">Activities</Link>
-            </div>
-          </div>
-          {stats.activities.recent.length === 0 && stats.signals.recent.length === 0 ? (
-            <p className="text-sm text-gray-500 py-4">No activity yet</p>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {/* Merge signals + activities, show most recent first */}
-              {[
-                ...stats.signals.recent.map((s) => ({
-                  id: s.id,
-                  kind: 'signal' as const,
-                  title: s.type,
-                  subtitle: s.account?.name || s.actor ? `${s.actor?.firstName || ''} ${s.actor?.lastName || ''}`.trim() : s.source?.name || '',
-                  date: s.timestamp,
-                })),
-                ...stats.activities.recent.map((a) => ({
-                  id: a.id,
-                  kind: 'activity' as const,
-                  title: a.title,
-                  subtitle: `${a.type} - ${a.status}`,
-                  date: a.createdAt,
-                })),
-              ]
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                .slice(0, 8)
-                .map((item) => (
-                  <div key={item.id} className="flex items-center gap-4 py-3">
-                    {item.kind === 'signal' ? (
-                      <span className="text-xs font-bold w-7 h-7 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">S</span>
-                    ) : (
-                      <ActivityTypeBadge type={item.subtitle.split(' - ')[0]} />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{item.title}</p>
-                      <p className="text-xs text-gray-500 truncate">{item.subtitle}</p>
-                    </div>
-                    <span className="text-xs text-gray-400 flex-shrink-0">
-                      {new Date(item.date).toLocaleDateString()}
-                    </span>
-                  </div>
-                ))}
-            </div>
+// ---------------------------------------------------------------------------
+// Onboarding Hero (for new users with < 5 contacts)
+// ---------------------------------------------------------------------------
+
+function OnboardingHero() {
+  return (
+    <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-8 lg:p-10 text-white">
+      <div className="max-w-2xl">
+        <h2 className="text-2xl lg:text-3xl font-bold mb-3">
+          Welcome to DevSignal!
+        </h2>
+        <p className="text-indigo-100 text-lg mb-8 leading-relaxed">
+          Connect your first signal source to start discovering who's evaluating your tool.
+          We'll track developer activity across GitHub, npm, documentation, and more --
+          so your team knows exactly which companies to talk to.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            to="/settings"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-indigo-700 font-semibold rounded-lg hover:bg-indigo-50 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+            </svg>
+            Connect GitHub
+          </Link>
+          <Link
+            to="/contacts"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/15 text-white font-semibold rounded-lg hover:bg-white/25 transition-colors border border-white/20"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            </svg>
+            Import Contacts
+          </Link>
+          <Link
+            to="/"
+            onClick={(e) => {
+              e.preventDefault();
+              // Trigger demo data load via the DemoDataBanner mechanism
+              window.dispatchEvent(new CustomEvent('devsignal:load-demo'));
+            }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/15 text-white font-semibold rounded-lg hover:bg-white/25 transition-colors border border-white/20"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+            </svg>
+            Explore Demo Data
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Daily Digest Card
+// ---------------------------------------------------------------------------
+
+function DailyDigest({
+  signalCount,
+  contactCount,
+  topAccount,
+  totalSignals,
+}: {
+  signalCount: number;
+  contactCount: number;
+  topAccount?: AccountScore | null;
+  totalSignals: number;
+}) {
+  // Only show if there's something meaningful to report
+  const hasActivity = signalCount > 0 || contactCount > 0 || topAccount;
+  if (!hasActivity && totalSignals === 0) return null;
+
+  // Build insight line
+  let insight = '';
+  if (topAccount && topAccount.account) {
+    const trendLabel = topAccount.trend === 'RISING' ? 'rising' : topAccount.trend === 'FALLING' ? 'falling' : 'stable';
+    insight = `${topAccount.account.name}'s score is ${topAccount.score} (${topAccount.tier}) and ${trendLabel}`;
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
+      <div className="flex items-start gap-4">
+        <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+          <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-semibold text-gray-900 mb-1">Daily Digest</h3>
+          <p className="text-sm text-gray-600">
+            Today: <span className="font-medium">{signalCount} new signal{signalCount !== 1 ? 's' : ''}</span>
+            {contactCount > 0 && (
+              <>, <span className="font-medium">{contactCount} new contact{contactCount !== 1 ? 's' : ''}</span></>
+            )}
+            {topAccount && (
+              <>, <span className="font-medium">{topAccount.account?.name || 'Unknown'}</span> is your hottest account</>
+            )}
+          </p>
+          {insight && (
+            <p className="text-xs text-gray-500 mt-1">
+              {insight}
+            </p>
           )}
         </div>
-
-        {/* Hot Accounts */}
-        {stats.hotAccounts.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:col-span-2">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Hot Accounts</h2>
-              <Link to="/scores" className="text-sm text-indigo-600 hover:text-indigo-500">View all scores</Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {stats.hotAccounts.map((s) => (
-                <Link
-                  key={s.id}
-                  to={`/companies/${s.accountId}`}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-gray-900 truncate">{s.account?.name || 'Unknown'}</span>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${TIER_COLORS[s.tier]}`}>{s.tier}</span>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">{s.score}</div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                    <span>{s.signalCount} signals</span>
-                    <span>{s.userCount} users</span>
-                    <span className="capitalize">{s.trend.toLowerCase()}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Recent Activity Feed (the "living" feed)
+// ---------------------------------------------------------------------------
+
+function RecentActivityFeed({ signals, activities }: { signals: Signal[]; activities: Activity[] }) {
+  const hasSignals = signals.length > 0;
+  const hasActivities = activities.length > 0;
+
+  if (!hasSignals && !hasActivities) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">Recent Activity</h2>
+        <div className="py-8 text-center">
+          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+            </svg>
+          </div>
+          <p className="text-sm text-gray-500 mb-1">No signals yet.</p>
+          <p className="text-xs text-gray-400 mb-4">Connect GitHub, npm, or another source to start tracking developer activity.</p>
+          <Link
+            to="/settings"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            Connect a signal source
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Merge signals + activities, sort by recency, show last 10
+  const feed = [
+    ...signals.map((s) => ({
+      id: s.id,
+      kind: 'signal' as const,
+      title: formatSignalTitle(s),
+      subtitle: s.account?.name || (s.actor ? `${s.actor?.firstName || ''} ${s.actor?.lastName || ''}`.trim() : '') || s.source?.name || '',
+      linkTo: s.account?.id ? `/companies/${s.account.id}` : (s.actor?.id ? `/contacts/${s.actor.id}` : '/signals'),
+      date: s.timestamp,
+      signalType: s.type,
+    })),
+    ...activities.map((a) => ({
+      id: a.id,
+      kind: 'activity' as const,
+      title: a.title,
+      subtitle: `${a.type} - ${a.status}`,
+      linkTo: '/activities',
+      date: a.createdAt,
+      signalType: '',
+    })),
+  ]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 10);
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+        <Link to="/signals" className="text-sm text-indigo-600 hover:text-indigo-500">View all</Link>
+      </div>
+      <div className="divide-y divide-gray-100">
+        {feed.map((item) => (
+          <Link
+            key={item.id}
+            to={item.linkTo}
+            className="flex items-center gap-3 py-3 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors"
+          >
+            {item.kind === 'signal' ? (
+              <SignalTypeBadge type={item.signalType} />
+            ) : (
+              <ActivityTypeBadge type={item.subtitle.split(' - ')[0]} />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">{item.title}</p>
+              {item.subtitle && (
+                <p className="text-xs text-gray-500 truncate">{item.subtitle}</p>
+              )}
+            </div>
+            <span className="text-xs text-gray-400 flex-shrink-0">
+              {formatRelativeTime(item.date)}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Hot Accounts Section (with empty state)
+// ---------------------------------------------------------------------------
+
+function HotAccountsSection({ accounts }: { accounts: AccountScore[] }) {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:col-span-2">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Hot Accounts</h2>
+        <Link to="/scores" className="text-sm text-indigo-600 hover:text-indigo-500">View all scores</Link>
+      </div>
+      {accounts.length === 0 ? (
+        <div className="py-6 text-center">
+          <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1.001A3.75 3.75 0 0012 18z" />
+            </svg>
+          </div>
+          <p className="text-sm text-gray-500 mb-1">No hot accounts yet.</p>
+          <p className="text-xs text-gray-400 max-w-sm mx-auto">
+            Accounts scoring 80+ will appear here once you have signals flowing. Connect a source to start tracking.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {accounts.map((s) => (
+            <Link
+              key={s.id}
+              to={`/companies/${s.accountId}`}
+              className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-gray-900 truncate">{s.account?.name || 'Unknown'}</span>
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${TIER_COLORS[s.tier]}`}>{s.tier}</span>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">{s.score}</div>
+              <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                <span>{s.signalCount} signals</span>
+                <span>{s.userCount} users</span>
+                <span className="capitalize">{s.trend.toLowerCase()}</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Deal Pipeline Section (with empty state)
+// ---------------------------------------------------------------------------
+
+function DealPipelineSection({ deals }: { deals: DashboardStats['deals'] }) {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Deal Pipeline</h2>
+        <Link to="/deals" className="text-sm text-indigo-600 hover:text-indigo-500">
+          View all
+        </Link>
+      </div>
+      {Object.keys(deals.byStage).length === 0 ? (
+        <div className="py-6 text-center">
+          <div className="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p className="text-sm text-gray-500 mb-1">No deals yet.</p>
+          <p className="text-xs text-gray-400 max-w-xs mx-auto">
+            Deals are created automatically when accounts reach "WARM" status, or manually from the Companies page.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {Object.entries(deals.byStage).map(([stage, count]) => {
+            const stageKey = stage as keyof typeof STAGE_LABELS;
+            return (
+              <div key={stage} className="flex items-center justify-between">
+                <span
+                  className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                    STAGE_COLORS[stageKey] || 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {STAGE_LABELS[stageKey] || stage}
+                </span>
+                <span className="text-sm font-semibold text-gray-700">{count}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -518,6 +762,65 @@ function TopSignalTypesChart({ topSignals }: { topSignals: { type: string; count
 function formatShortDate(dateStr: string): string {
   const d = new Date(dateStr);
   return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function formatRelativeTime(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return formatShortDate(dateStr);
+}
+
+function formatSignalTitle(signal: Signal): string {
+  const type = signal.type?.replace(/_/g, ' ').toLowerCase() || 'signal';
+  const actorName = signal.actor
+    ? `${signal.actor.firstName || ''} ${signal.actor.lastName || ''}`.trim()
+    : '';
+  const accountName = signal.account?.name || '';
+
+  if (actorName && accountName) {
+    return `${actorName} at ${accountName} -- ${type}`;
+  }
+  if (accountName) {
+    return `${accountName} -- ${type}`;
+  }
+  if (actorName) {
+    return `${actorName} -- ${type}`;
+  }
+  return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
+function SignalTypeBadge({ type }: { type: string }) {
+  const colors: Record<string, string> = {
+    github_star: 'bg-amber-100 text-amber-700',
+    github_fork: 'bg-amber-100 text-amber-700',
+    github_issue: 'bg-amber-100 text-amber-700',
+    github_pr: 'bg-amber-100 text-amber-700',
+    npm_download: 'bg-red-100 text-red-700',
+    npm_install: 'bg-red-100 text-red-700',
+    doc_visit: 'bg-blue-100 text-blue-700',
+    page_view: 'bg-blue-100 text-blue-700',
+    sign_up: 'bg-green-100 text-green-700',
+    api_usage: 'bg-indigo-100 text-indigo-700',
+  };
+
+  const normalizedType = (type || '').toLowerCase().replace(/ /g, '_');
+  const colorClass = colors[normalizedType] || 'bg-amber-100 text-amber-700';
+  const icon = normalizedType.startsWith('github') ? 'GH' : normalizedType.startsWith('npm') ? 'npm' : 'S';
+
+  return (
+    <span className={`text-[10px] font-bold w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${colorClass}`}>
+      {icon}
+    </span>
+  );
 }
 
 function ActivityTypeBadge({ type }: { type: string }) {
