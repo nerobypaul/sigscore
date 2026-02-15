@@ -8,9 +8,10 @@ const DISMISSED_KEY = 'devsignal_onboarding_dismissed';
 interface ChecklistItem {
   id: string;
   label: string;
-  href?: string;
+  description: string;
+  href: string;
+  ctaLabel: string;
   done: boolean;
-  detail?: React.ReactNode;
 }
 
 export default function GettingStarted() {
@@ -21,6 +22,7 @@ export default function GettingStarted() {
   const [contactCount, setContactCount] = useState<number | null>(null);
   const [sourceCount, setSourceCount] = useState<number | null>(null);
   const [memberCount, setMemberCount] = useState<number | null>(null);
+  const [workflowCount, setWorkflowCount] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -30,10 +32,11 @@ export default function GettingStarted() {
 
     async function fetchCounts() {
       try {
-        const [contactsRes, sourcesRes, membersRes] = await Promise.all([
+        const [contactsRes, sourcesRes, membersRes, workflowsRes] = await Promise.all([
           api.get('/contacts', { params: { limit: 1 } }).catch(() => null),
           api.get('/sources', { params: { limit: 100 } }).catch(() => null),
           api.get('/members').catch(() => null),
+          api.get('/workflows', { params: { limit: 1 } }).catch(() => null),
         ]);
 
         if (cancelled) return;
@@ -49,11 +52,17 @@ export default function GettingStarted() {
 
         const members = membersRes?.data?.members || membersRes?.data || [];
         setMemberCount(Array.isArray(members) ? members.length : 0);
+
+        const workflows = workflowsRes?.data?.workflows || workflowsRes?.data || [];
+        setWorkflowCount(
+          Array.isArray(workflows) ? workflows.length : workflowsRes?.data?.pagination?.total ?? 0,
+        );
       } catch {
         if (!cancelled) {
           setContactCount(0);
           setSourceCount(0);
           setMemberCount(0);
+          setWorkflowCount(0);
         }
       } finally {
         if (!cancelled) setLoaded(true);
@@ -69,47 +78,51 @@ export default function GettingStarted() {
   if (dismissed) return null;
   if (!loaded) return null;
 
-  const hasOrg = (user?.organizations?.length ?? 0) > 0;
-  const hasContact = (contactCount ?? 0) > 0;
   const hasSource = (sourceCount ?? 0) > 0;
+  const hasContact = (contactCount ?? 0) > 0;
+  const hasWorkflow = (workflowCount ?? 0) > 0;
   const hasTeam = (memberCount ?? 0) > 1;
 
+  // Ordered by impact: GitHub first, then review accounts, Slack, workflows, team
   const items: ChecklistItem[] = [
     {
-      id: 'org',
-      label: 'Create your organization',
-      done: hasOrg,
-    },
-    {
       id: 'signal-source',
-      label: 'Connect a signal source',
+      label: 'Connect GitHub',
+      description: 'Import stargazers, forkers, and contributors as signals',
       href: '/settings',
+      ctaLabel: 'Connect',
       done: hasSource,
-      detail: (
-        <span className="text-xs text-gray-400">GitHub, npm, Segment, or a custom webhook</span>
-      ),
     },
     {
-      id: 'contact',
-      label: 'Add your first contact',
-      href: '/contacts',
+      id: 'review-accounts',
+      label: 'Review your top accounts',
+      description: 'See which companies show the strongest buying signals',
+      href: '/scores',
+      ctaLabel: 'View scores',
       done: hasContact,
     },
     {
-      id: 'sdk',
-      label: 'Install the SDK',
-      href: '/docs',
+      id: 'slack',
+      label: 'Set up Slack alerts',
+      description: 'Get notified when hot accounts appear in real-time',
+      href: '/settings',
+      ctaLabel: 'Configure',
       done: false,
-      detail: (
-        <code className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-mono block mt-1">
-          npm install @devsignal/node
-        </code>
-      ),
+    },
+    {
+      id: 'workflow',
+      label: 'Create your first workflow',
+      description: 'Automate actions when signals match your criteria',
+      href: '/workflows',
+      ctaLabel: 'Create workflow',
+      done: hasWorkflow,
     },
     {
       id: 'team',
       label: 'Invite your team',
+      description: 'Collaborate on accounts with your sales and product teams',
       href: '/team',
+      ctaLabel: 'Invite',
       done: hasTeam,
     },
   ];
@@ -118,7 +131,7 @@ export default function GettingStarted() {
   const totalCount = items.length;
   const progressPct = Math.round((completedCount / totalCount) * 100);
 
-  // If all steps are complete, auto-dismiss
+  // Only auto-dismiss when ALL steps are complete
   if (completedCount === totalCount) {
     return null;
   }
@@ -128,14 +141,22 @@ export default function GettingStarted() {
     setDismissed(true);
   };
 
+  // Unused variable guard
+  void user;
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Getting Started</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-gray-900">Getting Started</h2>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">
+              Setup: {progressPct}% complete
+            </span>
+          </div>
           <p className="text-sm text-gray-500 mt-0.5">
-            {completedCount} of {totalCount} completed -- {progressPct}%
+            {completedCount} of {totalCount} steps completed
           </p>
         </div>
         <button
@@ -159,64 +180,58 @@ export default function GettingStarted() {
       </div>
 
       {/* Checklist */}
-      <div className="space-y-1">
-        {items.map((item) => {
-          const content = (
-            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors group">
-              {/* Checkbox */}
-              <div
-                className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  item.done
-                    ? 'bg-green-500 text-white'
-                    : 'border-2 border-gray-300 group-hover:border-indigo-400'
-                }`}
-              >
-                {item.done && (
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                )}
-              </div>
-
-              {/* Label */}
-              <div className="flex-1 min-w-0">
-                <span
-                  className={`text-sm ${
-                    item.done
-                      ? 'text-gray-400 line-through'
-                      : 'text-gray-700 font-medium'
-                  }`}
-                >
-                  {item.label}
-                </span>
-                {!item.done && item.detail && <div className="mt-0.5">{item.detail}</div>}
-              </div>
-
-              {/* Arrow for linked items */}
-              {item.href && !item.done && (
-                <svg
-                  className="w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors flex-shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+      <div className="space-y-2">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-colors ${
+              item.done
+                ? 'border-gray-100 bg-gray-50'
+                : 'border-gray-200 hover:border-indigo-200 hover:bg-indigo-50/30'
+            }`}
+          >
+            {/* Checkbox indicator */}
+            <div
+              className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                item.done
+                  ? 'bg-green-500 text-white'
+                  : 'border-2 border-gray-300'
+              }`}
+            >
+              {item.done && (
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
               )}
             </div>
-          );
 
-          if (item.href && !item.done) {
-            return (
-              <Link key={item.id} to={item.href} className="block">
-                {content}
+            {/* Label and description */}
+            <div className="flex-1 min-w-0">
+              <span
+                className={`text-sm ${
+                  item.done
+                    ? 'text-gray-400 line-through'
+                    : 'text-gray-900 font-medium'
+                }`}
+              >
+                {item.label}
+              </span>
+              {!item.done && (
+                <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
+              )}
+            </div>
+
+            {/* CTA button */}
+            {!item.done && (
+              <Link
+                to={item.href}
+                className="flex-shrink-0 inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+              >
+                {item.ctaLabel}
               </Link>
-            );
-          }
-
-          return <div key={item.id}>{content}</div>;
-        })}
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

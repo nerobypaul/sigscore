@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import api from '../lib/api';
 import Spinner from '../components/Spinner';
@@ -237,8 +237,8 @@ export default function Onboarding() {
 
   // ---- Navigation ----
 
-  const goToDashboard = useCallback(() => {
-    navigate('/', { replace: true });
+  const goToCompanies = useCallback(() => {
+    navigate('/companies', { replace: true });
   }, [navigate]);
 
   // ---- Render ----
@@ -299,6 +299,7 @@ export default function Onboarding() {
           {/* =================== STEP 1: Create Organization =================== */}
           {currentStep === 0 && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+              <p className="text-xs font-medium text-indigo-600 mb-3">Step 1 of 3 -- Create your workspace</p>
               <h2 className="text-xl font-bold text-gray-900 mb-1">Create your organization</h2>
               <p className="text-sm text-gray-500 mb-6">
                 This is your workspace where your team and data live.
@@ -356,6 +357,9 @@ export default function Onboarding() {
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow"
                     placeholder="yourcompany.com"
                   />
+                  <p className="mt-1.5 text-xs text-gray-400">
+                    Your company's domain (e.g., acme.dev). Helps match signals to your team.
+                  </p>
                 </div>
 
                 <div className="pt-2">
@@ -381,6 +385,7 @@ export default function Onboarding() {
           {/* =================== STEP 2: Connect GitHub =================== */}
           {currentStep === 1 && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+              <p className="text-xs font-medium text-indigo-600 mb-3">Step 2 of 3 -- Connect your signals</p>
               <div className="flex items-center gap-3 mb-1">
                 <div className="w-10 h-10 rounded-lg bg-gray-900 flex items-center justify-center flex-shrink-0">
                   <GitHubIcon />
@@ -441,7 +446,7 @@ export default function Onboarding() {
                       {tokenValidating ? (
                         <>
                           <Spinner size="sm" className="border-white border-t-transparent" />
-                          Connecting...
+                          Validating token...
                         </>
                       ) : (
                         <>
@@ -450,6 +455,10 @@ export default function Onboarding() {
                         </>
                       )}
                     </button>
+
+                    <p className="text-xs text-gray-400 text-center">
+                      We'll scan your top repos for stargazers, forkers, and issue authors to find companies evaluating your tool.
+                    </p>
                   </>
                 )}
 
@@ -595,7 +604,7 @@ export default function Onboarding() {
                 <div className="mt-6 pt-4 border-t border-gray-100 text-center">
                   <button
                     type="button"
-                    onClick={goToDashboard}
+                    onClick={goToCompanies}
                     className="text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors"
                   >
                     Skip for now -- I will set up later
@@ -608,14 +617,25 @@ export default function Onboarding() {
           {/* =================== STEP 3: See Results =================== */}
           {currentStep === 2 && summary && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-              {/* Success header */}
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              {/* Celebration banner */}
+              <div className="bg-green-50 border border-green-200 rounded-lg px-5 py-4 mb-8 flex items-start gap-3">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
                 </div>
+                <div>
+                  <p className="text-sm font-semibold text-green-800">
+                    You're all set! DevSignal found {summary.companiesFound} {summary.companiesFound === 1 ? 'company' : 'companies'} and {summary.developersFound} developers.
+                  </p>
+                  <p className="text-xs text-green-700 mt-0.5">
+                    Your signal intelligence is ready to use.
+                  </p>
+                </div>
+              </div>
 
+              {/* Success header */}
+              <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
                   We found {summary.companiesFound} {summary.companiesFound === 1 ? 'company' : 'companies'}!
                 </h2>
@@ -695,12 +715,66 @@ export default function Onboarding() {
                 </div>
               )}
 
+              {/* What's Next action cards */}
+              <div className="mb-8">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">What's Next</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Link
+                    to="/companies"
+                    className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:bg-indigo-50/50 transition-colors group"
+                  >
+                    <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mb-2">
+                      <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 group-hover:text-indigo-700">View your companies</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      See the {summary.companiesFound} {summary.companiesFound === 1 ? 'company' : 'companies'} we found in your CRM
+                    </p>
+                  </Link>
+
+                  <Link
+                    to="/settings"
+                    className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:bg-indigo-50/50 transition-colors group"
+                  >
+                    <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center mb-2">
+                      <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 group-hover:text-indigo-700">Set up Slack alerts</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Get notified when hot accounts appear
+                    </p>
+                  </Link>
+
+                  <Link
+                    to="/scores"
+                    className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:bg-indigo-50/50 transition-colors group"
+                  >
+                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center mb-2">
+                      <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 group-hover:text-indigo-700">Explore PQA scores</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      See which accounts are hottest
+                    </p>
+                  </Link>
+                </div>
+              </div>
+
               <button
                 type="button"
-                onClick={goToDashboard}
-                className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
+                onClick={goToCompanies}
+                className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
               >
-                Go to Dashboard
+                Go to your Companies
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
               </button>
             </div>
           )}

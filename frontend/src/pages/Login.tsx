@@ -4,13 +4,27 @@ import { useAuth } from '../lib/auth';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
+function humanizeOAuthError(raw: string | null): string {
+  if (!raw) return '';
+  const map: Record<string, string> = {
+    access_denied: 'You denied access. Please try again and authorize DevSignal.',
+    invalid_scope: 'The requested permissions were invalid. Please try again.',
+    server_error: 'The authentication provider encountered an error. Please try again later.',
+    temporarily_unavailable: 'The authentication provider is temporarily unavailable. Please try again later.',
+    invalid_token: 'Your authentication token was invalid or expired. Please try again.',
+    user_exists: 'An account with this email already exists. Try signing in with email instead.',
+    no_email: 'We could not retrieve your email from the provider. Please sign up with email.',
+  };
+  return map[raw] || 'Something went wrong during sign-in. Please try again.';
+}
+
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(searchParams.get('oauth_error') || '');
+  const [error, setError] = useState(humanizeOAuthError(searchParams.get('oauth_error')));
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -34,6 +48,7 @@ export default function Login() {
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">DevSignal</h1>
+          <p className="mt-1 text-sm font-medium text-indigo-600">Developer Signal Intelligence</p>
           <p className="mt-2 text-gray-600">Sign in to your account</p>
         </div>
 
@@ -98,9 +113,18 @@ export default function Login() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <a
+                  href="#"
+                  className="text-xs text-indigo-600 hover:text-indigo-500 font-medium"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  Forgot password?
+                </a>
+              </div>
               <input
                 id="password"
                 type="password"

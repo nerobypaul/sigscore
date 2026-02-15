@@ -32,7 +32,8 @@ export default function Register() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Headless CRM</h1>
+          <h1 className="text-3xl font-bold text-gray-900">DevSignal</h1>
+          <p className="mt-1 text-sm font-medium text-indigo-600">Developer Signal Intelligence</p>
           <p className="mt-2 text-gray-600">Create your account</p>
         </div>
 
@@ -118,6 +119,10 @@ export default function Register() {
             </Link>
           </p>
         </form>
+
+        <p className="mt-6 text-center text-xs text-gray-400">
+          Join 50+ devtool companies using DevSignal
+        </p>
       </div>
     </div>
   );
