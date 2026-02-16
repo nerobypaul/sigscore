@@ -64,6 +64,7 @@ import oauthRoutes from './routes/oauth';
 import enrichmentRoutes from './routes/enrichment';
 import webhookSubscriptionRoutes from './routes/webhook-subscriptions';
 import advancedAnalyticsRoutes from './routes/advanced-analytics';
+import customFieldRoutes from './routes/custom-fields';
 import scoreSnapshotRoutes from './routes/score-snapshots';
 import dataExportRoutes from './routes/data-export';
 import invitationRoutes from './routes/invitations';
@@ -229,6 +230,9 @@ app.use('/api/v1', oauthRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);
+
+// API routes — Custom Field Definitions & Values
+app.use('/api/v1/custom-fields', customFieldRoutes);
 
 // API routes — Data Export (enterprise compliance & data portability)
 app.use('/api/v1/exports', dataExportRoutes);

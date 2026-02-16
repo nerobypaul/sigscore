@@ -85,6 +85,7 @@ model Organization {
   webhookSubscriptions WebhookSubscription[]
   scoreSnapshots     ScoreSnapshot[]
   invitations        Invitation[]
+  customFieldDefinitions CustomFieldDefinition[]
 
   @@index([slug])
   @@map("organizations")
@@ -1080,4 +1081,27 @@ model Invitation {
   @@index([organizationId])
   @@index([email])
   @@map("invitations")
+}
+
+// ============================================================
+// CUSTOM FIELD DEFINITIONS — Org-scoped extensible fields
+// ============================================================
+
+model CustomFieldDefinition {
+  id              String   @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  entityType      String   // 'contact' or 'company'
+  fieldName       String   // internal key, e.g. 'favorite_color'
+  displayName     String   // UI label, e.g. 'Favorite Color'
+  fieldType       String   // 'text', 'number', 'boolean', 'date', 'select'
+  options         Json?    // For 'select' type: ["option1", "option2"]
+  required        Boolean  @default(false)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([organizationId, entityType, fieldName])
+  @@index([organizationId, entityType])
+  @@map("custom_field_definitions")
 }

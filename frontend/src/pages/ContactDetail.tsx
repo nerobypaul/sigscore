@@ -5,6 +5,7 @@ import type { Contact } from '../types';
 import Spinner from '../components/Spinner';
 import { useToast } from '../components/Toast';
 import ActivityTimeline from '../components/ActivityTimeline';
+import CustomFieldsDisplay from '../components/CustomFieldsDisplay';
 
 export default function ContactDetail() {
   const { id } = useParams<{ id: string }>();
@@ -130,6 +131,9 @@ export default function ContactDetail() {
               <p className="text-sm text-gray-700 whitespace-pre-wrap">{contact.notes}</p>
             </div>
           )}
+
+          {/* Custom Fields */}
+          <CustomFieldsDisplay entityType="contact" entityId={id!} />
 
           {/* Identity Resolution */}
           <IdentitySection contactId={id!} />

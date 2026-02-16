@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import api from '../lib/api';
 import { useToast } from '../components/Toast';
 import Spinner from '../components/Spinner';
+import CustomFieldsManager from '../components/CustomFieldsManager';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -224,13 +225,14 @@ interface ZendeskStatus {
   };
 }
 
-type TabId = 'api-keys' | 'webhooks' | 'sources' | 'notifications' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord' | 'stackoverflow' | 'twitter' | 'reddit' | 'linkedin' | 'posthog' | 'clearbit' | 'intercom' | 'zendesk';
+type TabId = 'api-keys' | 'webhooks' | 'sources' | 'notifications' | 'custom-fields' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord' | 'stackoverflow' | 'twitter' | 'reddit' | 'linkedin' | 'posthog' | 'clearbit' | 'intercom' | 'zendesk';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'api-keys', label: 'API Keys' },
   { id: 'webhooks', label: 'Webhooks' },
   { id: 'sources', label: 'Signal Sources' },
   { id: 'notifications', label: 'Notifications' },
+  { id: 'custom-fields', label: 'Custom Fields' },
   { id: 'slack', label: 'Slack' },
   { id: 'segment', label: 'Segment' },
   { id: 'hubspot', label: 'HubSpot' },
@@ -4273,6 +4275,11 @@ export default function Settings() {
       {loadedTabsRef.current.has('notifications') && (
         <div className={activeTab === 'notifications' ? '' : 'hidden'}>
           <NotificationsTab />
+        </div>
+      )}
+      {loadedTabsRef.current.has('custom-fields') && (
+        <div className={activeTab === 'custom-fields' ? '' : 'hidden'}>
+          <CustomFieldsManager />
         </div>
       )}
       {loadedTabsRef.current.has('slack') && (

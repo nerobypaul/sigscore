@@ -9,6 +9,7 @@ import AccountScoreCard, { AccountScoreBadge } from '../components/AccountScoreC
 import AccountTimeline from '../components/AccountTimeline';
 import AIBriefPanel from '../components/AIBriefPanel';
 import ScoreTrendChart from '../components/ScoreTrendChart';
+import CustomFieldsDisplay from '../components/CustomFieldsDisplay';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -464,6 +465,9 @@ function OverviewTab({ companyId, company, score, signals, activities, contacts,
             </div>
           </div>
         )}
+
+        {/* Custom Fields */}
+        <CustomFieldsDisplay entityType="company" entityId={companyId} />
       </div>
 
       {/* RIGHT COLUMN (1/3) */}
