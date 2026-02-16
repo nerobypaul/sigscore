@@ -114,5 +114,7 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
-# Start the server. Migrations are handled externally via CLI.
-CMD ["node", "dist/server.js"]
+# START_CMD env var lets the worker service override the entry point.
+# Default: server. Worker sets START_CMD=node dist/worker.js
+ENV START_CMD="node dist/server.js"
+CMD ["sh", "-c", "$START_CMD"]
