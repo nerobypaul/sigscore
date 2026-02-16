@@ -3,7 +3,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { config } from './config';
-import { prisma } from './config/database';
 import { swaggerSpec } from './config/swagger';
 import { errorHandler } from './middleware/error';
 import {
@@ -66,6 +65,7 @@ import enrichmentRoutes from './routes/enrichment';
 import webhookSubscriptionRoutes from './routes/webhook-subscriptions';
 import advancedAnalyticsRoutes from './routes/advanced-analytics';
 import scoreSnapshotRoutes from './routes/score-snapshots';
+import healthRoutes from './routes/health';
 import { sentryErrorHandler } from './utils/sentry';
 
 const app = express();
@@ -102,29 +102,8 @@ app.use('/api/v1/billing/webhook', billingWebhookRouter);
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Health check
-app.get('/health', async (_req, res) => {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    res.json({
-      status: 'ok',
-      service: 'devsignal',
-      timestamp: new Date().toISOString(),
-      version: '0.2.0',
-      db: 'connected',
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    res.status(503).json({
-      status: 'degraded',
-      service: 'devsignal',
-      timestamp: new Date().toISOString(),
-      version: '0.2.0',
-      db: 'disconnected',
-      error: message,
-    });
-  }
-});
+// Health check (liveness + readiness probes)
+app.use('/health', healthRoutes);
 
 // API routes — Core CRM
 app.use('/api/v1/auth', authRoutes);
@@ -265,7 +244,12 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 // 404 handler for API routes only.
 // Non-API routes are handled by the SPA fallback in server.ts (production)
 // or by the Vite dev server (development).
-app.use('/api', (_req, res) => {
+// Note: /api/v1/graphql is mounted later via setupGraphQL() in server.ts,
+// so we must skip it here to avoid shadowing the GraphQL endpoint.
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/v1/graphql')) {
+    return next();
+  }
   res.status(404).json({ error: 'Not Found' });
 });
 app.use('/graphql', (_req, res) => {
