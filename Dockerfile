@@ -85,8 +85,8 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 appuser
 
-# Install wget for healthcheck (alpine minimal image)
-RUN apk add --no-cache wget
+# Install wget for healthcheck + openssl for Prisma
+RUN apk add --no-cache wget openssl
 
 # Copy production node_modules (includes Prisma client via hoisting)
 COPY --from=deps /app/node_modules ./node_modules
@@ -112,5 +112,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
 # Run prisma migrate deploy, then start the server.
-# Using shell form so we can chain commands.
-CMD sh -c "npx prisma migrate deploy --schema ./prisma/schema.prisma && node dist/server.js"
+CMD ["sh", "-c", "echo 'Starting DevSignal...' && echo 'Running migrations...' && npx prisma migrate deploy --schema ./prisma/schema.prisma 2>&1 && echo 'Migrations complete. Starting server...' && node dist/server.js"]
