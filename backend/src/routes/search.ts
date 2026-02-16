@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, requireOrganization } from '../middleware/auth';
-import { globalSearch } from '../services/search';
+import { globalSearch, groupedSearch } from '../services/search';
 
 const router = Router();
 
@@ -109,6 +109,61 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       : undefined;
 
     const results = await globalSearch(req.organizationId!, q, { limit, types });
+    res.json(results);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @openapi
+ * /search/command-palette:
+ *   get:
+ *     tags: [Search]
+ *     summary: Grouped search for the Command Palette (Cmd+K)
+ *     description: >
+ *       Returns search results grouped by category (contacts, companies, signals)
+ *       with richer metadata for the command palette UI. Each category returns up
+ *       to 5 results.
+ *     security:
+ *       - BearerAuth: []
+ *       - ApiKeyAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/OrganizationId'
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *           minLength: 2
+ *         description: Search query (minimum 2 characters)
+ *     responses:
+ *       200:
+ *         description: Grouped search results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 contacts:
+ *                   type: array
+ *                 companies:
+ *                   type: array
+ *                 signals:
+ *                   type: array
+ *                 query:
+ *                   type: string
+ */
+router.get('/command-palette', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const q = req.query.q as string;
+
+    if (!q || q.trim().length < 2) {
+      res.json({ contacts: [], companies: [], signals: [], query: q || '' });
+      return;
+    }
+
+    const results = await groupedSearch(req.organizationId!, q, 5);
     res.json(results);
   } catch (error) {
     next(error);

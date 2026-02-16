@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Spinner from './components/Spinner';
+import CommandPalette from './components/CommandPalette';
 
 // Lazy-loaded pages — each becomes its own chunk for faster initial load
 const Login = lazy(() => import('./pages/Login'));
@@ -48,6 +49,9 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Privacy = lazy(() => import('./pages/Privacy'));
+const TeamSettings = lazy(() => import('./pages/TeamSettings'));
+const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
+const DataExport = lazy(() => import('./pages/DataExport'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
@@ -85,6 +89,9 @@ function AppRoutes() {
   }
 
   return (
+    <>
+    {/* Command Palette — mounted once at top level, outside routes */}
+    <CommandPalette />
     <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public routes */}
@@ -97,6 +104,7 @@ function AppRoutes() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/sso/callback" element={<SsoCallback />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
+        <Route path="/invitations/:token/accept" element={<AcceptInvitation />} />
         <Route
           path="/login"
           element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
@@ -152,6 +160,7 @@ function AppRoutes() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/billing" element={<Billing />} />
           <Route path="/team" element={<TeamMembers />} />
+          <Route path="/team/settings" element={<TeamSettings />} />
           <Route path="/audit" element={<AuditLog />} />
           <Route path="/sequences" element={<EmailSequences />} />
           <Route path="/sequences/:id" element={<EmailSequenceDetail />} />
@@ -160,12 +169,14 @@ function AppRoutes() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/webhooks" element={<WebhookManager />} />
           <Route path="/sso-settings" element={<SsoSettings />} />
+          <Route path="/settings/export" element={<DataExport />} />
         </Route>
 
         {/* 404 catch-all */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
+    </>
   );
 }
 

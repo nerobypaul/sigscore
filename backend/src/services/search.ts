@@ -179,3 +179,142 @@ export async function globalSearch(
     query,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Grouped search for the Command Palette (Cmd+K)
+// Returns results categorized by type with richer metadata.
+// ---------------------------------------------------------------------------
+
+export interface GroupedContactResult {
+  id: string;
+  name: string;
+  email: string | null;
+  title: string | null;
+  companyName: string | null;
+}
+
+export interface GroupedCompanyResult {
+  id: string;
+  name: string;
+  domain: string | null;
+  pqaScore: number | null;
+}
+
+export interface GroupedSignalResult {
+  id: string;
+  type: string;
+  source: string | null;
+  timestamp: string;
+}
+
+export interface GroupedSearchResults {
+  contacts: GroupedContactResult[];
+  companies: GroupedCompanyResult[];
+  signals: GroupedSignalResult[];
+  query: string;
+}
+
+/**
+ * Grouped search for the Command Palette.
+ * Returns up to `limit` results per category with richer metadata
+ * (e.g. company name on contacts, PQA score on companies, source on signals).
+ */
+export async function groupedSearch(
+  organizationId: string,
+  query: string,
+  limit = 5,
+): Promise<GroupedSearchResults> {
+  const cap = Math.min(limit, 10);
+
+  const tsQuery = query
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w + ':*')
+    .join(' & ');
+
+  if (!tsQuery) {
+    return { contacts: [], companies: [], signals: [], query };
+  }
+
+  // --- Contacts (join company for name) ---
+  const contacts = await prisma.$queryRaw<
+    Array<{
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string | null;
+      title: string | null;
+      companyName: string | null;
+    }>
+  >`
+    SELECT c.id, c."firstName", c."lastName", c.email, c.title,
+           co.name as "companyName"
+    FROM contacts c
+    LEFT JOIN companies co ON c."companyId" = co.id
+    WHERE c."organizationId" = ${organizationId}
+      AND c.search_vector @@ to_tsquery('english', ${tsQuery})
+    ORDER BY ts_rank(c.search_vector, to_tsquery('english', ${tsQuery})) DESC
+    LIMIT ${cap}
+  `;
+
+  // --- Companies (join account_scores for PQA) ---
+  const companies = await prisma.$queryRaw<
+    Array<{
+      id: string;
+      name: string;
+      domain: string | null;
+      pqaScore: number | null;
+    }>
+  >`
+    SELECT co.id, co.name, co.domain,
+           a.score as "pqaScore"
+    FROM companies co
+    LEFT JOIN account_scores a ON a."accountId" = co.id
+    WHERE co."organizationId" = ${organizationId}
+      AND co.search_vector @@ to_tsquery('english', ${tsQuery})
+    ORDER BY ts_rank(co.search_vector, to_tsquery('english', ${tsQuery})) DESC
+    LIMIT ${cap}
+  `;
+
+  // --- Signals (join signal_sources for name) ---
+  const signals = await prisma.$queryRaw<
+    Array<{
+      id: string;
+      type: string;
+      source: string | null;
+      timestamp: Date;
+    }>
+  >`
+    SELECT s.id, s.type, ss.name as source, s.timestamp
+    FROM signals s
+    LEFT JOIN signal_sources ss ON s."sourceId" = ss.id
+    WHERE s."organizationId" = ${organizationId}
+      AND s.search_vector @@ to_tsquery('english', ${tsQuery})
+    ORDER BY ts_rank(s.search_vector, to_tsquery('english', ${tsQuery})) DESC
+    LIMIT ${cap}
+  `;
+
+  return {
+    contacts: contacts.map((c) => ({
+      id: c.id,
+      name: `${c.firstName} ${c.lastName}`,
+      email: c.email,
+      title: c.title,
+      companyName: c.companyName,
+    })),
+    companies: companies.map((c) => ({
+      id: c.id,
+      name: c.name,
+      domain: c.domain,
+      pqaScore: c.pqaScore != null ? Number(c.pqaScore) : null,
+    })),
+    signals: signals.map((s) => ({
+      id: s.id,
+      type: s.type,
+      source: s.source,
+      timestamp: new Date(s.timestamp).toISOString(),
+    })),
+    query,
+  };
+}

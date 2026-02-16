@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
-import GlobalSearch from './GlobalSearch';
+import CommandPaletteTrigger from './CommandPaletteTrigger';
 import NotificationBell from './NotificationBell';
 import KeyboardShortcuts from './KeyboardShortcuts';
 import DemoModeBanner from './DemoModeBanner';
@@ -68,12 +68,13 @@ const navSections: NavSection[] = [
       { to: '/billing', label: 'Billing', icon: BillingIcon },
       { to: '/audit', label: 'Audit Log', icon: AuditLogIcon },
       { to: '/sso-settings', label: 'SSO', icon: SsoIcon },
+      { to: '/settings/export', label: 'Data Export', icon: DataExportIcon },
     ],
   },
 ];
 
 // Paths that belong to the Settings section (used to auto-expand when navigating directly)
-const SETTINGS_PATHS = ['/settings', '/webhooks', '/scoring', '/team', '/billing', '/audit', '/sso-settings'];
+const SETTINGS_PATHS = ['/settings', '/webhooks', '/scoring', '/team', '/team/settings', '/billing', '/audit', '/sso-settings', '/settings/export'];
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -178,9 +179,9 @@ export default function Layout() {
           </div>
         </div>
 
-        {/* Global Search */}
+        {/* Command Palette trigger (Cmd+K) — modal lives in App.tsx */}
         <div className="px-3 pt-3 pb-1">
-          <GlobalSearch />
+          <CommandPaletteTrigger />
         </div>
 
         {/* Navigation */}
@@ -466,6 +467,14 @@ function SsoIcon() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+    </svg>
+  );
+}
+
+function DataExportIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
     </svg>
   );
 }
