@@ -397,3 +397,110 @@ const TEST_PAYLOADS: Record<string, Record<string, unknown>> = {
 export const getTestPayload = (event: string): Record<string, unknown> => {
   return TEST_PAYLOADS[event] || { message: 'Test event', event };
 };
+
+// ---------------------------------------------------------------------------
+// Send test webhook (synchronous, records delivery, returns timing)
+// ---------------------------------------------------------------------------
+
+export interface TestWebhookResult {
+  success: boolean;
+  statusCode: number | null;
+  response: string | null;
+  duration: number;
+  payload: Record<string, unknown>;
+  headers: Record<string, string>;
+}
+
+/**
+ * Sends a test webhook to a subscription endpoint synchronously.
+ * Records the delivery in WebhookSubscriptionDelivery and returns the full
+ * result including status code, response body, request duration, and headers sent.
+ */
+export const sendTestWebhook = async (
+  subscriptionId: string,
+  organizationId: string,
+): Promise<TestWebhookResult> => {
+  const subscription = await prisma.webhookSubscription.findFirst({
+    where: { id: subscriptionId, organizationId },
+  });
+
+  if (!subscription) {
+    throw new AppError('Webhook subscription not found', 404);
+  }
+
+  const sampleData = getTestPayload(subscription.event);
+  const envelope: Record<string, unknown> = {
+    event: subscription.event,
+    timestamp: new Date().toISOString(),
+    organizationId,
+    data: sampleData,
+    _test: true,
+  };
+
+  const body = JSON.stringify(envelope);
+  const signature = crypto
+    .createHmac('sha256', subscription.secret)
+    .update(body)
+    .digest('hex');
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-DevSignal-Signature': `sha256=${signature}`,
+    'X-DevSignal-Event': subscription.event,
+  };
+
+  let success = false;
+  let statusCode: number | null = null;
+  let responseBody: string | null = null;
+  const startTime = Date.now();
+
+  try {
+    const res = await fetch(subscription.targetUrl, {
+      method: 'POST',
+      headers,
+      body,
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    statusCode = res.status;
+    success = res.ok;
+
+    try {
+      responseBody = await res.text();
+      // Truncate very long responses to avoid filling the DB
+      if (responseBody.length > 4096) {
+        responseBody = responseBody.slice(0, 4096) + '... (truncated)';
+      }
+    } catch {
+      responseBody = '(unable to read response body)';
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    responseBody = message;
+    success = false;
+  }
+
+  const duration = Date.now() - startTime;
+
+  // Record the delivery
+  await recordSubscriptionDelivery({
+    subscriptionId: subscription.id,
+    event: subscription.event,
+    payload: envelope,
+    statusCode: statusCode ?? undefined,
+    response: responseBody ?? undefined,
+    success,
+    attempt: 1,
+    maxAttempts: 1,
+    jobId: `test_${Date.now()}`,
+  });
+
+  return {
+    success,
+    statusCode,
+    response: responseBody,
+    duration,
+    payload: envelope,
+    headers,
+  };
+};

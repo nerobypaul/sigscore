@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../lib/api';
+import WebhookTestPanel from '../components/WebhookTestPanel';
 
 interface WebhookSubscription {
   id: string;
@@ -10,12 +11,6 @@ interface WebhookSubscription {
   active: boolean;
   createdAt: string;
   updatedAt: string;
-}
-
-interface TestResult {
-  success: boolean;
-  statusCode?: number;
-  error?: string;
 }
 
 const EVENT_TYPES = [
@@ -59,9 +54,8 @@ export default function WebhookManager() {
   // Filter state
   const [eventFilter, setEventFilter] = useState<string>('all');
 
-  // Test state
-  const [testingId, setTestingId] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<{ id: string; result: TestResult } | null>(null);
+  // Expanded row for test panel
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const fetchSubscriptions = useCallback(async () => {
     try {
@@ -124,19 +118,6 @@ export default function WebhookManager() {
       setSubscriptions((prev) => prev.map((s) => (s.id === id ? data : s)));
     } catch {
       // Ignore toggle errors silently
-    }
-  };
-
-  const handleTest = async (id: string) => {
-    setTestingId(id);
-    setTestResult(null);
-    try {
-      const { data } = await api.post(`/webhooks/subscribe/${id}/test`);
-      setTestResult({ id, result: data });
-    } catch {
-      setTestResult({ id, result: { success: false, error: 'Request failed' } });
-    } finally {
-      setTestingId(null);
     }
   };
 
@@ -322,63 +303,81 @@ export default function WebhookManager() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredSubscriptions.map((sub) => (
-                <tr key={sub.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <span className="text-sm text-gray-900 font-mono truncate block max-w-xs" title={sub.targetUrl}>
-                      {sub.targetUrl.length > 50
-                        ? sub.targetUrl.slice(0, 50) + '...'
-                        : sub.targetUrl}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                        EVENT_COLORS[sub.event] || 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {sub.event}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
-                    {new Date(sub.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleToggle(sub.id, sub.active)}
-                      className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                        sub.active ? 'bg-indigo-600' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          sub.active ? 'translate-x-4' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleTest(sub.id)}
-                        disabled={testingId === sub.id}
-                        className="px-2.5 py-1 text-xs font-medium text-indigo-600 border border-indigo-200 rounded-md hover:bg-indigo-50 disabled:opacity-50 transition-colors"
-                      >
-                        {testingId === sub.id ? 'Sending...' : 'Test'}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(sub.id)}
-                        className="px-2.5 py-1 text-xs font-medium text-red-600 border border-red-200 rounded-md hover:bg-red-50 transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                    {/* Test result inline */}
-                    {testResult && testResult.id === sub.id && (
-                      <div className={`mt-1 text-xs ${testResult.result.success ? 'text-green-600' : 'text-red-600'}`}>
-                        {testResult.result.success
-                          ? `OK (${testResult.result.statusCode})`
-                          : testResult.result.error || `Failed (${testResult.result.statusCode})`}
+                <tr key={sub.id} className="group">
+                  <td colSpan={5} className="p-0">
+                    {/* Subscription row */}
+                    <div className="flex items-center hover:bg-gray-50 transition-colors">
+                      <div className="flex-1 grid grid-cols-[1fr_auto_auto_auto_auto] items-center">
+                        <button
+                          onClick={() => setExpandedId(expandedId === sub.id ? null : sub.id)}
+                          className="flex items-center gap-2 px-4 py-3 text-left"
+                        >
+                          <svg
+                            className={`w-3.5 h-3.5 text-gray-400 transition-transform flex-shrink-0 ${expandedId === sub.id ? 'rotate-90' : ''}`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                          <span className="text-sm text-gray-900 font-mono truncate max-w-xs" title={sub.targetUrl}>
+                            {sub.targetUrl.length > 50
+                              ? sub.targetUrl.slice(0, 50) + '...'
+                              : sub.targetUrl}
+                          </span>
+                        </button>
+                        <div className="px-4 py-3">
+                          <span
+                            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                              EVENT_COLORS[sub.event] || 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            {sub.event}
+                          </span>
+                        </div>
+                        <div className="px-4 py-3 text-sm text-gray-500">
+                          {new Date(sub.createdAt).toLocaleDateString()}
+                        </div>
+                        <div className="px-4 py-3">
+                          <button
+                            onClick={() => handleToggle(sub.id, sub.active)}
+                            className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                              sub.active ? 'bg-indigo-600' : 'bg-gray-200'
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                sub.active ? 'translate-x-4' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                        <div className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setExpandedId(expandedId === sub.id ? null : sub.id)}
+                              className="px-2.5 py-1 text-xs font-medium text-indigo-600 border border-indigo-200 rounded-md hover:bg-indigo-50 transition-colors"
+                            >
+                              {expandedId === sub.id ? 'Close' : 'Test'}
+                            </button>
+                            <button
+                              onClick={() => handleDelete(sub.id)}
+                              className="px-2.5 py-1 text-xs font-medium text-red-600 border border-red-200 rounded-md hover:bg-red-50 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
                       </div>
+                    </div>
+
+                    {/* Expandable test panel */}
+                    {expandedId === sub.id && (
+                      <WebhookTestPanel
+                        subscription={sub}
+                        onClose={() => setExpandedId(null)}
+                      />
                     )}
                   </td>
                 </tr>

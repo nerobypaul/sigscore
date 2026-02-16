@@ -10,8 +10,7 @@ import {
   listSubscriptions,
   getSubscription,
   toggleSubscription,
-  deliverToSubscription,
-  getTestPayload,
+  sendTestWebhook,
   getSubscriptionDeliveries,
   getSubscriptionWithDeliveryStats,
   WEBHOOK_EVENT_TYPES,
@@ -171,38 +170,27 @@ router.get('/:id/deliveries', ...flexAuth, async (req: Request, res: Response, n
 });
 
 /**
- * POST /webhooks/subscribe/:id/test — send a test payload
+ * POST /webhooks/subscribe/:id/test — send a test payload synchronously
+ * Records the delivery in WebhookSubscriptionDelivery and returns full result.
  */
 router.post('/:id/test', ...flexAuth, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const organizationId = req.organizationId!;
-    const subscription = await getSubscription(organizationId, req.params.id);
+    const result = await sendTestWebhook(req.params.id, organizationId);
 
-    const testPayload = {
-      event: subscription.event,
-      timestamp: new Date().toISOString(),
-      organizationId,
-      data: getTestPayload(subscription.event),
-      _test: true,
-    };
-
-    const result = await deliverToSubscription(
-      subscription.targetUrl,
-      subscription.secret,
-      subscription.event,
-      testPayload,
-    );
-
-    logger.info(`Webhook test delivery to ${subscription.targetUrl}: ${result.success ? 'OK' : 'FAILED'}`, {
-      subscriptionId: subscription.id,
-      ...result,
+    logger.info(`Webhook test delivery: ${result.success ? 'OK' : 'FAILED'} (${result.duration}ms)`, {
+      subscriptionId: req.params.id,
+      statusCode: result.statusCode,
+      duration: result.duration,
     });
 
     res.json({
       success: result.success,
       statusCode: result.statusCode,
-      error: result.error,
-      payload: testPayload,
+      response: result.response,
+      duration: result.duration,
+      payload: result.payload,
+      headers: result.headers,
     });
   } catch (error) {
     next(error);
