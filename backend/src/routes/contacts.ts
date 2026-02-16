@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getContacts, getContact, createContact, updateContact, deleteContact, getDuplicates, mergeContact, exportContacts } from '../controllers/contacts';
+import { getContacts, getContact, createContact, updateContact, deleteContact, getDuplicates, mergeContact, exportContacts, bulkAction } from '../controllers/contacts';
 import { authenticate, requireOrganization } from '../middleware/auth';
 import { enforceContactLimit } from '../middleware/usage-limits';
 import { validate } from '../middleware/validate';
@@ -222,6 +222,64 @@ router.get('/duplicates', getDuplicates);
  *               type: string
  */
 router.get('/export', exportContacts);
+
+/**
+ * @openapi
+ * /contacts/bulk-action:
+ *   post:
+ *     tags: [Contacts]
+ *     summary: Perform a bulk action on selected contacts
+ *     description: |
+ *       Execute an action on multiple contacts at once. Supported actions:
+ *       - `add_tag` — Add a tag to all selected contacts (params: { tag: string })
+ *       - `remove_tag` — Remove a tag from selected contacts (params: { tag: string })
+ *       - `update_stage` — Update deal stage for contacts' deals (params: { stage: DealStage })
+ *       - `assign_owner` — Assign a user as deal owner (params: { ownerId: string })
+ *       - `export` — Export selected contacts as CSV (returns CSV file)
+ *     security:
+ *       - BearerAuth: []
+ *       - ApiKeyAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/OrganizationId'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [contactIds, action]
+ *             properties:
+ *               contactIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               action:
+ *                 type: string
+ *                 enum: [add_tag, remove_tag, update_stage, assign_owner, export]
+ *               params:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Bulk action result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 affected:
+ *                   type: integer
+ *                 action:
+ *                   type: string
+ *       400:
+ *         description: Invalid request (missing params, unknown action)
+ *       401:
+ *         description: Missing or invalid authorization
+ *       404:
+ *         description: No valid contacts found
+ */
+router.post('/bulk-action', bulkAction);
 
 /**
  * @openapi

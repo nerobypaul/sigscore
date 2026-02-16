@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { Prisma } from '@prisma/client';
+import { Prisma, DealStage } from '@prisma/client';
 import * as contactService from '../services/contacts';
 import { findDuplicates, mergeContacts } from '../services/identity-resolution';
 import { enqueueWorkflowExecution } from '../jobs/producers';
@@ -10,6 +10,9 @@ import { fireContactCreated, fireContactUpdated } from '../services/webhook-even
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
 import { prisma } from '../config/database';
+
+// Valid DealStage values for bulk update_stage validation
+const VALID_DEAL_STAGES: string[] = Object.values(DealStage);
 
 export const getContacts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -286,6 +289,249 @@ export const mergeContact = async (req: Request, res: Response, next: NextFuncti
     logger.info(`Contact merge: ${result.merged} merged into ${id}`, { organizationId });
 
     res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Bulk Actions
+// ---------------------------------------------------------------------------
+
+interface BulkActionBody {
+  contactIds: string[];
+  action: string;
+  params: Record<string, unknown>;
+}
+
+function escapeCsvFieldBulk(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) return '';
+  const str = String(value);
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+/**
+ * POST /contacts/bulk-action
+ * Perform a bulk action on a set of contacts by their IDs.
+ * Supported actions: add_tag, remove_tag, update_stage, assign_owner, export
+ */
+export const bulkAction = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const organizationId = req.organizationId!;
+    const { contactIds, action, params } = req.body as BulkActionBody;
+
+    // Validate required fields
+    if (!Array.isArray(contactIds) || contactIds.length === 0) {
+      res.status(400).json({ error: 'contactIds must be a non-empty array' });
+      return;
+    }
+    if (!action) {
+      res.status(400).json({ error: 'action is required' });
+      return;
+    }
+
+    // Verify all contacts belong to this organization
+    const validContacts = await prisma.contact.findMany({
+      where: { id: { in: contactIds }, organizationId },
+      select: { id: true },
+    });
+    const validIds = validContacts.map((c) => c.id);
+
+    if (validIds.length === 0) {
+      res.status(404).json({ error: 'No valid contacts found for the given IDs' });
+      return;
+    }
+
+    switch (action) {
+      case 'add_tag': {
+        const tagName = params?.tag as string;
+        if (!tagName || typeof tagName !== 'string') {
+          res.status(400).json({ error: 'params.tag is required for add_tag action' });
+          return;
+        }
+
+        // Find or create the tag
+        const tag = await prisma.tag.upsert({
+          where: { organizationId_name: { organizationId, name: tagName.trim() } },
+          create: { organizationId, name: tagName.trim() },
+          update: {},
+        });
+
+        // Add tag to all contacts (skip existing via skipDuplicates)
+        const created = await prisma.contactTag.createMany({
+          data: validIds.map((contactId) => ({ contactId, tagId: tag.id })),
+          skipDuplicates: true,
+        });
+
+        logAudit({
+          organizationId,
+          userId: req.user?.id,
+          action: 'bulk_add_tag',
+          entityType: 'contact',
+          metadata: { contactCount: validIds.length, tag: tagName },
+        }).catch(() => {});
+
+        logger.info(`Bulk add_tag: ${created.count} contacts tagged with "${tagName}"`, { organizationId });
+        res.json({ success: true, affected: created.count, action: 'add_tag' });
+        return;
+      }
+
+      case 'remove_tag': {
+        const tagName = params?.tag as string;
+        if (!tagName || typeof tagName !== 'string') {
+          res.status(400).json({ error: 'params.tag is required for remove_tag action' });
+          return;
+        }
+
+        // Find the tag
+        const tag = await prisma.tag.findUnique({
+          where: { organizationId_name: { organizationId, name: tagName.trim() } },
+        });
+
+        if (!tag) {
+          res.json({ success: true, affected: 0, action: 'remove_tag' });
+          return;
+        }
+
+        const deleted = await prisma.contactTag.deleteMany({
+          where: { contactId: { in: validIds }, tagId: tag.id },
+        });
+
+        logAudit({
+          organizationId,
+          userId: req.user?.id,
+          action: 'bulk_remove_tag',
+          entityType: 'contact',
+          metadata: { contactCount: validIds.length, tag: tagName },
+        }).catch(() => {});
+
+        logger.info(`Bulk remove_tag: ${deleted.count} tag links removed for "${tagName}"`, { organizationId });
+        res.json({ success: true, affected: deleted.count, action: 'remove_tag' });
+        return;
+      }
+
+      case 'update_stage': {
+        const stage = params?.stage as string;
+        if (!stage || typeof stage !== 'string') {
+          res.status(400).json({ error: 'params.stage is required for update_stage action' });
+          return;
+        }
+
+        if (!VALID_DEAL_STAGES.includes(stage)) {
+          res.status(400).json({ error: `Invalid stage. Must be one of: ${VALID_DEAL_STAGES.join(', ')}` });
+          return;
+        }
+
+        // Update all deals associated with these contacts
+        const updated = await prisma.deal.updateMany({
+          where: { contactId: { in: validIds }, organizationId },
+          data: { stage: stage as DealStage },
+        });
+
+        logAudit({
+          organizationId,
+          userId: req.user?.id,
+          action: 'bulk_update_stage',
+          entityType: 'deal',
+          metadata: { contactCount: validIds.length, stage },
+        }).catch(() => {});
+
+        logger.info(`Bulk update_stage: ${updated.count} deals updated to "${stage}"`, { organizationId });
+        res.json({ success: true, affected: updated.count, action: 'update_stage' });
+        return;
+      }
+
+      case 'assign_owner': {
+        const ownerId = params?.ownerId as string;
+        if (!ownerId || typeof ownerId !== 'string') {
+          res.status(400).json({ error: 'params.ownerId is required for assign_owner action' });
+          return;
+        }
+
+        // Verify the owner belongs to this organization
+        const membership = await prisma.userOrganization.findFirst({
+          where: { userId: ownerId, organizationId },
+        });
+
+        if (!membership) {
+          res.status(400).json({ error: 'Owner must be a member of this organization' });
+          return;
+        }
+
+        // Assign owner on deals linked to the selected contacts
+        const updated = await prisma.deal.updateMany({
+          where: { contactId: { in: validIds }, organizationId },
+          data: { ownerId },
+        });
+
+        logAudit({
+          organizationId,
+          userId: req.user?.id,
+          action: 'bulk_assign_owner',
+          entityType: 'deal',
+          metadata: { contactCount: validIds.length, ownerId },
+        }).catch(() => {});
+
+        logger.info(`Bulk assign_owner: ${updated.count} deals assigned to owner ${ownerId}`, { organizationId });
+        res.json({ success: true, affected: updated.count, action: 'assign_owner' });
+        return;
+      }
+
+      case 'export': {
+        const contacts = await prisma.contact.findMany({
+          where: { id: { in: validIds }, organizationId },
+          include: {
+            company: { select: { name: true, score: { select: { score: true, tier: true } } } },
+            tags: { include: { tag: { select: { name: true } } } },
+            _count: { select: { signals: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        const header = 'Name,Email,Company,Title,PQA Score,Signal Count,Created Date,Tags';
+        const rows = contacts.map((c) => {
+          const name = `${c.firstName} ${c.lastName}`;
+          const companyName = c.company?.name ?? '';
+          const pqaScore = c.company?.score?.score ?? '';
+          const signalCount = c._count.signals;
+          const tagNames = c.tags.map((t) => t.tag.name).join('; ');
+          return [
+            escapeCsvFieldBulk(name),
+            escapeCsvFieldBulk(c.email),
+            escapeCsvFieldBulk(companyName),
+            escapeCsvFieldBulk(c.title),
+            escapeCsvFieldBulk(pqaScore),
+            escapeCsvFieldBulk(signalCount),
+            escapeCsvFieldBulk(c.createdAt.toISOString().slice(0, 10)),
+            escapeCsvFieldBulk(tagNames),
+          ].join(',');
+        });
+
+        const csv = [header, ...rows].join('\n');
+
+        logAudit({
+          organizationId,
+          userId: req.user?.id,
+          action: 'bulk_export',
+          entityType: 'contact',
+          metadata: { contactCount: contacts.length },
+        }).catch(() => {});
+
+        logger.info(`Bulk export: ${contacts.length} contacts exported as CSV`, { organizationId });
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=contacts-bulk-export-${new Date().toISOString().slice(0, 10)}.csv`);
+        res.send(csv);
+        return;
+      }
+
+      default:
+        res.status(400).json({ error: `Unknown action: ${action}. Supported: add_tag, remove_tag, update_stage, assign_owner, export` });
+        return;
+    }
   } catch (error) {
     next(error);
   }

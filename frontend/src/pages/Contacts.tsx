@@ -7,6 +7,7 @@ import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
 import CSVImport from '../components/CSVImport';
 import SavedViewSelector from '../components/SavedViewSelector';
+import BulkActionBar from '../components/BulkActionBar';
 
 export default function Contacts() {
   const navigate = useNavigate();
@@ -21,9 +22,6 @@ export default function Contacts() {
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [bulkAction, setBulkAction] = useState<'delete' | 'tag' | null>(null);
-  const [bulkTagName, setBulkTagName] = useState('');
-  const [bulkLoading, setBulkLoading] = useState(false);
 
   const fetchContacts = useCallback(async () => {
     setLoading(true);
@@ -84,46 +82,6 @@ export default function Contacts() {
       else next.add(id);
       return next;
     });
-  };
-
-  // --- Bulk actions ---
-
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) return;
-    setBulkLoading(true);
-    try {
-      const { data } = await api.post('/bulk/contacts/delete', {
-        ids: Array.from(selectedIds),
-      });
-      toast.success(`Deleted ${data.deleted} contact${data.deleted !== 1 ? 's' : ''}`);
-      setSelectedIds(new Set());
-      setBulkAction(null);
-      fetchContacts();
-    } catch {
-      toast.error('Failed to delete contacts');
-    } finally {
-      setBulkLoading(false);
-    }
-  };
-
-  const handleBulkTag = async () => {
-    if (selectedIds.size === 0 || !bulkTagName.trim()) return;
-    setBulkLoading(true);
-    try {
-      const { data } = await api.post('/bulk/contacts/tag', {
-        ids: Array.from(selectedIds),
-        tagName: bulkTagName.trim(),
-      });
-      toast.success(`Tagged ${data.tagged} contact${data.tagged !== 1 ? 's' : ''}`);
-      setSelectedIds(new Set());
-      setBulkAction(null);
-      setBulkTagName('');
-      fetchContacts();
-    } catch {
-      toast.error('Failed to tag contacts');
-    } finally {
-      setBulkLoading(false);
-    }
   };
 
   const [exporting, setExporting] = useState(false);
@@ -227,43 +185,6 @@ export default function Contacts() {
           className="w-full sm:max-w-md px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
         />
       </div>
-
-      {/* Bulk action toolbar */}
-      {selectedIds.size > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-3 sm:px-4 py-3">
-          <span className="text-sm font-medium text-indigo-900">
-            {selectedIds.size} selected
-          </span>
-          <div className="hidden sm:block h-4 w-px bg-indigo-300" />
-          <button
-            onClick={() => setBulkAction('delete')}
-            disabled={bulkLoading}
-            className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
-          >
-            Delete
-          </button>
-          <button
-            onClick={() => setBulkAction('tag')}
-            disabled={bulkLoading}
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
-          >
-            Tag
-          </button>
-          <button
-            onClick={handleExport}
-            disabled={exporting}
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
-          >
-            {exporting ? 'Exporting...' : 'Export'}
-          </button>
-          <button
-            onClick={() => setSelectedIds(new Set())}
-            className="ml-auto text-sm text-gray-500 hover:text-gray-700"
-          >
-            Clear
-          </button>
-        </div>
-      )}
 
       {/* Contact List */}
       {loading ? (
@@ -455,72 +376,13 @@ export default function Contacts() {
         </>
       )}
 
-      {/* Bulk Delete Confirmation Modal */}
-      {bulkAction === 'delete' && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete contacts?</h3>
-            <p className="text-sm text-gray-600 mb-6">
-              This will permanently delete {selectedIds.size} contact{selectedIds.size !== 1 ? 's' : ''}. This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setBulkAction(null)}
-                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleBulkDelete}
-                disabled={bulkLoading}
-                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
-              >
-                {bulkLoading ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bulk Tag Modal */}
-      {bulkAction === 'tag' && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Add tag</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Apply a tag to {selectedIds.size} selected contact{selectedIds.size !== 1 ? 's' : ''}.
-            </p>
-            <input
-              type="text"
-              placeholder="Tag name..."
-              value={bulkTagName}
-              onChange={(e) => setBulkTagName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && bulkTagName.trim()) handleBulkTag();
-              }}
-              autoFocus
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none mb-6"
-            />
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setBulkAction(null);
-                  setBulkTagName('');
-                }}
-                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleBulkTag}
-                disabled={bulkLoading || !bulkTagName.trim()}
-                className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {bulkLoading ? 'Tagging...' : 'Apply Tag'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <BulkActionBar
+          selectedIds={selectedIds}
+          onClearSelection={() => setSelectedIds(new Set())}
+          onActionComplete={fetchContacts}
+        />
       )}
 
       {/* Create Contact Modal */}
