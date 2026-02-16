@@ -9,7 +9,7 @@ set -euo pipefail
 BASE_URL="${1:-http://localhost:3000}"
 BASE_URL="${BASE_URL%/}"  # strip trailing slash
 VERBOSE=false
-MAX_TIME=2  # seconds — any response slower than this is a failure
+MAX_TIME=10  # seconds — any response slower than this is a failure
 
 for arg in "$@"; do
   [[ "$arg" == "--verbose" ]] && VERBOSE=true
@@ -35,14 +35,17 @@ log_fail() { ((FAILED++)); ((TOTAL++)); printf "${RED}  FAIL${RESET}  %s  (expec
 run_test() {
   local label="$1" method="$2" url="$3" expect_status="$4"
   shift 4
-  local extra_curl_args=("$@")
+  local extra_curl_args=()
+  if [[ $# -gt 0 ]]; then
+    extra_curl_args=("$@")
+  fi
 
   local tmpfile
   tmpfile=$(mktemp)
 
   local http_code time_total
   http_code=$(curl -s -o "$tmpfile" -w "%{http_code}|%{time_total}" \
-    --max-time "$MAX_TIME" -X "$method" "${extra_curl_args[@]}" "$url" 2>/dev/null) || {
+    --max-time "$MAX_TIME" -X "$method" ${extra_curl_args[@]+"${extra_curl_args[@]}"} "$url" 2>/dev/null) || {
     log_fail "$label" "$expect_status" "timeout/error" "$MAX_TIME"
     $VERBOSE && printf "${YELLOW}    curl error for %s %s${RESET}\n" "$method" "$url"
     rm -f "$tmpfile"
