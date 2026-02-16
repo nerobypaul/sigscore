@@ -1,16 +1,38 @@
 {
   "name": "@devsignal/node",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Official Node.js SDK for the DevSignal API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
   "files": ["dist"],
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["devsignal", "crm", "plg", "signals", "sdk"],
+  "keywords": ["devsignal", "crm", "plg", "signals", "sdk", "developer-tools", "product-led-growth"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nerobypaul/headless-crm",
+    "directory": "packages/sdk"
+  },
+  "author": "DevSignal <hello@devsignal.dev>",
   "license": "MIT",
+  "homepage": "https://devsignal.dev/developers",
+  "bugs": {
+    "url": "https://github.com/nerobypaul/headless-crm/issues"
+  },
   "engines": {
     "node": ">=18"
   }

@@ -1,6 +1,11 @@
 # @devsignal/node
 
-Official Node.js SDK for the DevSignal API. Zero dependencies -- uses native `fetch` (Node 18+).
+[![npm version](https://img.shields.io/npm/v/@devsignal/node.svg)](https://www.npmjs.com/package/@devsignal/node)
+[![license](https://img.shields.io/npm/l/@devsignal/node.svg)](https://github.com/nerobypaul/headless-crm/blob/main/LICENSE)
+
+Official Node.js SDK for the [DevSignal](https://devsignal.dev) API.
+
+Zero dependencies. TypeScript-first. Works with any Node.js 18+ project.
 
 ## Install
 
@@ -10,152 +15,117 @@ npm install @devsignal/node
 
 ## Quick start
 
-```typescript
+```ts
 import { DevSignal } from '@devsignal/node';
 
-const ds = new DevSignal({
-  apiKey: 'ds_live_xxxxxxxxxxxx',
-  // baseUrl: 'https://api.devsignal.dev', // optional
-});
-```
+const ds = new DevSignal({ apiKey: 'ds_live_xxxxxxxxxxxx' });
 
-## Signals
-
-```typescript
-// Ingest a single signal
-const signal = await ds.signals.ingest({
+// Ingest a signal
+await ds.signals.ingest({
   type: 'feature_used',
-  sourceId: 'my-app',
+  sourceId: 'app',
   metadata: { feature: 'dashboard', action: 'viewed' },
-  actorEmail: 'user@example.com',
 });
 
 // Batch ingest
 const batch = await ds.signals.ingestBatch([
   { type: 'page_view', sourceId: 'web', metadata: { path: '/pricing' } },
-  { type: 'api_call',  sourceId: 'api', metadata: { endpoint: '/v1/users' } },
+  { type: 'api_call', sourceId: 'api', metadata: { endpoint: '/v1/users' } },
 ]);
-console.log(`Processed: ${batch.processed}, Failed: ${batch.failed}`);
 
-// List signals with filters
-const signals = await ds.signals.list({
-  type: 'feature_used',
-  from: '2025-01-01',
-  to: '2025-12-31',
-  page: 1,
-  limit: 50,
-});
-
-// Account signals & timeline
-const accountSignals = await ds.signals.getAccountSignals('acct_123');
-const timeline = await ds.signals.getTimeline('acct_123');
+// Get top-scoring accounts
+const hot = await ds.scores.topAccounts({ limit: 10, tier: 'HOT' });
 ```
 
-## Contacts
+## Configuration
 
-```typescript
-// Create
-const contact = await ds.contacts.create({
-  firstName: 'Jane',
-  lastName: 'Doe',
-  email: 'jane@example.com',
-  title: 'CTO',
-  companyId: 'comp_456',
-});
+| Option    | Type     | Default                     | Description                                      |
+| --------- | -------- | --------------------------- | ------------------------------------------------ |
+| `apiKey`  | `string` | --                          | Required. Starts with `ds_live_` or `ds_test_`.  |
+| `baseUrl` | `string` | `https://api.devsignal.dev` | Override the API base URL.                       |
 
-// List with search
-const contacts = await ds.contacts.list({ search: 'jane', page: 1, limit: 20 });
+## Resources
 
-// Get, update, delete
-const fetched = await ds.contacts.get('contact_789');
-const updated = await ds.contacts.update('contact_789', { title: 'VP Engineering' });
-await ds.contacts.delete('contact_789');
-```
+### `ds.signals`
 
-## Companies
+| Method                                  | Description                              |
+| --------------------------------------- | ---------------------------------------- |
+| `ingest(signal)`                        | Ingest a single signal event.            |
+| `ingestBatch(signals)`                  | Ingest multiple signals in one request.  |
+| `list(params?)`                         | List signals with filters and pagination.|
+| `getAccountSignals(accountId, params?)` | Get all signals for an account.          |
+| `getTimeline(accountId)`                | Merged signal + activity timeline.       |
 
-```typescript
-const company = await ds.companies.create({
-  name: 'Acme Inc',
-  domain: 'acme.com',
-  industry: 'SaaS',
-  size: 'MEDIUM',
-});
+### `ds.contacts`
 
-const companies = await ds.companies.list({ search: 'acme', industry: 'SaaS' });
-const fetched = await ds.companies.get('comp_456');
-const updated = await ds.companies.update('comp_456', { size: 'LARGE' });
-await ds.companies.delete('comp_456');
-```
+| Method              | Description                           |
+| ------------------- | ------------------------------------- |
+| `list(params?)`     | List contacts with search/pagination. |
+| `get(id)`           | Get a contact by ID.                  |
+| `create(data)`      | Create a new contact.                 |
+| `update(id, data)`  | Partial update a contact.             |
+| `delete(id)`        | Delete a contact.                     |
 
-## Deals
+### `ds.companies`
 
-```typescript
-const deal = await ds.deals.create({
-  title: 'Acme Enterprise Plan',
-  amount: 50000,
-  currency: 'USD',
-  stage: 'SALES_QUALIFIED',
-  companyId: 'comp_456',
-  contactId: 'contact_789',
-});
+| Method              | Description                            |
+| ------------------- | -------------------------------------- |
+| `list(params?)`     | List companies with search/pagination. |
+| `get(id)`           | Get a company by ID.                   |
+| `create(data)`      | Create a new company.                  |
+| `update(id, data)`  | Partial update a company.              |
+| `delete(id)`        | Delete a company.                      |
 
-const deals = await ds.deals.list({ stage: 'NEGOTIATION', limit: 10 });
-const updated = await ds.deals.update(deal.id, { stage: 'CLOSED_WON' });
-await ds.deals.delete(deal.id);
-```
+### `ds.deals`
 
-## Scores
+| Method              | Description                          |
+| ------------------- | ------------------------------------ |
+| `list(params?)`     | List deals with filters/pagination.  |
+| `get(id)`           | Get a deal by ID.                    |
+| `create(data)`      | Create a new deal.                   |
+| `update(id, data)`  | Partial update a deal.               |
+| `delete(id)`        | Delete a deal.                       |
 
-```typescript
-// Get current PQA score for an account
-const score = await ds.scores.getScore('acct_123');
-console.log(`Score: ${score.score}, Tier: ${score.tier}, Trend: ${score.trend}`);
+### `ds.scores`
 
-// Force a fresh score computation
-const fresh = await ds.scores.computeScore('acct_123');
-
-// Get top accounts
-const topAccounts = await ds.scores.topAccounts({ limit: 25, tier: 'HOT' });
-```
+| Method                    | Description                               |
+| ------------------------- | ----------------------------------------- |
+| `getScore(accountId)`     | Get the current PQA score for an account. |
+| `computeScore(accountId)` | Trigger a fresh score computation.        |
+| `topAccounts(params?)`    | Get top-scoring accounts by tier.         |
 
 ## Error handling
 
-```typescript
+All API errors throw a `DevSignalError` with `status`, `code`, and `message` properties.
+
+```ts
 import { DevSignal, DevSignalError } from '@devsignal/node';
 
 try {
   await ds.contacts.get('nonexistent');
 } catch (err) {
   if (err instanceof DevSignalError) {
-    console.error(`API error ${err.status}: ${err.message}`);
-    console.error(`Error code: ${err.code}`);
+    console.error(err.status);  // 404
+    console.error(err.message); // "Contact not found"
   }
 }
 ```
 
-## Types
+## TypeScript
 
-All request/response types are exported for use in your own code:
+All request and response types are exported from the package entry point.
 
-```typescript
+```ts
 import type {
-  Signal,
-  SignalInput,
-  Contact,
-  ContactInput,
-  Company,
-  CompanyInput,
-  Deal,
-  DealInput,
-  DealStage,
-  AccountScore,
-  ScoreTier,
-  ScoreTrend,
-  PaginatedResponse,
-  ListParams,
+  Signal, SignalInput, Contact, ContactInput,
+  Company, CompanyInput, Deal, DealInput,
+  AccountScore, ScoreTier, PaginatedResponse,
 } from '@devsignal/node';
 ```
+
+## Documentation
+
+Full API reference and guides at [devsignal.dev/developers](https://devsignal.dev/developers).
 
 ## License
 
