@@ -23,6 +23,8 @@ export const QUEUE_NAMES = {
   POSTHOG_SYNC: 'posthog-sync',
   LINKEDIN_SYNC: 'linkedin-sync',
   INTERCOM_SYNC: 'intercom-sync',
+  ZENDESK_SYNC: 'zendesk-sync',
+  SCORE_SNAPSHOT: 'score-snapshot',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -116,9 +118,17 @@ export interface IntercomSyncJobData {
   organizationId: string;
 }
 
+export interface ZendeskSyncJobData {
+  organizationId: string;
+}
+
 export interface BulkEnrichmentJobData {
   organizationId: string;
   type: 'companies' | 'contacts';
+}
+
+export interface ScoreSnapshotJobData {
+  organizationId: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -305,6 +315,18 @@ export const intercomSyncQueue = new Queue<IntercomSyncJobData>(
   },
 );
 
+export const zendeskSyncQueue = new Queue<ZendeskSyncJobData>(
+  QUEUE_NAMES.ZENDESK_SYNC,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 5_000 },
+    },
+  },
+);
+
 export const bulkEnrichmentQueue = new Queue<BulkEnrichmentJobData>(
   QUEUE_NAMES.ENRICHMENT_BULK,
   {
@@ -312,6 +334,18 @@ export const bulkEnrichmentQueue = new Queue<BulkEnrichmentJobData>(
     defaultJobOptions: {
       ...defaultQueueOpts.defaultJobOptions,
       attempts: 2,
+      backoff: { type: 'exponential' as const, delay: 5_000 },
+    },
+  },
+);
+
+export const scoreSnapshotQueue = new Queue<ScoreSnapshotJobData>(
+  QUEUE_NAMES.SCORE_SNAPSHOT,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
       backoff: { type: 'exponential' as const, delay: 5_000 },
     },
   },
@@ -337,7 +371,9 @@ const allQueues: Queue[] = [
   posthogSyncQueue,
   linkedinSyncQueue,
   intercomSyncQueue,
+  zendeskSyncQueue,
   bulkEnrichmentQueue,
+  scoreSnapshotQueue,
 ];
 
 /**

@@ -81,6 +81,7 @@ model Organization {
   dashboards         Dashboard[]
   ssoConnections     SsoConnection[]
   webhookSubscriptions WebhookSubscription[]
+  scoreSnapshots     ScoreSnapshot[]
 
   @@index([slug])
   @@map("organizations")
@@ -199,6 +200,7 @@ model Company {
   signals        Signal[]
   score          AccountScore?
   briefs         AccountBrief[]
+  scoreSnapshots ScoreSnapshot[]
 
   @@index([organizationId])
   @@index([domain])
@@ -426,6 +428,7 @@ enum SignalSourceType {
   POSTHOG
   LINKEDIN
   INTERCOM
+  ZENDESK
   CUSTOM_WEBHOOK
 }
 
@@ -543,6 +546,7 @@ enum IdentityType {
   REDDIT
   POSTHOG
   INTERCOM
+  ZENDESK
 }
 
 // ============================================================
@@ -969,4 +973,24 @@ model SsoConnection {
 enum SsoProvider {
   SAML
   OIDC
+}
+
+// ============================================================
+// SCORE SNAPSHOTS — Historical PQA score tracking for trends
+// ============================================================
+
+model ScoreSnapshot {
+  id              String   @id @default(cuid())
+  organizationId  String
+  companyId       String
+  score           Int
+  breakdown       Json?    // { userCount, velocity, featureBreadth, engagement, seniority, firmographic }
+  capturedAt      DateTime @default(now())
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  company         Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, capturedAt])
+  @@index([organizationId, capturedAt])
+  @@map("score_snapshots")
 }

@@ -17,6 +17,7 @@ import {
   posthogSyncQueue,
   linkedinSyncQueue,
   intercomSyncQueue,
+  zendeskSyncQueue,
   bulkEnrichmentQueue,
   SignalProcessingJobData,
   ScoreComputationJobData,
@@ -34,7 +35,10 @@ import {
   PostHogSyncJobData,
   LinkedInSyncJobData,
   IntercomSyncJobData,
+  ZendeskSyncJobData,
   BulkEnrichmentJobData,
+  scoreSnapshotQueue,
+  ScoreSnapshotJobData,
 } from './queue';
 
 // ---------------------------------------------------------------------------
@@ -414,6 +418,28 @@ export const enqueueIntercomSync = async (
 };
 
 // ---------------------------------------------------------------------------
+// Zendesk Sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue a Zendesk sync job for a specific organization.
+ */
+export const enqueueZendeskSync = async (
+  organizationId: string,
+): Promise<Job<ZendeskSyncJobData>> => {
+  const job = await zendeskSyncQueue.add(
+    'zendesk-sync',
+    { organizationId },
+    {
+      // Deduplication: only one pending sync per org at a time
+      jobId: `zendesk-sync-${organizationId}`,
+    },
+  );
+  logger.debug('Enqueued Zendesk sync', { jobId: job.id, organizationId });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
 // Bulk Enrichment (Clearbit)
 // ---------------------------------------------------------------------------
 
@@ -434,5 +460,28 @@ export const enqueueBulkEnrichment = async (
     },
   );
   logger.debug('Enqueued bulk enrichment', { jobId: job.id, organizationId, type });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// Score Snapshot
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue a score snapshot capture for a specific organization.
+ * Per-org deduplication prevents duplicate snapshot runs.
+ */
+export const enqueueScoreSnapshot = async (
+  organizationId: string,
+): Promise<Job<ScoreSnapshotJobData>> => {
+  const job = await scoreSnapshotQueue.add(
+    'capture-score-snapshot',
+    { organizationId },
+    {
+      // Deduplication: only one pending snapshot per org at a time
+      jobId: `score-snapshot-${organizationId}`,
+    },
+  );
+  logger.debug('Enqueued score snapshot', { jobId: job.id, organizationId });
   return job;
 };

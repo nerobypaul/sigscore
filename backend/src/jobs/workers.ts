@@ -16,7 +16,8 @@ import { syncReddit } from '../services/reddit-connector';
 import { syncLinkedIn } from '../services/linkedin-connector';
 import { syncPostHogEvents } from '../services/posthog-connector';
 import { bulkEnrichCompanies, bulkEnrichContacts } from '../services/clearbit-enrichment';
-import { enqueueHubSpotSyncForAllConnected, enqueueDiscordSyncForAllConnected, enqueueSalesforceSyncForAllConnected, enqueueStackOverflowSyncForAllConnected, enqueueTwitterSyncForAllConnected, enqueueRedditSyncForAllConnected, enqueueLinkedInSyncForAllConnected, enqueuePostHogSyncForAllConnected, enqueueClearbitEnrichmentForAllConnected } from './scheduler';
+import { captureScoreSnapshots } from '../services/score-snapshots';
+import { enqueueHubSpotSyncForAllConnected, enqueueDiscordSyncForAllConnected, enqueueSalesforceSyncForAllConnected, enqueueStackOverflowSyncForAllConnected, enqueueTwitterSyncForAllConnected, enqueueRedditSyncForAllConnected, enqueueLinkedInSyncForAllConnected, enqueuePostHogSyncForAllConnected, enqueueClearbitEnrichmentForAllConnected, enqueueScoreSnapshotForAllOrgs } from './scheduler';
 import {
   QUEUE_NAMES,
   SignalProcessingJobData,
@@ -35,6 +36,7 @@ import {
   LinkedInSyncJobData,
   PostHogSyncJobData,
   BulkEnrichmentJobData,
+  ScoreSnapshotJobData,
 } from './queue';
 import { processEmailStep } from '../services/email-sequences';
 
@@ -625,6 +627,44 @@ function createEmailSendWorker(): Worker<EmailSendJobData> {
 }
 
 // ---------------------------------------------------------------------------
+// Score Snapshot Worker
+// ---------------------------------------------------------------------------
+function createScoreSnapshotWorker(): Worker<ScoreSnapshotJobData> {
+  return new Worker<ScoreSnapshotJobData>(
+    QUEUE_NAMES.SCORE_SNAPSHOT,
+    async (job: Job<ScoreSnapshotJobData>) => {
+      const { organizationId } = job.data;
+
+      // Handle scheduler sentinel: enqueue individual jobs for all orgs
+      if (organizationId === '__scheduler__') {
+        logger.info('Score snapshot scheduler triggered', { jobId: job.id });
+        await enqueueScoreSnapshotForAllOrgs();
+        return { scheduled: true };
+      }
+
+      logger.info('Score snapshot capture started', {
+        jobId: job.id,
+        organizationId,
+        attempt: job.attemptsMade + 1,
+      });
+
+      const result = await captureScoreSnapshots(organizationId);
+
+      logger.info('Score snapshot capture completed', {
+        jobId: job.id,
+        organizationId,
+        captured: result.captured,
+      });
+      return result;
+    },
+    {
+      connection: bullConnection,
+      concurrency: 2,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Lifecycle helpers
 // ---------------------------------------------------------------------------
 function attachLogging(worker: Worker): void {
@@ -668,8 +708,9 @@ export const startWorkers = (): void => {
   const linkedinSyncWorker = createLinkedInSyncWorker();
   const posthogSyncWorker = createPostHogSyncWorker();
   const bulkEnrichmentWorker = createBulkEnrichmentWorker();
+  const scoreSnapshotWorker = createScoreSnapshotWorker();
 
-  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, redditSyncWorker, linkedinSyncWorker, posthogSyncWorker, bulkEnrichmentWorker].forEach((w) => {
+  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, redditSyncWorker, linkedinSyncWorker, posthogSyncWorker, bulkEnrichmentWorker, scoreSnapshotWorker].forEach((w) => {
     attachLogging(w);
     workers.push(w);
   });

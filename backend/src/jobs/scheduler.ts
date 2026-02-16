@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import { signalSyncQueue, hubspotSyncQueue, discordSyncQueue, salesforceSyncQueue, stackoverflowSyncQueue, twitterSyncQueue, redditSyncQueue, linkedinSyncQueue, posthogSyncQueue, bulkEnrichmentQueue } from './queue';
+import { signalSyncQueue, hubspotSyncQueue, discordSyncQueue, salesforceSyncQueue, stackoverflowSyncQueue, twitterSyncQueue, redditSyncQueue, linkedinSyncQueue, posthogSyncQueue, bulkEnrichmentQueue, scoreSnapshotQueue } from './queue';
 import { getConnectedOrganizations } from '../services/hubspot-sync';
 import { getConnectedOrganizations as getSalesforceConnectedOrganizations } from '../services/salesforce-sync';
 import { getDiscordConnectedOrganizations } from '../services/discord-connector';
@@ -9,6 +9,7 @@ import { getRedditConnectedOrganizations } from '../services/reddit-connector';
 import { getLinkedInConnectedOrganizations } from '../services/linkedin-connector';
 import { getPostHogConnectedOrganizations } from '../services/posthog-connector';
 import { getConnectedOrganizations as getClearbitConnectedOrganizations } from '../services/clearbit-enrichment';
+import { prisma } from '../config/database';
 
 /**
  * Set up recurring (cron-based) jobs using BullMQ's built-in repeatable jobs.
@@ -134,6 +135,16 @@ export const setupScheduler = async (): Promise<void> => {
     },
   );
 
+  // Score snapshots daily at 2 AM — capture PQA scores for trend tracking.
+  await scoreSnapshotQueue.add(
+    'score-snapshot-scheduler',
+    { organizationId: '__scheduler__' },
+    {
+      repeat: { pattern: '0 2 * * *' },
+      jobId: 'scheduled-score-snapshot',
+    },
+  );
+
   logger.info('BullMQ scheduled jobs configured', {
     jobs: [
       { name: 'sync-all-npm', schedule: 'every 6 hours' },
@@ -147,6 +158,7 @@ export const setupScheduler = async (): Promise<void> => {
       { name: 'linkedin-sync', schedule: 'every 6 hours' },
       { name: 'posthog-sync', schedule: 'every hour' },
       { name: 'clearbit-enrichment', schedule: 'daily at 3 AM' },
+      { name: 'score-snapshot', schedule: 'daily at 2 AM' },
     ],
   });
 };
@@ -311,5 +323,26 @@ export async function enqueueClearbitEnrichmentForAllConnected(): Promise<void> 
   }
   logger.info('Scheduled Clearbit enrichment enqueued for connected orgs', {
     count: orgIds.length,
+  });
+}
+
+/**
+ * Resolve scheduled score snapshot into per-org jobs.
+ * Called by the score snapshot worker when it sees the scheduler sentinel.
+ * Queries all organizations and enqueues a snapshot job for each.
+ */
+export async function enqueueScoreSnapshotForAllOrgs(): Promise<void> {
+  const orgs = await prisma.organization.findMany({
+    select: { id: true },
+  });
+  for (const org of orgs) {
+    await scoreSnapshotQueue.add(
+      'capture-score-snapshot',
+      { organizationId: org.id },
+      { jobId: `score-snapshot-${org.id}-${Date.now()}` },
+    );
+  }
+  logger.info('Scheduled score snapshots enqueued for all orgs', {
+    count: orgs.length,
   });
 }

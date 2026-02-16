@@ -59,11 +59,13 @@ import redditConnectorRoutes from './routes/reddit-connector';
 import posthogConnectorRoutes from './routes/posthog-connector';
 import linkedinConnectorRoutes from './routes/linkedin-connector';
 import intercomConnectorRoutes from './routes/intercom-connector';
+import zendeskConnectorRoutes from './routes/zendesk-connector';
 import ssoRoutes from './routes/sso';
 import oauthRoutes from './routes/oauth';
 import enrichmentRoutes from './routes/enrichment';
 import webhookSubscriptionRoutes from './routes/webhook-subscriptions';
 import advancedAnalyticsRoutes from './routes/advanced-analytics';
+import scoreSnapshotRoutes from './routes/score-snapshots';
 import { sentryErrorHandler } from './utils/sentry';
 
 const app = express();
@@ -177,6 +179,7 @@ app.use('/api/v1/connectors/reddit', redditConnectorRoutes);
 app.use('/api/v1/connectors/posthog', posthogConnectorRoutes);
 app.use('/api/v1/connectors/linkedin', linkedinConnectorRoutes);
 app.use('/api/v1/connectors/intercom', intercomConnectorRoutes);
+app.use('/api/v1/connectors/zendesk', zendeskConnectorRoutes);
 
 // API routes — Bulk Operations & CSV Export
 app.use('/api/v1/bulk', bulkRoutes);
@@ -220,6 +223,9 @@ app.use('/api/v1/playbooks', playbookRoutes);
 
 // API routes — Scoring Rules (no-code lead scoring builder)
 app.use('/api/v1/scoring', scoringRoutes);
+
+// API routes — Score Snapshots (PQA score history for trend visualization)
+app.use('/api/v1/score-snapshots', scoreSnapshotRoutes);
 
 // API routes — Identity Resolution
 app.use('/api/v1/identity', identityRoutes);
