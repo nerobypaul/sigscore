@@ -26,7 +26,7 @@ RUN npm ci --workspace=backend --include-workspace-root
 
 # Copy prisma schema and generate the client
 COPY backend/prisma ./backend/prisma
-RUN npx --prefix backend prisma generate
+RUN npx prisma generate --schema ./backend/prisma/schema.prisma
 
 # Copy backend source and compile TypeScript
 COPY backend/tsconfig.json ./backend/
@@ -71,7 +71,7 @@ RUN npm ci --workspace=backend --include-workspace-root --omit=dev
 
 # Prisma client must be generated against production node_modules
 COPY backend/prisma ./backend/prisma
-RUN npx --prefix backend prisma generate
+RUN npx prisma generate --schema ./backend/prisma/schema.prisma
 
 
 # ---- Stage 4: Production runtime ----
