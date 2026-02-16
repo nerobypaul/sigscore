@@ -54,6 +54,10 @@ const TeamSettings = lazy(() => import('./pages/TeamSettings'));
 const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
 const DataExport = lazy(() => import('./pages/DataExport'));
 const AccountAlerts = lazy(() => import('./pages/AccountAlerts'));
+const EnrichmentQueue = lazy(() => import('./pages/EnrichmentQueue'));
+const AccountReports = lazy(() => import('./pages/AccountReports'));
+const SharedReport = lazy(() => import('./pages/SharedReport'));
+const ApiUsage = lazy(() => import('./pages/ApiUsage'));
 const Changelog = lazy(() => import('./pages/Changelog'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
@@ -108,6 +112,7 @@ function AppRoutes() {
         <Route path="/changelog" element={<Changelog />} />
         <Route path="/sso/callback" element={<SsoCallback />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
+        <Route path="/shared/:shareToken" element={<SharedReport />} />
         <Route path="/invitations/:token/accept" element={<AcceptInvitation />} />
         <Route
           path="/login"
@@ -176,6 +181,9 @@ function AppRoutes() {
           <Route path="/sso-settings" element={<SsoSettings />} />
           <Route path="/settings/export" element={<DataExport />} />
           <Route path="/alerts" element={<AccountAlerts />} />
+          <Route path="/reports" element={<AccountReports />} />
+          <Route path="/enrichment" element={<EnrichmentQueue />} />
+          <Route path="/api-usage" element={<ApiUsage />} />
         </Route>
 
         {/* 404 catch-all */}

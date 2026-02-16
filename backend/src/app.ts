@@ -62,16 +62,20 @@ import zendeskConnectorRoutes from './routes/zendesk-connector';
 import ssoRoutes from './routes/sso';
 import oauthRoutes from './routes/oauth';
 import enrichmentRoutes from './routes/enrichment';
+import enrichmentQueueRoutes from './routes/enrichment-queue';
 import webhookSubscriptionRoutes from './routes/webhook-subscriptions';
 import advancedAnalyticsRoutes from './routes/advanced-analytics';
+import apiUsageRoutes from './routes/api-usage';
 import customFieldRoutes from './routes/custom-fields';
 import scoreSnapshotRoutes from './routes/score-snapshots';
 import dataExportRoutes from './routes/data-export';
 import accountAlertRoutes from './routes/account-alerts';
+import accountReportRoutes, { accountReportsPublicRouter } from './routes/account-reports';
 import invitationRoutes from './routes/invitations';
 import healthRoutes from './routes/health';
 import seoRoutes from './routes/seo';
 import changelogRoutes from './routes/changelog';
+import { apiUsageTracker } from './middleware/api-usage';
 import { sentryErrorHandler } from './utils/sentry';
 
 const app = express();
@@ -108,6 +112,10 @@ app.use('/api/v1/billing/webhook', billingWebhookRouter);
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// API usage tracking — lightweight middleware to record per-org request metrics
+// Must be early in the chain to capture all API requests, but after body parsing.
+app.use(apiUsageTracker);
+
 // Health check (liveness + readiness probes)
 app.use('/health', healthRoutes);
 
@@ -116,6 +124,9 @@ app.use(seoRoutes);
 
 // Public changelog API (no auth required — mounted before authenticated routes)
 app.use('/api/v1/changelog', changelogRoutes);
+
+// Public shared account report (no auth required — mounted before authenticated routes)
+app.use('/api/v1/account-reports', accountReportsPublicRouter);
 
 // API routes — Core CRM
 app.use('/api/v1/auth', authRoutes);
@@ -155,6 +166,7 @@ app.use('/api/v1/search', searchRoutes);
 // API routes — Usage & Billing
 app.use('/api/v1/usage', usageRoutes);
 app.use('/api/v1/billing', billingRoutes);
+app.use('/api/v1/api-usage', apiUsageRoutes);
 
 // API routes — Analytics & Workflows
 app.use('/api/v1/analytics', analyticsRoutes);
@@ -227,6 +239,9 @@ app.use('/api/v1/identity', identityRoutes);
 // API routes — Clearbit Enrichment
 app.use('/api/v1/enrichment', enrichmentRoutes);
 
+// API routes — Enrichment Queue (bulk enrichment management UI)
+app.use('/api/v1/enrichment-queue', enrichmentQueueRoutes);
+
 // API routes — SSO (SAML / OIDC)
 app.use('/api/v1/sso', ssoRoutes);
 
@@ -241,6 +256,9 @@ app.use('/api/v1/custom-fields', customFieldRoutes);
 
 // API routes — Account Alert Rules
 app.use('/api/v1/account-alerts', accountAlertRoutes);
+
+// API routes — Account Reports (shareable)
+app.use('/api/v1/account-reports', accountReportRoutes);
 
 // API routes — Data Export (enterprise compliance & data portability)
 app.use('/api/v1/exports', dataExportRoutes);
