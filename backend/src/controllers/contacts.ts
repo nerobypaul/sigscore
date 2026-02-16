@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as contactService from '../services/contacts';
+import { findDuplicates, mergeContacts } from '../services/identity-resolution';
 import { enqueueWorkflowExecution } from '../jobs/producers';
 import { notifyOrgUsers } from '../services/notifications';
 import { sendSignupAlert } from '../services/slack-notifications';
@@ -139,6 +140,57 @@ export const deleteContact = async (req: Request, res: Response, next: NextFunct
     }).catch(() => {});
 
     res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /contacts/duplicates
+ * Returns groups of potential duplicate contacts, matched by email or shared identities.
+ */
+export const getDuplicates = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const organizationId = req.organizationId!;
+    const groups = await findDuplicates(organizationId);
+    res.json({ groups });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /contacts/:id/merge
+ * Merges one or more source contacts into the target (primary) contact.
+ * Body: { duplicateIds: string[] }
+ */
+export const mergeContact = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const organizationId = req.organizationId!;
+    const { duplicateIds } = req.body as { duplicateIds: string[] };
+
+    if (!Array.isArray(duplicateIds) || duplicateIds.length === 0) {
+      res.status(400).json({ error: 'duplicateIds must be a non-empty array' });
+      return;
+    }
+
+    const result = await mergeContacts(organizationId, id, duplicateIds);
+
+    // Audit log (fire-and-forget)
+    logAudit({
+      organizationId,
+      userId: req.user?.id,
+      action: 'merge',
+      entityType: 'contact',
+      entityId: id,
+      entityName: `Merged ${result.merged} contact(s) into ${id}`,
+      metadata: { duplicateIds, merged: result.merged, errors: result.errors } as unknown as Record<string, unknown>,
+    }).catch(() => {});
+
+    logger.info(`Contact merge: ${result.merged} merged into ${id}`, { organizationId });
+
+    res.json(result);
   } catch (error) {
     next(error);
   }

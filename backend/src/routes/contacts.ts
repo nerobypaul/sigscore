@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getContacts, getContact, createContact, updateContact, deleteContact } from '../controllers/contacts';
+import { getContacts, getContact, createContact, updateContact, deleteContact, getDuplicates, mergeContact } from '../controllers/contacts';
 import { authenticate, requireOrganization } from '../middleware/auth';
 import { enforceContactLimit } from '../middleware/usage-limits';
 import { validate } from '../middleware/validate';
@@ -134,6 +134,51 @@ const updateContactSchema = z.object({
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/', getContacts);
+
+/**
+ * @openapi
+ * /contacts/duplicates:
+ *   get:
+ *     tags: [Contacts]
+ *     summary: Find duplicate contacts
+ *     description: Returns groups of potential duplicate contacts matched by email or shared identities within the organization.
+ *     security:
+ *       - BearerAuth: []
+ *       - ApiKeyAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/OrganizationId'
+ *     responses:
+ *       200:
+ *         description: Duplicate contact groups
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 groups:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       primaryContactId:
+ *                         type: string
+ *                       primaryName:
+ *                         type: string
+ *                       primaryEmail:
+ *                         type: string
+ *                         nullable: true
+ *                       duplicates:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *       401:
+ *         description: Missing or invalid authorization
+ *       403:
+ *         description: Access to organization denied
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/duplicates', getDuplicates);
 
 /**
  * @openapi
@@ -302,6 +347,64 @@ router.post('/', enforceContactLimit, validate(createContactSchema), createConta
  *               $ref: '#/components/schemas/Error'
  */
 router.put('/:id', validate(updateContactSchema), updateContact);
+
+/**
+ * @openapi
+ * /contacts/{id}/merge:
+ *   post:
+ *     tags: [Contacts]
+ *     summary: Merge duplicate contacts
+ *     description: Merges one or more source contacts into the target (primary) contact. Moves all signals, identities, activities, deals, and tags from the source contacts to the primary, then deletes the source contacts.
+ *     security:
+ *       - BearerAuth: []
+ *       - ApiKeyAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/OrganizationId'
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The primary contact ID to merge into
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [duplicateIds]
+ *             properties:
+ *               duplicateIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: IDs of contacts to merge into the primary
+ *     responses:
+ *       200:
+ *         description: Merge result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 merged:
+ *                   type: integer
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Missing or invalid authorization
+ *       403:
+ *         description: Access to organization denied
+ *       404:
+ *         description: Contact not found
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/:id/merge', mergeContact);
 
 /**
  * @openapi

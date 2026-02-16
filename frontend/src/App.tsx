@@ -42,6 +42,7 @@ const SsoSettings = lazy(() => import('./pages/SsoSettings'));
 const SsoCallback = lazy(() => import('./pages/SsoCallback'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 const WebhookManager = lazy(() => import('./pages/WebhookManager'));
+const ContactDuplicates = lazy(() => import('./pages/ContactDuplicates'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const NotFound = lazy(() => import('./pages/NotFound'));
@@ -130,6 +131,7 @@ function AppRoutes() {
         >
           <Route path="/" element={<Dashboard />} />
           <Route path="/contacts" element={<Contacts />} />
+          <Route path="/contacts/duplicates" element={<ContactDuplicates />} />
           <Route path="/contacts/:id" element={<ContactDetail />} />
           <Route path="/companies" element={<Companies />} />
           <Route path="/companies/:id" element={<CompanyDetail />} />
