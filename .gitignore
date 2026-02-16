@@ -51,6 +51,9 @@ coverage/
 # Prisma — generated client (tracked via prisma generate)
 backend/node_modules/.prisma/
 
+# Load test results
+tests/load/results/
+
 # Docker
 .docker/
 .nero/*.log

@@ -18,7 +18,9 @@
     "db:seed": "npm run db:seed --workspace=backend",
     "e2e": "npx playwright test",
     "e2e:ui": "npx playwright test --ui",
-    "e2e:headed": "npx playwright test --headed"
+    "e2e:headed": "npx playwright test --headed",
+    "test:load": "node tests/load/run.js",
+    "test:load:quick": "node tests/load/run.js --quick"
   },
   "keywords": [
     "crm",
