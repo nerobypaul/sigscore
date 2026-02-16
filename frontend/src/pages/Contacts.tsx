@@ -126,17 +126,17 @@ export default function Contacts() {
     }
   };
 
-  const handleExport = async () => {
-    setBulkLoading(true);
-    try {
-      const payload: { ids?: string[]; filters?: { search?: string } } =
-        selectedIds.size > 0
-          ? { ids: Array.from(selectedIds) }
-          : search
-            ? { filters: { search } }
-            : {};
+  const [exporting, setExporting] = useState(false);
 
-      const { data } = await api.post('/bulk/contacts/export', payload, {
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const params: Record<string, string> = {};
+      if (search) params.search = search;
+      // sortField / sortDirection could be added here if sort state is tracked
+
+      const { data } = await api.get('/contacts/export', {
+        params,
         responseType: 'blob',
       });
 
@@ -151,15 +151,11 @@ export default function Contacts() {
       a.remove();
       window.URL.revokeObjectURL(url);
 
-      toast.success(
-        selectedIds.size > 0
-          ? `Exported ${selectedIds.size} contact${selectedIds.size !== 1 ? 's' : ''}`
-          : 'Contacts exported'
-      );
+      toast.success('Contacts exported');
     } catch {
       toast.error('Failed to export contacts');
     } finally {
-      setBulkLoading(false);
+      setExporting(false);
     }
   };
 
@@ -175,14 +171,14 @@ export default function Contacts() {
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={handleExport}
-            disabled={bulkLoading}
+            disabled={exporting}
             className="border border-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
-            <span className="hidden sm:inline">Export CSV</span>
-            <span className="sm:hidden">Export</span>
+            <span className="hidden sm:inline">{exporting ? 'Exporting...' : 'Export CSV'}</span>
+            <span className="sm:hidden">{exporting ? 'Exporting...' : 'Export'}</span>
           </button>
           <Link
             to="/contacts/duplicates"
@@ -255,10 +251,10 @@ export default function Contacts() {
           </button>
           <button
             onClick={handleExport}
-            disabled={bulkLoading}
+            disabled={exporting}
             className="text-sm font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
           >
-            Export
+            {exporting ? 'Exporting...' : 'Export'}
           </button>
           <button
             onClick={() => setSelectedIds(new Set())}

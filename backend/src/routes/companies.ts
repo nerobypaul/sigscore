@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getCompanies, getCompany, createCompany, updateCompany, deleteCompany } from '../controllers/companies';
+import { getCompanies, getCompany, createCompany, updateCompany, deleteCompany, exportCompanies } from '../controllers/companies';
 import { authenticate, requireOrganization } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
@@ -132,6 +132,49 @@ const updateCompanySchema = z.object({
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/', getCompanies);
+
+/**
+ * @openapi
+ * /companies/export:
+ *   get:
+ *     tags: [Companies]
+ *     summary: Export companies as CSV
+ *     description: Returns a CSV file of companies matching the provided filters.
+ *     security:
+ *       - BearerAuth: []
+ *       - ApiKeyAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/OrganizationId'
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by company name or domain
+ *       - in: query
+ *         name: industry
+ *         schema:
+ *           type: string
+ *         description: Filter by industry
+ *       - in: query
+ *         name: sortField
+ *         schema:
+ *           type: string
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortDirection
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         description: Sort direction
+ *     responses:
+ *       200:
+ *         description: CSV file download
+ *         content:
+ *           text/csv:
+ *             schema:
+ *               type: string
+ */
+router.get('/export', exportCompanies);
 
 /**
  * @openapi

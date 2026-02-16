@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getContacts, getContact, createContact, updateContact, deleteContact, getDuplicates, mergeContact } from '../controllers/contacts';
+import { getContacts, getContact, createContact, updateContact, deleteContact, getDuplicates, mergeContact, exportContacts } from '../controllers/contacts';
 import { authenticate, requireOrganization } from '../middleware/auth';
 import { enforceContactLimit } from '../middleware/usage-limits';
 import { validate } from '../middleware/validate';
@@ -179,6 +179,49 @@ router.get('/', getContacts);
  *         description: Internal server error
  */
 router.get('/duplicates', getDuplicates);
+
+/**
+ * @openapi
+ * /contacts/export:
+ *   get:
+ *     tags: [Contacts]
+ *     summary: Export contacts as CSV
+ *     description: Returns a CSV file of contacts matching the provided filters.
+ *     security:
+ *       - BearerAuth: []
+ *       - ApiKeyAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/OrganizationId'
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search contacts by name or email
+ *       - in: query
+ *         name: companyId
+ *         schema:
+ *           type: string
+ *         description: Filter by company ID
+ *       - in: query
+ *         name: sortField
+ *         schema:
+ *           type: string
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortDirection
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         description: Sort direction
+ *     responses:
+ *       200:
+ *         description: CSV file download
+ *         content:
+ *           text/csv:
+ *             schema:
+ *               type: string
+ */
+router.get('/export', exportContacts);
 
 /**
  * @openapi

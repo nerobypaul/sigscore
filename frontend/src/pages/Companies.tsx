@@ -100,6 +100,38 @@ export default function Companies() {
     setSelectedIds(new Set());
   };
 
+  // --- Export ---
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const params: Record<string, string> = {};
+      if (search) params.search = search;
+
+      const { data } = await api.get('/companies/export', {
+        params,
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `companies-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Companies exported');
+    } catch {
+      toast.error('Failed to export companies');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // --- Bulk actions ---
 
   const handleBulkDelete = async () => {
@@ -162,6 +194,27 @@ export default function Companies() {
             </svg>
             <span className="hidden sm:inline">{selectMode ? 'Exit Select' : 'Select'}</span>
             <span className="sm:hidden">{selectMode ? 'Exit' : 'Select'}</span>
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="border border-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
+              />
+            </svg>
+            <span className="hidden sm:inline">{exporting ? 'Exporting...' : 'Export CSV'}</span>
+            <span className="sm:hidden">{exporting ? 'Exporting...' : 'Export'}</span>
           </button>
           <button
             onClick={() => setShowImport(true)}
@@ -231,6 +284,13 @@ export default function Companies() {
             className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
           >
             Delete
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+          >
+            {exporting ? 'Exporting...' : 'Export'}
           </button>
           <button
             onClick={() => setSelectedIds(new Set())}
