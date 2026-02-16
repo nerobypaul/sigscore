@@ -7,6 +7,7 @@ import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
 import CSVImport from '../components/CSVImport';
 import SavedViewSelector from '../components/SavedViewSelector';
+import ScoreTrendSparkline from '../components/ScoreTrendSparkline';
 
 const SIZE_LABELS: Record<string, string> = {
   STARTUP: 'Startup',
@@ -444,11 +445,12 @@ function CompanyCard({
         </p>
       )}
 
-      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4 text-xs text-gray-400">
+      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-3 text-xs text-gray-400">
         {company.website && (
           <span className="truncate">{company.website}</span>
         )}
-        <span className="ml-auto">
+        <span className="ml-auto flex items-center gap-2">
+          <ScoreTrendSparkline companyId={company.id} width={64} height={20} days={7} />
           {new Date(company.createdAt).toLocaleDateString()}
         </span>
       </div>

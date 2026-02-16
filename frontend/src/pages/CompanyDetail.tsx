@@ -8,6 +8,7 @@ import { useToast } from '../components/Toast';
 import AccountScoreCard, { AccountScoreBadge } from '../components/AccountScoreCard';
 import AccountTimeline from '../components/AccountTimeline';
 import AIBriefPanel from '../components/AIBriefPanel';
+import ScoreTrendChart from '../components/ScoreTrendChart';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -292,6 +293,7 @@ export default function CompanyDetail() {
       {loadedTabsRef.current.has('overview') && (
         <div className={activeTab === 'overview' ? '' : 'hidden'}>
           <OverviewTab
+            companyId={id!}
             company={company}
             score={score}
             signals={recentSignals}
@@ -348,6 +350,7 @@ export default function CompanyDetail() {
 // ===========================================================================
 
 interface OverviewTabProps {
+  companyId: string;
   company: CompanyWithRelations;
   score: AccountScore | null;
   signals: Signal[];
@@ -358,7 +361,7 @@ interface OverviewTabProps {
   totalDealValue: number;
 }
 
-function OverviewTab({ company, score, signals, activities, contacts, deals, tags, totalDealValue }: OverviewTabProps) {
+function OverviewTab({ companyId, company, score, signals, activities, contacts, deals, tags, totalDealValue }: OverviewTabProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
       {/* LEFT COLUMN (2/3) */}
@@ -474,6 +477,9 @@ function OverviewTab({ company, score, signals, activities, contacts, deals, tag
             <p className="text-sm text-gray-400 text-center py-4">No score computed yet</p>
           </div>
         )}
+
+        {/* PQA Score Trend Chart */}
+        <ScoreTrendChart companyId={companyId} days={30} />
 
         {/* Metadata */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

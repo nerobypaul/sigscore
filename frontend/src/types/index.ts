@@ -302,6 +302,24 @@ export const TREND_ICONS: Record<ScoreTrend, string> = {
   FALLING: 'arrow-down',
 };
 
+// === Score Snapshots ===
+
+export interface ScoreBreakdown {
+  userCount: number;
+  velocity: number;
+  featureBreadth: number;
+  engagement: number;
+  seniority: number;
+  firmographic: number;
+}
+
+export interface ScoreSnapshot {
+  id: string;
+  score: number;
+  breakdown: ScoreBreakdown | null;
+  capturedAt: string;
+}
+
 // === Saved Views ===
 
 export interface SavedView {
