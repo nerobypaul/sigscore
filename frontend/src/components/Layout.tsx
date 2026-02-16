@@ -35,6 +35,7 @@ const navSections: NavSection[] = [
       { to: '/contacts', label: 'Contacts', icon: ContactsIcon },
       { to: '/companies', label: 'Companies', icon: CompaniesIcon },
       { to: '/signals', label: 'Signals', icon: SignalsIcon },
+      { to: '/signals/feed', label: 'Signal Feed', icon: SignalFeedIcon },
       { to: '/scores', label: 'PQA Scores', icon: ScoresIcon },
     ],
   },
@@ -53,6 +54,7 @@ const navSections: NavSection[] = [
     items: [
       { to: '/analytics', label: 'Analytics', icon: AnalyticsIcon },
       { to: '/deals', label: 'Deals', icon: DealsIcon },
+      { to: '/alerts', label: 'Alerts', icon: AlertsIcon },
     ],
   },
   {
@@ -367,6 +369,14 @@ function SignalsIcon() {
   );
 }
 
+function SignalFeedIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.348 14.651a3.75 3.75 0 010-5.303m5.304 0a3.75 3.75 0 010 5.303m-7.425 2.122a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546M5.106 18.894c-3.808-3.808-3.808-9.98 0-13.789m13.788 0c3.808 3.808 3.808 9.981 0 13.79M12 12h.008v.007H12V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+    </svg>
+  );
+}
+
 function ScoresIcon() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -411,6 +421,14 @@ function DealsIcon() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+
+function AlertsIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
     </svg>
   );
 }

@@ -96,10 +96,12 @@ export const getSignals = async (req: Request, res: Response, next: NextFunction
     const filters = {
       type: req.query.type as string,
       sourceId: req.query.sourceId as string,
+      sourceType: req.query.sourceType as string,
       accountId: req.query.accountId as string,
       actorId: req.query.actorId as string,
       from: req.query.from as string,
       to: req.query.to as string,
+      search: req.query.search as string,
       page: parsePageInt(req.query.page),
       limit: parsePageInt(req.query.limit),
     };

@@ -21,6 +21,7 @@ const CompanyCompare = lazy(() => import('./pages/CompanyCompare'));
 const Deals = lazy(() => import('./pages/Deals'));
 const Activities = lazy(() => import('./pages/Activities'));
 const Signals = lazy(() => import('./pages/Signals'));
+const SignalFeed = lazy(() => import('./pages/SignalFeed'));
 const PQADashboard = lazy(() => import('./pages/PQADashboard'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Billing = lazy(() => import('./pages/Billing'));
@@ -52,6 +53,8 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 const TeamSettings = lazy(() => import('./pages/TeamSettings'));
 const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
 const DataExport = lazy(() => import('./pages/DataExport'));
+const AccountAlerts = lazy(() => import('./pages/AccountAlerts'));
+const Changelog = lazy(() => import('./pages/Changelog'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
@@ -102,6 +105,7 @@ function AppRoutes() {
         <Route path="/developers" element={<DevPortal />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/changelog" element={<Changelog />} />
         <Route path="/sso/callback" element={<SsoCallback />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
         <Route path="/invitations/:token/accept" element={<AcceptInvitation />} />
@@ -153,6 +157,7 @@ function AppRoutes() {
           <Route path="/deals/:id" element={<DealDetail />} />
           <Route path="/activities" element={<Activities />} />
           <Route path="/signals" element={<Signals />} />
+          <Route path="/signals/feed" element={<SignalFeed />} />
           <Route path="/scores" element={<PQADashboard />} />
           <Route path="/scoring" element={<ScoringBuilder />} />
           <Route path="/workflows" element={<Workflows />} />
@@ -170,6 +175,7 @@ function AppRoutes() {
           <Route path="/webhooks" element={<WebhookManager />} />
           <Route path="/sso-settings" element={<SsoSettings />} />
           <Route path="/settings/export" element={<DataExport />} />
+          <Route path="/alerts" element={<AccountAlerts />} />
         </Route>
 
         {/* 404 catch-all */}

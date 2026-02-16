@@ -23,10 +23,12 @@ export interface SignalInput {
 export interface SignalFilters {
   type?: string;
   sourceId?: string;
+  sourceType?: string;
   accountId?: string;
   actorId?: string;
   from?: string;
   to?: string;
+  search?: string;
   page?: number;
   limit?: number;
 }
@@ -217,7 +219,7 @@ export const ingestSignalBatch = async (organizationId: string, signals: SignalI
 };
 
 export const getSignals = async (organizationId: string, filters: SignalFilters) => {
-  const { type, sourceId, accountId, actorId, from, to, page = 1, limit } = filters;
+  const { type, sourceId, sourceType, accountId, actorId, from, to, search, page = 1, limit } = filters;
   const clampedLimit = Math.min(100, Math.max(1, limit ?? 50));
   const skip = (page - 1) * clampedLimit;
 
@@ -225,6 +227,7 @@ export const getSignals = async (organizationId: string, filters: SignalFilters)
     organizationId,
     ...(type && { type }),
     ...(sourceId && { sourceId }),
+    ...(sourceType && { source: { type: sourceType as Prisma.EnumSignalSourceTypeFilter['equals'] } }),
     ...(accountId && { accountId }),
     ...(actorId && { actorId }),
     ...((from || to) && {
@@ -232,6 +235,18 @@ export const getSignals = async (organizationId: string, filters: SignalFilters)
         ...(from && { gte: new Date(from) }),
         ...(to && { lte: new Date(to) }),
       },
+    }),
+    ...(search && {
+      OR: [
+        { type: { contains: search, mode: 'insensitive' as const } },
+        { metadata: { path: [], string_contains: search } },
+        { actor: { OR: [
+          { firstName: { contains: search, mode: 'insensitive' as const } },
+          { lastName: { contains: search, mode: 'insensitive' as const } },
+          { email: { contains: search, mode: 'insensitive' as const } },
+        ] } },
+        { account: { name: { contains: search, mode: 'insensitive' as const } } },
+      ],
     }),
   };
 
