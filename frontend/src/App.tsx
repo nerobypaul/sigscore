@@ -16,6 +16,7 @@ const Contacts = lazy(() => import('./pages/Contacts'));
 const ContactDetail = lazy(() => import('./pages/ContactDetail'));
 const Companies = lazy(() => import('./pages/Companies'));
 const CompanyDetail = lazy(() => import('./pages/CompanyDetail'));
+const CompanyCompare = lazy(() => import('./pages/CompanyCompare'));
 const Deals = lazy(() => import('./pages/Deals'));
 const Activities = lazy(() => import('./pages/Activities'));
 const Signals = lazy(() => import('./pages/Signals'));
@@ -138,6 +139,7 @@ function AppRoutes() {
           <Route path="/contacts/duplicates" element={<ContactDuplicates />} />
           <Route path="/contacts/:id" element={<ContactDetail />} />
           <Route path="/companies" element={<Companies />} />
+          <Route path="/companies/compare" element={<CompanyCompare />} />
           <Route path="/companies/:id" element={<CompanyDetail />} />
           <Route path="/deals" element={<Deals />} />
           <Route path="/deals/:id" element={<DealDetail />} />

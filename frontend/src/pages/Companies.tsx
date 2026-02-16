@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import type { Company, Pagination } from '../types';
 import Spinner from '../components/Spinner';
@@ -19,6 +19,7 @@ const SIZE_LABELS: Record<string, string> = {
 
 export default function Companies() {
   const toast = useToast();
+  const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [search, setSearch] = useState('');
@@ -32,6 +33,31 @@ export default function Companies() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<'delete' | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
+
+  // Compare selection state (independent from bulk selection)
+  const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
+
+  const toggleCompare = (id: string) => {
+    setCompareIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size < 4) {
+        next.add(id);
+      } else {
+        toast.info('You can compare up to 4 companies at a time');
+      }
+      return next;
+    });
+  };
+
+  const handleCompare = () => {
+    if (compareIds.size < 2) {
+      toast.info('Select at least 2 companies to compare');
+      return;
+    }
+    navigate(`/companies/compare?ids=${Array.from(compareIds).join(',')}`);
+  };
 
   const fetchCompanies = useCallback(async () => {
     setLoading(true);
@@ -362,6 +388,8 @@ export default function Companies() {
               selectMode={selectMode}
               selected={selectedIds.has(company.id)}
               onToggleSelect={() => toggleSelect(company.id)}
+              compareSelected={compareIds.has(company.id)}
+              onToggleCompare={() => toggleCompare(company.id)}
             />
           ))}
         </div>
@@ -446,6 +474,36 @@ export default function Companies() {
           }}
         />
       )}
+
+      {/* Floating Compare Bar */}
+      {compareIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+          <div className="flex items-center gap-3 bg-white border border-gray-200 shadow-xl rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+              </svg>
+              <span className="text-sm font-medium text-gray-700">
+                {compareIds.size} of 4 selected
+              </span>
+            </div>
+            <div className="h-4 w-px bg-gray-200" />
+            <button
+              onClick={handleCompare}
+              disabled={compareIds.size < 2}
+              className="px-4 py-1.5 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Compare
+            </button>
+            <button
+              onClick={() => setCompareIds(new Set())}
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -455,11 +513,15 @@ function CompanyCard({
   selectMode,
   selected,
   onToggleSelect,
+  compareSelected,
+  onToggleCompare,
 }: {
   company: Company;
   selectMode: boolean;
   selected: boolean;
   onToggleSelect: () => void;
+  compareSelected: boolean;
+  onToggleCompare: () => void;
 }) {
   const cardContent = (
     <>
@@ -476,6 +538,29 @@ function CompanyCard({
         </div>
       )}
 
+      {/* Compare checkbox (visible when not in bulk select mode) */}
+      {!selectMode && (
+        <div className="absolute top-3 right-3 z-10">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleCompare();
+            }}
+            className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+              compareSelected
+                ? 'bg-indigo-600 border-indigo-600 text-white'
+                : 'border-gray-300 bg-white text-transparent hover:border-indigo-400'
+            }`}
+            title={compareSelected ? 'Remove from comparison' : 'Add to comparison'}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       <div className="flex items-start justify-between mb-3">
         <div
           className={`w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-bold flex-shrink-0 ${
@@ -485,7 +570,7 @@ function CompanyCard({
           {company.name[0]?.toUpperCase()}
         </div>
         {company.size && (
-          <span className="text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+          <span className={`text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600 ${!selectMode ? 'mr-8' : ''}`}>
             {SIZE_LABELS[company.size] || company.size}
           </span>
         )}
@@ -520,6 +605,7 @@ function CompanyCard({
   const baseClasses =
     'relative block bg-white rounded-xl shadow-sm border border-gray-200 p-5 transition-all';
   const selectedClasses = selected ? ' ring-2 ring-indigo-500' : '';
+  const compareClasses = compareSelected && !selectMode ? ' ring-2 ring-indigo-400 bg-indigo-50/20' : '';
 
   if (selectMode) {
     return (
@@ -545,7 +631,7 @@ function CompanyCard({
   return (
     <Link
       to={`/companies/${company.id}`}
-      className={`${baseClasses} hover:shadow-md`}
+      className={`${baseClasses}${compareClasses} hover:shadow-md`}
     >
       {cardContent}
     </Link>
