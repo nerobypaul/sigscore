@@ -80,6 +80,9 @@ import { sentryErrorHandler } from './utils/sentry';
 
 const app = express();
 
+// Trust Railway/proxy X-Forwarded-For headers for rate limiting and IP detection
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
