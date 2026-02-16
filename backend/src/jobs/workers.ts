@@ -23,7 +23,7 @@ import { syncLinkedIn } from '../services/linkedin-connector';
 import { syncPostHogEvents } from '../services/posthog-connector';
 import { bulkEnrichCompanies, bulkEnrichContacts } from '../services/clearbit-enrichment';
 import { captureScoreSnapshots } from '../services/score-snapshots';
-import { enqueueHubSpotSyncForAllConnected, enqueueDiscordSyncForAllConnected, enqueueSalesforceSyncForAllConnected, enqueueStackOverflowSyncForAllConnected, enqueueTwitterSyncForAllConnected, enqueueRedditSyncForAllConnected, enqueueLinkedInSyncForAllConnected, enqueuePostHogSyncForAllConnected, enqueueClearbitEnrichmentForAllConnected, enqueueScoreSnapshotForAllOrgs } from './scheduler';
+import { enqueueHubSpotSyncForAllConnected, enqueueDiscordSyncForAllConnected, enqueueSalesforceSyncForAllConnected, enqueueStackOverflowSyncForAllConnected, enqueueTwitterSyncForAllConnected, enqueueRedditSyncForAllConnected, enqueueLinkedInSyncForAllConnected, enqueuePostHogSyncForAllConnected, enqueueClearbitEnrichmentForAllConnected, enqueueScoreSnapshotForAllOrgs, enqueueWeeklyDigestForAllOrgs } from './scheduler';
 import {
   QUEUE_NAMES,
   SignalProcessingJobData,
@@ -43,8 +43,14 @@ import {
   PostHogSyncJobData,
   BulkEnrichmentJobData,
   ScoreSnapshotJobData,
+  WeeklyDigestJobData,
 } from './queue';
 import { processEmailStep } from '../services/email-sequences';
+import { generateWeeklyDigest } from '../services/weekly-digest';
+import { renderWeeklyDigestEmail, renderWeeklyDigestSubject } from '../services/email-templates';
+import { sendEmail } from '../services/email-sender';
+import { prisma } from '../config/database';
+import { config } from '../config';
 
 // ---------------------------------------------------------------------------
 // Worker references (populated by startWorkers, drained by stopWorkers)
@@ -762,6 +768,89 @@ function createScoreSnapshotWorker(): Worker<ScoreSnapshotJobData> {
 }
 
 // ---------------------------------------------------------------------------
+// Weekly Digest Worker
+// ---------------------------------------------------------------------------
+function createWeeklyDigestWorker(): Worker<WeeklyDigestJobData> {
+  return new Worker<WeeklyDigestJobData>(
+    QUEUE_NAMES.WEEKLY_DIGEST,
+    async (job: Job<WeeklyDigestJobData>) => {
+      const { organizationId } = job.data;
+
+      // Handle scheduler sentinel: enqueue individual jobs for all orgs
+      if (organizationId === '__scheduler__') {
+        logger.info('Weekly digest scheduler triggered', { jobId: job.id });
+        await enqueueWeeklyDigestForAllOrgs();
+        return { scheduled: true };
+      }
+
+      logger.info('Weekly digest generation started', {
+        jobId: job.id,
+        organizationId,
+        attempt: job.attemptsMade + 1,
+      });
+
+      // 1. Generate digest data
+      const digestData = await generateWeeklyDigest(organizationId);
+
+      // 2. Render HTML email
+      const appUrl = config.frontend.url;
+      const html = renderWeeklyDigestEmail(digestData, appUrl);
+      const subject = renderWeeklyDigestSubject(digestData);
+
+      // 3. Find all org members to send the digest to
+      //    In the future we can add a per-user "digestEnabled" preference.
+      //    For now, send to all org members.
+      const members = await prisma.userOrganization.findMany({
+        where: { organizationId },
+        include: { user: { select: { email: true } } },
+      });
+
+      const emails = members
+        .map((m) => m.user.email)
+        .filter((e): e is string => !!e);
+
+      if (emails.length === 0) {
+        logger.info('Weekly digest skipped — no members found', { organizationId });
+        return { sent: 0 };
+      }
+
+      // 4. Send the digest email to all members
+      //    We send one email per member (not BCC) so each gets their own unsubscribe.
+      let sent = 0;
+      for (const email of emails) {
+        try {
+          await sendEmail({
+            to: email,
+            subject,
+            html,
+          });
+          sent++;
+        } catch (err) {
+          logger.error('Failed to send weekly digest to member', {
+            organizationId,
+            email,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+
+      logger.info('Weekly digest completed', {
+        jobId: job.id,
+        organizationId,
+        totalMembers: emails.length,
+        sent,
+      });
+
+      return { sent, totalMembers: emails.length };
+    },
+    {
+      connection: bullConnection,
+      concurrency: 2,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Lifecycle helpers
 // ---------------------------------------------------------------------------
 function attachLogging(worker: Worker): void {
@@ -806,8 +895,9 @@ export const startWorkers = (): void => {
   const posthogSyncWorker = createPostHogSyncWorker();
   const bulkEnrichmentWorker = createBulkEnrichmentWorker();
   const scoreSnapshotWorker = createScoreSnapshotWorker();
+  const weeklyDigestWorker = createWeeklyDigestWorker();
 
-  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, redditSyncWorker, linkedinSyncWorker, posthogSyncWorker, bulkEnrichmentWorker, scoreSnapshotWorker].forEach((w) => {
+  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, redditSyncWorker, linkedinSyncWorker, posthogSyncWorker, bulkEnrichmentWorker, scoreSnapshotWorker, weeklyDigestWorker].forEach((w) => {
     attachLogging(w);
     workers.push(w);
   });

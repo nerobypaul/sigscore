@@ -25,6 +25,7 @@ export const QUEUE_NAMES = {
   INTERCOM_SYNC: 'intercom-sync',
   ZENDESK_SYNC: 'zendesk-sync',
   SCORE_SNAPSHOT: 'score-snapshot',
+  WEEKLY_DIGEST: 'weekly-digest',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -132,6 +133,10 @@ export interface BulkEnrichmentJobData {
 }
 
 export interface ScoreSnapshotJobData {
+  organizationId: string;
+}
+
+export interface WeeklyDigestJobData {
   organizationId: string;
 }
 
@@ -357,6 +362,18 @@ export const scoreSnapshotQueue = new Queue<ScoreSnapshotJobData>(
   },
 );
 
+export const weeklyDigestQueue = new Queue<WeeklyDigestJobData>(
+  QUEUE_NAMES.WEEKLY_DIGEST,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 10_000 },
+    },
+  },
+);
+
 // ---------------------------------------------------------------------------
 // Convenience: all queues in a single array
 // ---------------------------------------------------------------------------
@@ -380,6 +397,7 @@ const allQueues: Queue[] = [
   zendeskSyncQueue,
   bulkEnrichmentQueue,
   scoreSnapshotQueue,
+  weeklyDigestQueue,
 ];
 
 /**

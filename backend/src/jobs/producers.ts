@@ -39,6 +39,8 @@ import {
   BulkEnrichmentJobData,
   scoreSnapshotQueue,
   ScoreSnapshotJobData,
+  weeklyDigestQueue,
+  WeeklyDigestJobData,
 } from './queue';
 
 // ---------------------------------------------------------------------------
@@ -483,5 +485,28 @@ export const enqueueScoreSnapshot = async (
     },
   );
   logger.debug('Enqueued score snapshot', { jobId: job.id, organizationId });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// Weekly Digest
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue a weekly digest email job for a specific organization.
+ * Per-org deduplication prevents duplicate digest sends.
+ */
+export const enqueueWeeklyDigest = async (
+  organizationId: string,
+): Promise<Job<WeeklyDigestJobData>> => {
+  const job = await weeklyDigestQueue.add(
+    'send-weekly-digest',
+    { organizationId },
+    {
+      // Deduplication: only one pending digest per org at a time
+      jobId: `weekly-digest-${organizationId}`,
+    },
+  );
+  logger.debug('Enqueued weekly digest', { jobId: job.id, organizationId });
   return job;
 };

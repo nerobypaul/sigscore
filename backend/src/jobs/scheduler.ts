@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import { signalSyncQueue, hubspotSyncQueue, discordSyncQueue, salesforceSyncQueue, stackoverflowSyncQueue, twitterSyncQueue, redditSyncQueue, linkedinSyncQueue, posthogSyncQueue, bulkEnrichmentQueue, scoreSnapshotQueue } from './queue';
+import { signalSyncQueue, hubspotSyncQueue, discordSyncQueue, salesforceSyncQueue, stackoverflowSyncQueue, twitterSyncQueue, redditSyncQueue, linkedinSyncQueue, posthogSyncQueue, bulkEnrichmentQueue, scoreSnapshotQueue, weeklyDigestQueue } from './queue';
 import { getConnectedOrganizations } from '../services/hubspot-sync';
 import { getConnectedOrganizations as getSalesforceConnectedOrganizations } from '../services/salesforce-sync';
 import { getDiscordConnectedOrganizations } from '../services/discord-connector';
@@ -142,6 +142,16 @@ export const setupScheduler = async (): Promise<void> => {
     {
       repeat: { pattern: '0 2 * * *' },
       jobId: 'scheduled-score-snapshot',
+    },
+  );
+
+  // Weekly digest every Monday at 9 AM UTC — retention email summarizing the week's signals.
+  await weeklyDigestQueue.add(
+    'weekly-digest-scheduler',
+    { organizationId: '__scheduler__' },
+    {
+      repeat: { pattern: '0 9 * * 1' },
+      jobId: 'scheduled-weekly-digest',
     },
   );
 
@@ -343,6 +353,22 @@ export async function enqueueScoreSnapshotForAllOrgs(): Promise<void> {
     );
   }
   logger.info('Scheduled score snapshots enqueued for all orgs', {
+    count: orgs.length,
+  });
+}
+
+export async function enqueueWeeklyDigestForAllOrgs(): Promise<void> {
+  const orgs = await prisma.organization.findMany({
+    select: { id: true },
+  });
+  for (const org of orgs) {
+    await weeklyDigestQueue.add(
+      'send-weekly-digest',
+      { organizationId: org.id },
+      { jobId: `weekly-digest-${org.id}-${Date.now()}` },
+    );
+  }
+  logger.info('Weekly digest jobs enqueued for all orgs', {
     count: orgs.length,
   });
 }
