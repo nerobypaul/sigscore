@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authenticate, requireOrganization, requireOrgRole } from '../middleware/auth';
+import { enforceUserLimit } from '../middleware/usage-limits';
 import { validate } from '../middleware/validate';
 import * as memberService from '../services/members';
 
@@ -46,6 +47,7 @@ router.get(
 router.post(
   '/invite',
   requireOrgRole('ADMIN'),
+  enforceUserLimit,
   validate(inviteSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {

@@ -63,6 +63,7 @@ export const config = {
     secretKey: requireEnv('STRIPE_SECRET_KEY', 'sk_test_placeholder'),
     webhookSecret: requireEnv('STRIPE_WEBHOOK_SECRET', 'whsec_test_placeholder'),
     pricePro: process.env.STRIPE_PRICE_PRO || 'price_pro_placeholder',
+    priceGrowth: process.env.STRIPE_PRICE_GROWTH || 'price_growth_placeholder',
     priceScale: process.env.STRIPE_PRICE_SCALE || 'price_scale_placeholder',
   },
 

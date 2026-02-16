@@ -1,10 +1,13 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import GlobalSearch from './GlobalSearch';
 import NotificationBell from './NotificationBell';
 import KeyboardShortcuts from './KeyboardShortcuts';
 import DemoModeBanner from './DemoModeBanner';
+import UsageBanner from './UsageBanner';
+import UpgradeModal from './UpgradeModal';
+import type { UpgradeModalProps } from './UpgradeModal';
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts';
 
 // --- Grouped Navigation Structure ---
@@ -79,6 +82,28 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
 
+  // UpgradeModal state — triggered by 402 responses from the API
+  const [upgradeModal, setUpgradeModal] = useState<Omit<UpgradeModalProps, 'open' | 'onClose'> | null>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as {
+        error?: string;
+        current?: number;
+        limit?: number;
+        tier?: string;
+      } | undefined;
+      setUpgradeModal({
+        error: detail?.error,
+        current: detail?.current,
+        limit: detail?.limit,
+        tier: detail?.tier,
+      });
+    };
+    window.addEventListener('devsignal:plan-limit', handler);
+    return () => window.removeEventListener('devsignal:plan-limit', handler);
+  }, []);
+
   // Auto-expand settings if the user is on a settings page
   const isOnSettingsPage = SETTINGS_PATHS.some(
     (p) => location.pathname === p || location.pathname.startsWith(p + '/')
@@ -120,6 +145,7 @@ export default function Layout() {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       <DemoModeBanner />
+      <UsageBanner />
       <div className="flex flex-1 overflow-hidden">
       {/* Mobile backdrop */}
       {sidebarOpen && (
@@ -273,6 +299,16 @@ export default function Layout() {
       {showShortcuts && (
         <KeyboardShortcuts onClose={() => setShowShortcuts(false)} />
       )}
+
+      {/* Upgrade modal — triggered by 402 responses */}
+      <UpgradeModal
+        open={upgradeModal !== null}
+        onClose={() => setUpgradeModal(null)}
+        error={upgradeModal?.error}
+        current={upgradeModal?.current}
+        limit={upgradeModal?.limit}
+        tier={upgradeModal?.tier}
+      />
       </div>
     </div>
   );

@@ -24,7 +24,7 @@ function getStripe(): Stripe {
 // Plan helpers
 // ---------------------------------------------------------------------------
 
-export type PlanName = 'free' | 'pro' | 'scale';
+export type PlanName = 'free' | 'pro' | 'growth' | 'scale';
 export type PlanStatus = 'active' | 'past_due' | 'canceled';
 
 interface BillingSettings {
@@ -36,6 +36,7 @@ interface BillingSettings {
 
 function priceToPlan(priceId: string): PlanName {
   if (priceId === config.stripe.pricePro) return 'pro';
+  if (priceId === config.stripe.priceGrowth) return 'growth';
   if (priceId === config.stripe.priceScale) return 'scale';
   return 'free';
 }

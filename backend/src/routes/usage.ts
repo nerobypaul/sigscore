@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { authenticate, requireOrganization } from '../middleware/auth';
-import { getUsage, getPlanForOrg, PLAN_LIMITS } from '../services/usage';
+import { getUsageSummary, PLAN_LIMITS } from '../services/usage';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -14,7 +14,9 @@ router.use(requireOrganization);
  *   get:
  *     tags: [Usage]
  *     summary: Get current usage and limits
- *     description: Returns the organization's current resource usage alongside the plan limits.
+ *     description: |
+ *       Returns the organization's current resource usage alongside the plan limits
+ *       and percentage utilization for each dimension.
  *     security:
  *       - BearerAuth: []
  *       - ApiKeyAuth: []
@@ -30,9 +32,16 @@ router.use(requireOrganization);
  *               properties:
  *                 plan:
  *                   type: string
- *                   enum: [free, pro, scale]
+ *                   enum: [free, pro, growth, scale]
+ *                 contacts:
+ *                   $ref: '#/components/schemas/UsageDimension'
+ *                 signals:
+ *                   $ref: '#/components/schemas/UsageDimension'
+ *                 users:
+ *                   $ref: '#/components/schemas/UsageDimension'
  *                 usage:
  *                   type: object
+ *                   description: Legacy format — prefer top-level dimension objects
  *                   properties:
  *                     contacts:
  *                       type: integer
@@ -42,13 +51,17 @@ router.use(requireOrganization);
  *                       type: integer
  *                 limits:
  *                   type: object
+ *                   description: Legacy format — prefer top-level dimension objects
  *                   properties:
  *                     contacts:
  *                       type: integer
+ *                       nullable: true
  *                     signalsPerMonth:
  *                       type: integer
+ *                       nullable: true
  *                     users:
  *                       type: integer
+ *                       nullable: true
  *       401:
  *         description: Missing or invalid authorization
  *       403:
@@ -59,21 +72,25 @@ router.use(requireOrganization);
 router.get('/', async (req: Request, res: Response) => {
   try {
     const organizationId = req.organizationId!;
-
-    const [plan, usage] = await Promise.all([
-      getPlanForOrg(organizationId),
-      getUsage(organizationId),
-    ]);
-
-    const limits = PLAN_LIMITS[plan];
+    const summary = await getUsageSummary(organizationId);
+    const limits = PLAN_LIMITS[summary.plan];
 
     res.json({
-      plan,
-      usage,
+      // New structured format
+      plan: summary.plan,
+      contacts: summary.contacts,
+      signals: summary.signals,
+      users: summary.users,
+      // Legacy format for backward compatibility with existing Billing page
+      usage: {
+        contacts: summary.contacts.current,
+        signals: summary.signals.current,
+        users: summary.users.current,
+      },
       limits: {
-        contacts: limits.contacts === Infinity ? null : limits.contacts,
-        signalsPerMonth: limits.signalsPerMonth === Infinity ? null : limits.signalsPerMonth,
-        users: limits.users === Infinity ? null : limits.users,
+        contacts: summary.contacts.limit,
+        signalsPerMonth: isFinite(limits.signalsPerMonth) ? limits.signalsPerMonth : null,
+        users: summary.users.limit,
       },
     });
   } catch (error) {

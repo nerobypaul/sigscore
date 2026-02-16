@@ -7,7 +7,7 @@ import Spinner from '../components/Spinner';
 // Types
 // ---------------------------------------------------------------------------
 
-type PlanName = 'free' | 'pro' | 'scale';
+type PlanName = 'free' | 'pro' | 'growth' | 'scale';
 type PlanStatus = 'active' | 'past_due' | 'canceled';
 
 interface SubscriptionInfo {
@@ -75,6 +75,24 @@ const PLANS: PlanConfig[] = [
     ],
   },
   {
+    name: 'Growth',
+    key: 'growth',
+    price: '$199',
+    priceNote: '/mo',
+    contacts: '100,000',
+    signals: '500,000/mo',
+    users: '25',
+    features: [
+      'Everything in Pro',
+      '100k contacts',
+      '500k signals/mo',
+      'Up to 25 users',
+      'Custom objects',
+      'Advanced AI features',
+      'Priority support',
+    ],
+  },
+  {
     name: 'Scale',
     key: 'scale',
     price: '$299',
@@ -83,13 +101,12 @@ const PLANS: PlanConfig[] = [
     signals: 'Unlimited',
     users: 'Unlimited',
     features: [
-      'Everything in Pro',
+      'Everything in Growth',
       'Unlimited contacts & signals',
       'Unlimited users',
-      'Custom objects',
-      'Advanced AI features',
       'Dedicated support',
       'SLA guarantee',
+      'SSO / SAML',
     ],
   },
 ];
@@ -147,9 +164,12 @@ export default function Billing() {
 
     setCheckoutLoading(planKey);
     try {
-      const priceId = planKey === 'pro'
-        ? import.meta.env.VITE_STRIPE_PRICE_PRO || 'price_pro_placeholder'
-        : import.meta.env.VITE_STRIPE_PRICE_SCALE || 'price_scale_placeholder';
+      const priceMap: Record<string, string> = {
+        pro: import.meta.env.VITE_STRIPE_PRICE_PRO || 'price_pro_placeholder',
+        growth: import.meta.env.VITE_STRIPE_PRICE_GROWTH || 'price_growth_placeholder',
+        scale: import.meta.env.VITE_STRIPE_PRICE_SCALE || 'price_scale_placeholder',
+      };
+      const priceId = priceMap[planKey] || 'price_pro_placeholder';
 
       const { data } = await api.post('/billing/checkout', {
         priceId,
@@ -263,7 +283,7 @@ export default function Billing() {
       {/* Plan Comparison Cards */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Plans</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {PLANS.map((plan) => {
             const isCurrent = plan.key === currentPlan;
             const isDowngrade = PLANS.findIndex((p) => p.key === currentPlan) > PLANS.findIndex((p) => p.key === plan.key);

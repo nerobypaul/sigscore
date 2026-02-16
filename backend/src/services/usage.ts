@@ -5,7 +5,7 @@ import { logger } from '../utils/logger';
 // Plan limit definitions
 // ---------------------------------------------------------------------------
 
-export type PlanName = 'free' | 'pro' | 'scale';
+export type PlanName = 'free' | 'pro' | 'growth' | 'scale';
 
 export interface PlanLimits {
   contacts: number;
@@ -16,6 +16,7 @@ export interface PlanLimits {
 export const PLAN_LIMITS: Record<PlanName, PlanLimits> = {
   free: { contacts: 1_000, signalsPerMonth: 5_000, users: 1 },
   pro: { contacts: 25_000, signalsPerMonth: 100_000, users: 10 },
+  growth: { contacts: 100_000, signalsPerMonth: 500_000, users: 25 },
   scale: { contacts: Infinity, signalsPerMonth: Infinity, users: Infinity },
 };
 
@@ -114,5 +115,51 @@ export async function checkLimit(
     current,
     limit,
     plan,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Usage summary — returns current usage vs limits for all dimensions
+// ---------------------------------------------------------------------------
+
+export interface UsageDimension {
+  current: number;
+  limit: number | null; // null = unlimited
+  percentage: number;   // 0-100, capped at 100
+}
+
+export interface UsageSummary {
+  plan: PlanName;
+  contacts: UsageDimension;
+  signals: UsageDimension;
+  users: UsageDimension;
+}
+
+/**
+ * Returns a complete usage summary for an organization, including
+ * current counts, plan limits, and usage percentages.
+ */
+export async function getUsageSummary(organizationId: string): Promise<UsageSummary> {
+  const [plan, usage] = await Promise.all([
+    getPlanForOrg(organizationId),
+    getUsage(organizationId),
+  ]);
+
+  const limits = PLAN_LIMITS[plan];
+
+  function dimension(current: number, limit: number): UsageDimension {
+    const isUnlimited = !isFinite(limit);
+    return {
+      current,
+      limit: isUnlimited ? null : limit,
+      percentage: isUnlimited ? 0 : Math.min(Math.round((current / limit) * 100), 100),
+    };
+  }
+
+  return {
+    plan,
+    contacts: dimension(usage.contacts, limits.contacts),
+    signals: dimension(usage.signals, limits.signalsPerMonth),
+    users: dimension(usage.users, limits.users),
   };
 }

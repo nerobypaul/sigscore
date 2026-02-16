@@ -54,6 +54,21 @@ api.interceptors.response.use(
       }
     }
 
+    // Handle 402 Payment Required — dispatch a custom event for the UpgradeModal
+    if (error.response?.status === 402) {
+      const detail = error.response.data as Record<string, unknown> | undefined;
+      window.dispatchEvent(
+        new CustomEvent('devsignal:plan-limit', {
+          detail: {
+            error: detail?.error ?? 'Plan limit reached',
+            current: detail?.current,
+            limit: detail?.limit,
+            tier: detail?.tier,
+          },
+        }),
+      );
+    }
+
     return Promise.reject(error);
   }
 );

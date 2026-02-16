@@ -2,6 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import { checkLimit, Resource } from '../services/usage';
 import { logger } from '../utils/logger';
 
+/** Human-readable labels for each resource, used in 402 error messages. */
+const RESOURCE_LABELS: Record<Resource, string> = {
+  contacts: 'Contact limit reached',
+  signals: 'Signal limit reached',
+  users: 'User limit reached',
+};
+
 /**
  * Factory that produces middleware enforcing a plan limit for the given resource.
  * Returns 402 Payment Required when the limit has been reached.
@@ -12,7 +19,7 @@ function enforcePlanLimit(resource: Resource) {
       const organizationId = req.organizationId;
 
       if (!organizationId) {
-        // Should never happen if auth middleware runs first — fail safe.
+        // Should never happen if auth middleware runs first -- fail safe.
         res.status(400).json({ error: 'Organization context required' });
         return;
       }
@@ -21,11 +28,10 @@ function enforcePlanLimit(resource: Resource) {
 
       if (!result.allowed) {
         res.status(402).json({
-          error: 'Plan limit reached',
-          resource,
-          current: result.current,
+          error: RESOURCE_LABELS[resource],
           limit: result.limit,
-          plan: result.plan,
+          current: result.current,
+          tier: result.plan.toUpperCase(),
           upgradeUrl: '/billing',
         });
         return;
@@ -34,7 +40,7 @@ function enforcePlanLimit(resource: Resource) {
       next();
     } catch (error) {
       logger.error(`Usage limit check failed for ${resource}:`, error);
-      // Fail open — do not block requests if the limit check itself errors.
+      // Fail open -- do not block requests if the limit check itself errors.
       next();
     }
   };
