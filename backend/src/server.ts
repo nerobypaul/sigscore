@@ -52,7 +52,7 @@ const ENABLE_WORKERS = process.env.ENABLE_WORKERS === 'true';
     // file gets the index.html so client-side routing works correctly.
     app.get('*', (_req, res, next) => {
       // Skip routes that should be handled by existing Express middleware
-      const skip = ['/api', '/health', '/graphql', '/api-docs'];
+      const skip = ['/api', '/health', '/graphql', '/api-docs', '/sitemap.xml', '/robots.txt'];
       if (skip.some((prefix) => _req.path.startsWith(prefix))) {
         return next();
       }

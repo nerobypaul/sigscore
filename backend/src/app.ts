@@ -66,6 +66,7 @@ import webhookSubscriptionRoutes from './routes/webhook-subscriptions';
 import advancedAnalyticsRoutes from './routes/advanced-analytics';
 import scoreSnapshotRoutes from './routes/score-snapshots';
 import healthRoutes from './routes/health';
+import seoRoutes from './routes/seo';
 import { sentryErrorHandler } from './utils/sentry';
 
 const app = express();
@@ -104,6 +105,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check (liveness + readiness probes)
 app.use('/health', healthRoutes);
+
+// SEO — sitemap.xml and robots.txt (must be before API routes)
+app.use(seoRoutes);
 
 // API routes — Core CRM
 app.use('/api/v1/auth', authRoutes);

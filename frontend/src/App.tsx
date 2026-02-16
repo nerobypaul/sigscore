@@ -45,6 +45,8 @@ const WebhookManager = lazy(() => import('./pages/WebhookManager'));
 const ContactDuplicates = lazy(() => import('./pages/ContactDuplicates'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Terms = lazy(() => import('./pages/Terms'));
+const Privacy = lazy(() => import('./pages/Privacy'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
@@ -90,6 +92,8 @@ function AppRoutes() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/docs" element={<ApiDocs />} />
         <Route path="/developers" element={<DevPortal />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="/sso/callback" element={<SsoCallback />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
         <Route
