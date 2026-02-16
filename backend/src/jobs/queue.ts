@@ -55,6 +55,10 @@ export interface WebhookDeliveryJobData {
   organizationId: string;
   event: string;
   payload: Record<string, unknown>;
+  /** Per-subscription delivery fields (set by fireEvent in webhook-subscriptions service) */
+  subscriptionId?: string;
+  targetUrl?: string;
+  secret?: string;
 }
 
 export interface EnrichmentJobData {
@@ -161,7 +165,9 @@ export const webhookDeliveryQueue = new Queue<WebhookDeliveryJobData>(
     defaultJobOptions: {
       ...defaultQueueOpts.defaultJobOptions,
       attempts: 5,
-      backoff: { type: 'exponential' as const, delay: 10_000 },
+      backoff: { type: 'exponential' as const, delay: 30_000 },
+      removeOnComplete: { count: 2000 },
+      removeOnFail: { count: 10_000 },
     },
   },
 );

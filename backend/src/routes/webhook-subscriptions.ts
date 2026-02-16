@@ -12,6 +12,8 @@ import {
   toggleSubscription,
   deliverToSubscription,
   getTestPayload,
+  getSubscriptionDeliveries,
+  getSubscriptionWithDeliveryStats,
   WEBHOOK_EVENT_TYPES,
 } from '../services/webhook-subscriptions';
 import { logger } from '../utils/logger';
@@ -136,6 +138,33 @@ router.delete('/:id', ...flexAuth, async (req: Request, res: Response, next: Nex
     await deleteSubscription(organizationId, req.params.id);
     logger.info(`Webhook subscription deleted: ${req.params.id}`);
     res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /webhooks/subscribe/:id/status — get subscription with delivery stats and failure rate
+ */
+router.get('/:id/status', ...flexAuth, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const organizationId = req.organizationId!;
+    const result = await getSubscriptionWithDeliveryStats(organizationId, req.params.id);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /webhooks/subscribe/:id/deliveries — list recent delivery attempts
+ */
+router.get('/:id/deliveries', ...flexAuth, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const organizationId = req.organizationId!;
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+    const deliveries = await getSubscriptionDeliveries(organizationId, req.params.id, limit);
+    res.json({ deliveries });
   } catch (error) {
     next(error);
   }

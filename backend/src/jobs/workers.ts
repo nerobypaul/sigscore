@@ -4,6 +4,12 @@ import { logger } from '../utils/logger';
 import { ingestSignal } from '../services/signals';
 import { computeAccountScore } from '../services/account-scores';
 import { dispatchWebhookEvent } from '../services/webhooks';
+import {
+  deliverToSubscription,
+  recordSubscriptionDelivery,
+  markSubscriptionFailing,
+  markSubscriptionHealthy,
+} from '../services/webhook-subscriptions';
 import { syncNpmSource, syncAllNpmSources } from '../services/npm-connector';
 import { syncPypiSource, syncAllPypiSources } from '../services/pypi-connector';
 import { processEvent } from '../services/workflows';
@@ -103,16 +109,107 @@ function createWebhookDeliveryWorker(): Worker<WebhookDeliveryJobData> {
   return new Worker<WebhookDeliveryJobData>(
     QUEUE_NAMES.WEBHOOK_DELIVERY,
     async (job: Job<WebhookDeliveryJobData>) => {
-      const { organizationId, event, payload } = job.data;
+      const { organizationId, event, payload, subscriptionId, targetUrl, secret } = job.data;
+      const attempt = job.attemptsMade + 1;
+      const maxAttempts = (job.opts.attempts ?? 5);
+
+      // ---------------------------------------------------------------
+      // Per-subscription delivery (Zapier/Make REST Hook pattern)
+      // ---------------------------------------------------------------
+      if (subscriptionId && targetUrl && secret) {
+        logger.info('Webhook subscription delivery started', {
+          jobId: job.id,
+          subscriptionId,
+          targetUrl,
+          event,
+          attempt,
+          maxAttempts,
+        });
+
+        const result = await deliverToSubscription(targetUrl, secret, event, payload);
+
+        // Record the delivery attempt in the database
+        await recordSubscriptionDelivery({
+          subscriptionId,
+          event,
+          payload,
+          statusCode: result.statusCode,
+          response: result.error,
+          success: result.success,
+          attempt,
+          maxAttempts,
+          jobId: job.id,
+        }).catch((err) => {
+          // Delivery logging failure should not block the job outcome
+          logger.error('Failed to record subscription delivery', {
+            subscriptionId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
+
+        if (!result.success) {
+          const isLastAttempt = attempt >= maxAttempts;
+
+          if (isLastAttempt) {
+            // All retries exhausted -- mark subscription as FAILING
+            logger.error('Webhook subscription delivery exhausted all retries, marking FAILING', {
+              jobId: job.id,
+              subscriptionId,
+              targetUrl,
+              event,
+              statusCode: result.statusCode,
+              error: result.error,
+            });
+
+            await markSubscriptionFailing(subscriptionId).catch((err) => {
+              logger.error('Failed to mark subscription as FAILING', {
+                subscriptionId,
+                error: err instanceof Error ? err.message : String(err),
+              });
+            });
+
+            // Don't throw -- let the job complete as failed on final attempt
+            // so BullMQ records it in the dead-letter set
+            throw new Error(
+              `Webhook delivery to ${targetUrl} failed after ${maxAttempts} attempts: ${result.error || `HTTP ${result.statusCode}`}`,
+            );
+          }
+
+          // Throw to trigger BullMQ retry with exponential backoff
+          throw new Error(
+            `Webhook delivery to ${targetUrl} failed (attempt ${attempt}/${maxAttempts}): ${result.error || `HTTP ${result.statusCode}`}`,
+          );
+        }
+
+        // Success -- if the subscription was previously FAILING, restore to HEALTHY
+        await markSubscriptionHealthy(subscriptionId).catch((err) => {
+          logger.error('Failed to mark subscription as HEALTHY', {
+            subscriptionId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
+
+        logger.info('Webhook subscription delivery succeeded', {
+          jobId: job.id,
+          subscriptionId,
+          event,
+          statusCode: result.statusCode,
+          attempt,
+        });
+
+        return;
+      }
+
+      // ---------------------------------------------------------------
+      // Legacy: native WebhookEndpoint delivery (unchanged)
+      // ---------------------------------------------------------------
       logger.info('Webhook delivery started', {
         jobId: job.id,
         organizationId,
         event,
-        attempt: job.attemptsMade + 1,
+        attempt,
       });
 
-      // dispatchWebhookEvent already handles finding matching endpoints,
-      // signing payloads, and recording delivery results.
       await dispatchWebhookEvent(organizationId, event, payload);
 
       logger.info('Webhook delivery completed', { jobId: job.id, event });

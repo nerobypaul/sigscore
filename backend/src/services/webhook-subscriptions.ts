@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
 import { AppError } from '../utils/errors';
@@ -114,8 +115,8 @@ export const toggleSubscription = async (
 
 /**
  * Delivers a webhook event payload to all active subscribers of that event type.
- * Each delivery is enqueued to the webhook delivery BullMQ queue for reliable
- * retry and exponential backoff.
+ * Each delivery is enqueued as a separate BullMQ job per subscription for
+ * independent retry with exponential backoff (30s, 60s, 120s, 240s, 480s).
  */
 export const fireEvent = async (
   organizationId: string,
@@ -146,12 +147,10 @@ export const fireEvent = async (
         {
           organizationId,
           event,
-          payload: {
-            ...envelope,
-            _subscriptionId: sub.id,
-            _targetUrl: sub.targetUrl,
-            _secret: sub.secret,
-          },
+          payload: envelope,
+          subscriptionId: sub.id,
+          targetUrl: sub.targetUrl,
+          secret: sub.secret,
         },
       );
     } catch (err) {
@@ -203,6 +202,130 @@ export const deliverToSubscription = async (
     const message = err instanceof Error ? err.message : 'Unknown error';
     return { success: false, error: message };
   }
+};
+
+// ---------------------------------------------------------------------------
+// Delivery log queries
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns recent delivery attempts for a subscription, most recent first.
+ */
+export const getSubscriptionDeliveries = async (
+  organizationId: string,
+  subscriptionId: string,
+  limit = 20,
+) => {
+  // Verify ownership
+  const subscription = await prisma.webhookSubscription.findFirst({
+    where: { id: subscriptionId, organizationId },
+  });
+  if (!subscription) {
+    throw new AppError('Webhook subscription not found', 404);
+  }
+
+  return prisma.webhookSubscriptionDelivery.findMany({
+    where: { subscriptionId },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+  });
+};
+
+/**
+ * Returns a subscription with delivery stats (total, succeeded, failed, failure rate)
+ * computed over the last 7 days.
+ */
+export const getSubscriptionWithDeliveryStats = async (
+  organizationId: string,
+  subscriptionId: string,
+) => {
+  const subscription = await prisma.webhookSubscription.findFirst({
+    where: { id: subscriptionId, organizationId },
+  });
+  if (!subscription) {
+    throw new AppError('Webhook subscription not found', 404);
+  }
+
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const deliveries = await prisma.webhookSubscriptionDelivery.findMany({
+    where: {
+      subscriptionId,
+      createdAt: { gte: since },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  });
+
+  const total = deliveries.length;
+  const succeeded = deliveries.filter((d) => d.success).length;
+  const failed = total - succeeded;
+  const failureRate = total > 0 ? Math.round((failed / total) * 100) : 0;
+
+  return {
+    ...subscription,
+    deliveryStats: {
+      period: '7d',
+      total,
+      succeeded,
+      failed,
+      failureRate,
+    },
+    recentDeliveries: deliveries.slice(0, 10),
+  };
+};
+
+// ---------------------------------------------------------------------------
+// Subscription status management
+// ---------------------------------------------------------------------------
+
+/**
+ * Mark a subscription as FAILING after exhausting all retry attempts.
+ */
+export const markSubscriptionFailing = async (subscriptionId: string) => {
+  return prisma.webhookSubscription.update({
+    where: { id: subscriptionId },
+    data: { status: 'FAILING' },
+  });
+};
+
+/**
+ * Clear the FAILING status back to HEALTHY after a successful delivery.
+ */
+export const markSubscriptionHealthy = async (subscriptionId: string) => {
+  return prisma.webhookSubscription.update({
+    where: { id: subscriptionId },
+    data: { status: 'HEALTHY' },
+  });
+};
+
+/**
+ * Record a delivery attempt for a subscription webhook.
+ */
+export const recordSubscriptionDelivery = async (data: {
+  subscriptionId: string;
+  event: string;
+  payload: Record<string, unknown>;
+  statusCode?: number;
+  response?: string;
+  success: boolean;
+  attempt: number;
+  maxAttempts: number;
+  jobId?: string;
+}) => {
+  return prisma.webhookSubscriptionDelivery.create({
+    data: {
+      subscription: { connect: { id: data.subscriptionId } },
+      event: data.event,
+      payload: data.payload as unknown as Prisma.InputJsonValue,
+      statusCode: data.statusCode,
+      response: data.response,
+      success: data.success,
+      attempt: data.attempt,
+      maxAttempts: data.maxAttempts,
+      jobId: data.jobId,
+    },
+  });
 };
 
 // ---------------------------------------------------------------------------

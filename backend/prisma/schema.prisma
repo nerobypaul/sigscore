@@ -680,22 +680,50 @@ model WebhookDelivery {
 // ============================================================
 
 model WebhookSubscription {
-  id              String   @id @default(cuid())
+  id              String                       @id @default(cuid())
   organizationId  String
   targetUrl       String
   event           String
-  hookId          String?  // Zapier's hook ID for reference
-  secret          String   // HMAC signing secret (auto-generated)
-  active          Boolean  @default(true)
+  hookId          String?                      // Zapier's hook ID for reference
+  secret          String                       // HMAC signing secret (auto-generated)
+  active          Boolean                      @default(true)
+  status          WebhookSubscriptionStatus    @default(HEALTHY)
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization    Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  deliveries      WebhookSubscriptionDelivery[]
 
   @@index([organizationId, event])
   @@index([organizationId, active])
   @@map("webhook_subscriptions")
+}
+
+enum WebhookSubscriptionStatus {
+  HEALTHY
+  FAILING
+}
+
+model WebhookSubscriptionDelivery {
+  id              String   @id @default(cuid())
+  subscriptionId  String
+  event           String
+  payload         Json
+  statusCode      Int?
+  response        String?
+  success         Boolean  @default(false)
+  attempt         Int      @default(1)
+  maxAttempts     Int      @default(5)
+  jobId           String?  // BullMQ job ID for correlation
+
+  createdAt       DateTime @default(now())
+
+  subscription    WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId, createdAt(sort: Desc)])
+  @@index([jobId])
+  @@map("webhook_subscription_deliveries")
 }
 
 // ============================================================
