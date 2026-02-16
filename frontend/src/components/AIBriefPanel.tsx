@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import Spinner from './Spinner';
 
@@ -167,9 +168,12 @@ export default function AIBriefPanel({ accountId }: AIBriefPanelProps) {
       setBrief(data.brief || data);
       setFetched(true);
     } catch (err) {
+      const statusCode = (err as { response?: { status?: number } })?.response?.status;
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      if (msg?.includes('ANTHROPIC_API_KEY')) {
-        setError('AI service not configured. Set ANTHROPIC_API_KEY to enable.');
+      if (statusCode === 402) {
+        setError('AI features require an Anthropic API key. Configure it in Settings > AI Configuration.');
+      } else if (msg?.includes('ANTHROPIC_API_KEY') || msg?.includes('API key not configured')) {
+        setError('AI features require an Anthropic API key. Configure it in Settings > AI Configuration.');
       } else if (msg?.includes('not found')) {
         setError('Account not found.');
       } else {
@@ -189,9 +193,12 @@ export default function AIBriefPanel({ accountId }: AIBriefPanelProps) {
       setBrief(data);
       setFetched(true);
     } catch (err) {
+      const statusCode = (err as { response?: { status?: number } })?.response?.status;
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      if (msg?.includes('ANTHROPIC_API_KEY')) {
-        setError('AI service not configured. Set ANTHROPIC_API_KEY to enable.');
+      if (statusCode === 402) {
+        setError('AI features require an Anthropic API key. Configure it in Settings > AI Configuration.');
+      } else if (msg?.includes('ANTHROPIC_API_KEY') || msg?.includes('API key not configured')) {
+        setError('AI features require an Anthropic API key. Configure it in Settings > AI Configuration.');
       } else {
         setError(msg || 'Failed to generate brief.');
       }
@@ -252,6 +259,14 @@ export default function AIBriefPanel({ accountId }: AIBriefPanelProps) {
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
             {error}
+            {error.includes('Configure it in Settings') && (
+              <Link
+                to="/settings"
+                className="ml-2 text-red-800 underline hover:text-red-900 font-medium"
+              >
+                Go to Settings
+              </Link>
+            )}
           </div>
         )}
 

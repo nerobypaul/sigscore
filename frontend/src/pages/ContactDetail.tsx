@@ -498,8 +498,13 @@ function AIEnrichment({ contactId }: { contactId: string }) {
     try {
       const { data } = await api.post(`/ai/enrich/${contactId}`);
       setEnrichment(data.enrichment || data.content || JSON.stringify(data, null, 2));
-    } catch {
-      setError('Enrichment failed. AI service may be unavailable.');
+    } catch (err) {
+      const statusCode = (err as { response?: { status?: number } })?.response?.status;
+      if (statusCode === 402) {
+        setError('AI features require an Anthropic API key. Configure it in Settings > AI Configuration.');
+      } else {
+        setError('Enrichment failed. AI service may be unavailable.');
+      }
     } finally {
       setLoading(false);
     }

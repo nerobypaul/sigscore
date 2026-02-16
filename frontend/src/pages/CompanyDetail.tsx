@@ -533,8 +533,13 @@ function ContactsTab({ contacts }: { contacts: Contact[] }) {
     try {
       await api.post(`/ai/enrich/${contactId}`);
       toast.success('Contact enriched successfully');
-    } catch {
-      toast.error('Enrichment failed. AI service may be unavailable.');
+    } catch (err) {
+      const statusCode = (err as { response?: { status?: number } })?.response?.status;
+      if (statusCode === 402) {
+        toast.error('AI features require an Anthropic API key. Configure it in Settings > AI Configuration.');
+      } else {
+        toast.error('Enrichment failed. AI service may be unavailable.');
+      }
     } finally {
       setEnrichingId(null);
     }
@@ -720,9 +725,12 @@ function NextBestActions({ accountId }: { accountId: string }) {
       setActions(parsed as AIAction[]);
       setFetched(true);
     } catch (err) {
+      const statusCode = (err as { response?: { status?: number } })?.response?.status;
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      if (msg?.includes('ANTHROPIC_API_KEY')) {
-        setError('AI service not configured.');
+      if (statusCode === 402) {
+        setError('AI features require an Anthropic API key. Configure it in Settings > AI Configuration.');
+      } else if (msg?.includes('ANTHROPIC_API_KEY') || msg?.includes('API key not configured')) {
+        setError('AI features require an Anthropic API key. Configure it in Settings > AI Configuration.');
       } else {
         setError(msg || 'Failed to generate suggestions.');
       }

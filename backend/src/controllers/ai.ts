@@ -131,11 +131,11 @@ export const saveApiKey = async (req: Request, res: Response, next: NextFunction
       return;
     }
 
-    // Merge new API key into settings
+    // Merge new API key into settings (or remove if empty)
     const currentSettings = (org.settings || {}) as Record<string, unknown>;
     const updatedSettings = {
       ...currentSettings,
-      anthropicApiKey: apiKey,
+      anthropicApiKey: apiKey || undefined, // Remove key if empty string
     };
 
     // Update organization settings
@@ -149,11 +149,12 @@ export const saveApiKey = async (req: Request, res: Response, next: NextFunction
     // Clear cached client so new key takes effect
     aiEngine.clearClientCache(organizationId);
 
-    logger.info(`Anthropic API key configured for organization ${organizationId}`);
+    const action = apiKey ? 'configured' : 'removed';
+    logger.info(`Anthropic API key ${action} for organization ${organizationId}`);
 
     res.json({
       success: true,
-      keyPrefix: apiKey.slice(0, 10) + '...',
+      keyPrefix: apiKey ? apiKey.slice(0, 10) + '...' : null,
     });
   } catch (error) {
     next(error);

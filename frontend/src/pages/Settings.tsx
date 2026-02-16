@@ -225,7 +225,7 @@ interface ZendeskStatus {
   };
 }
 
-type TabId = 'api-keys' | 'webhooks' | 'sources' | 'notifications' | 'custom-fields' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord' | 'stackoverflow' | 'twitter' | 'reddit' | 'linkedin' | 'posthog' | 'clearbit' | 'intercom' | 'zendesk';
+type TabId = 'api-keys' | 'webhooks' | 'sources' | 'notifications' | 'custom-fields' | 'ai-config' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord' | 'stackoverflow' | 'twitter' | 'reddit' | 'linkedin' | 'posthog' | 'clearbit' | 'intercom' | 'zendesk';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'api-keys', label: 'API Keys' },
@@ -233,6 +233,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'sources', label: 'Signal Sources' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'custom-fields', label: 'Custom Fields' },
+  { id: 'ai-config', label: 'AI Configuration' },
   { id: 'slack', label: 'Slack' },
   { id: 'segment', label: 'Segment' },
   { id: 'hubspot', label: 'HubSpot' },
@@ -3981,6 +3982,205 @@ function ClearbitTab() {
 }
 
 // ---------------------------------------------------------------------------
+// AI Configuration Tab
+// ---------------------------------------------------------------------------
+
+interface AIConfigStatus {
+  configured: boolean;
+  keyPrefix: string | null;
+}
+
+function AIConfigTab() {
+  const toast = useToast();
+  const [status, setStatus] = useState<AIConfigStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get('/ai/config');
+      setStatus(data);
+    } catch {
+      setStatus({
+        configured: false,
+        keyPrefix: null,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  async function handleSaveKey() {
+    if (!apiKey.trim()) {
+      toast.error('Please enter your Anthropic API key.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data } = await api.put('/ai/config/api-key', { apiKey: apiKey.trim() });
+      setApiKey('');
+      setStatus({
+        configured: true,
+        keyPrefix: data.keyPrefix,
+      });
+      toast.success('API key saved successfully.');
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRemoveKey() {
+    if (!window.confirm('Remove your Anthropic API key? AI features will be disabled.')) {
+      return;
+    }
+    setRemoving(true);
+    try {
+      await api.put('/ai/config/api-key', { apiKey: '' });
+      setStatus({
+        configured: false,
+        keyPrefix: null,
+      });
+      toast.success('API key removed.');
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setRemoving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="px-6 py-5 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">
+                AI Configuration
+              </h2>
+              <p className="text-sm text-gray-500">
+                DevSignal uses Claude AI to generate account briefs, next-best-actions, and contact enrichment. Add your Anthropic API key to enable these features. You can get one at{' '}
+                <a
+                  href="https://console.anthropic.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-purple-600 hover:underline"
+                >
+                  console.anthropic.com
+                </a>
+                .
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {/* Status indicator */}
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <div className={`w-2.5 h-2.5 rounded-full ${status?.configured ? 'bg-green-500' : 'bg-gray-300'}`} />
+              <span className="text-sm font-medium text-gray-900">
+                {status?.configured ? 'Configured' : 'Not configured'}
+              </span>
+            </div>
+            {status?.configured && status.keyPrefix && (
+              <span className="text-sm text-gray-500 font-mono">
+                {status.keyPrefix}...
+              </span>
+            )}
+          </div>
+
+          {/* API Key input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Anthropic API Key
+            </label>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="sk-ant-api03-..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              Your API key is encrypted and stored securely. We only use it to make requests to Anthropic on your behalf.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              onClick={handleSaveKey}
+              disabled={saving || !apiKey.trim()}
+              className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {saving ? 'Saving...' : 'Save API Key'}
+            </button>
+            {status?.configured && (
+              <button
+                onClick={handleRemoveKey}
+                disabled={removing}
+                className="px-4 py-2 bg-white text-red-600 text-sm font-medium rounded-lg border border-red-300 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {removing ? 'Removing...' : 'Remove Key'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* AI Features Info */}
+      <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
+        <h4 className="text-sm font-medium text-purple-900 mb-2">AI-Powered Features</h4>
+        <ul className="space-y-1.5 text-xs text-purple-800">
+          <li className="flex items-start gap-2">
+            <svg className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            <span><strong>Account Briefs:</strong> Automatically generate comprehensive summaries of account history, key contacts, and recent activity</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <svg className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            <span><strong>Next-Best-Actions:</strong> Get AI-powered suggestions for outreach and engagement strategies</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <svg className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            <span><strong>Contact Enrichment:</strong> Enhance contact profiles with intelligent insights and context</span>
+          </li>
+        </ul>
+        <p className="text-xs text-purple-700 mt-3 pt-3 border-t border-purple-200">
+          <strong>Note:</strong> You pay Anthropic directly for API usage. DevSignal does not charge for AI features.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Notification Preferences types
 // ---------------------------------------------------------------------------
 
@@ -4280,6 +4480,11 @@ export default function Settings() {
       {loadedTabsRef.current.has('custom-fields') && (
         <div className={activeTab === 'custom-fields' ? '' : 'hidden'}>
           <CustomFieldsManager />
+        </div>
+      )}
+      {loadedTabsRef.current.has('ai-config') && (
+        <div className={activeTab === 'ai-config' ? '' : 'hidden'}>
+          <AIConfigTab />
         </div>
       )}
       {loadedTabsRef.current.has('slack') && (
