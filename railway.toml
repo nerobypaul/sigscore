@@ -6,7 +6,9 @@ builder = "DOCKERFILE"
 dockerfilePath = "./Dockerfile"
 
 [deploy]
-healthcheckPath = "/health"
-healthcheckTimeout = 120
+# NOTE: healthcheckPath is NOT set here because both the web and worker
+# services share this file. The worker has no HTTP server, so a health
+# check would always fail. Configure healthcheck per-service in the
+# Railway dashboard instead (web service → /health, worker → none).
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
