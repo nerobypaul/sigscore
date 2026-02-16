@@ -342,9 +342,10 @@ describe('Webhook Subscriptions', () => {
           payload: expect.objectContaining({
             event: 'signal.created',
             data: payload,
-            _subscriptionId: 'sub-1',
-            _targetUrl: 'https://hooks.a.com',
           }),
+          subscriptionId: 'sub-1',
+          targetUrl: 'https://hooks.a.com',
+          secret: 'a'.repeat(64),
         }),
       );
     });
