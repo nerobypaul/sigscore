@@ -4,19 +4,47 @@ import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
 
 // ---------------------------------------------------------------------------
-// Anthropic client (lazy-initialized so we can check for API key at call time)
+// Anthropic client (per-org caching for BYOK)
 // ---------------------------------------------------------------------------
 
-let _client: Anthropic | null = null;
+const _clientCache = new Map<string, Anthropic>();
 
-function getClient(): Anthropic {
-  if (!config.anthropic.apiKey) {
-    throw new Error('ANTHROPIC_API_KEY is not configured. Set the environment variable to enable AI features.');
+async function getClientForOrg(organizationId: string): Promise<Anthropic> {
+  // Check cache first
+  const cached = _clientCache.get(organizationId);
+  if (cached) {
+    return cached;
   }
-  if (!_client) {
-    _client = new Anthropic({ apiKey: config.anthropic.apiKey });
+
+  // Fetch org settings from database
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { settings: true },
+  });
+
+  if (!org) {
+    throw new Error(`Organization ${organizationId} not found`);
   }
-  return _client;
+
+  // Extract API key from settings JSON
+  const apiKey = (org.settings as any)?.anthropicApiKey;
+  if (!apiKey || typeof apiKey !== 'string') {
+    throw new Error('Anthropic API key not configured. Go to Settings > AI Configuration to add your API key.');
+  }
+
+  // Create new client and cache it
+  const client = new Anthropic({ apiKey });
+  _clientCache.set(organizationId, client);
+
+  return client;
+}
+
+/**
+ * Clear the cached Anthropic client for an organization.
+ * Call this when the org's API key is updated.
+ */
+export function clearClientCache(organizationId: string): void {
+  _clientCache.delete(organizationId);
 }
 
 // ---------------------------------------------------------------------------
@@ -244,7 +272,7 @@ Return ONLY the JSON object, no other text.`;
  * Generate a fresh account brief by calling Claude, store it in the AccountBrief table.
  */
 export async function generateAccountBrief(organizationId: string, accountId: string) {
-  const client = getClient();
+  const client = await getClientForOrg(organizationId);
   const ctx = await gatherAccountContext(organizationId, accountId);
   const prompt = buildBriefPrompt(ctx);
 
@@ -310,7 +338,7 @@ export async function getAccountBrief(organizationId: string, accountId: string)
  * Ask Claude for 3-5 concrete next-best-actions for the given account.
  */
 export async function suggestNextActions(organizationId: string, accountId: string) {
-  const client = getClient();
+  const client = await getClientForOrg(organizationId);
   const ctx = await gatherAccountContext(organizationId, accountId);
   const prompt = buildActionsPrompt(ctx);
 
@@ -351,7 +379,7 @@ export async function suggestNextActions(organizationId: string, accountId: stri
  * Analyze a contact's signal activity to infer role, seniority, and interests.
  */
 export async function enrichContactFromSignals(organizationId: string, contactId: string) {
-  const client = getClient();
+  const client = await getClientForOrg(organizationId);
 
   const contact = await prisma.contact.findFirst({
     where: { id: contactId, organizationId },
