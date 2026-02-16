@@ -41,6 +41,7 @@ model User {
   notificationPreference   NotificationPreference?
   invitations              Invitation[]
   accountAlertRules        AccountAlertRule[]
+  accountReports           AccountReport[]
 
   @@index([email])
   @@map("users")
@@ -88,6 +89,7 @@ model Organization {
   invitations        Invitation[]
   customFieldDefinitions CustomFieldDefinition[]
   accountAlertRules      AccountAlertRule[]
+  accountReports         AccountReport[]
 
   @@index([slug])
   @@map("organizations")
@@ -207,6 +209,7 @@ model Company {
   score          AccountScore?
   briefs         AccountBrief[]
   scoreSnapshots ScoreSnapshot[]
+  accountReports AccountReport[]
 
   @@index([organizationId])
   @@index([domain])
@@ -1129,4 +1132,30 @@ model AccountAlertRule {
 
   @@map("account_alert_rules")
   @@index([organizationId])
+}
+
+// ============================================================
+// SHAREABLE ACCOUNT REPORTS — Public account intelligence
+// ============================================================
+
+model AccountReport {
+  id              String    @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdById     String
+  createdBy       User      @relation(fields: [createdById], references: [id])
+  shareToken      String    @unique @default(cuid())
+  title           String
+  content         Json      // Snapshot of company data, scores, signals at generation time
+  isPublic        Boolean   @default(true)
+  expiresAt       DateTime?
+  viewCount       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("account_reports")
+  @@index([organizationId])
+  @@index([companyId])
 }
