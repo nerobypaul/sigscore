@@ -6,6 +6,7 @@ import { STAGE_LABELS, STAGE_COLORS, TIER_COLORS } from '../types';
 import Spinner from '../components/Spinner';
 import GettingStarted from '../components/GettingStarted';
 import DemoDataBanner from '../components/DemoDataBanner';
+import ConnectorHealthCard from '../components/ConnectorHealthCard';
 
 interface DashboardStats {
   contacts: { total: number; recent: Contact[] };
@@ -219,6 +220,11 @@ export default function Dashboard() {
             </div>
           </Link>
         ))}
+      </div>
+
+      {/* Connector Health */}
+      <div className="mb-8">
+        <ConnectorHealthCard />
       </div>
 
       {/* Recent Activity Feed */}
