@@ -65,6 +65,8 @@ import enrichmentRoutes from './routes/enrichment';
 import webhookSubscriptionRoutes from './routes/webhook-subscriptions';
 import advancedAnalyticsRoutes from './routes/advanced-analytics';
 import scoreSnapshotRoutes from './routes/score-snapshots';
+import dataExportRoutes from './routes/data-export';
+import invitationRoutes from './routes/invitations';
 import healthRoutes from './routes/health';
 import seoRoutes from './routes/seo';
 import { sentryErrorHandler } from './utils/sentry';
@@ -173,6 +175,9 @@ app.use('/api/v1/notifications', notificationRoutes);
 // API routes — Team Members
 app.use('/api/v1/members', memberRoutes);
 
+// API routes — Team Invitations
+app.use('/api/v1/invitations', invitationRoutes);
+
 // API routes — Audit Log
 app.use('/api/v1/audit', auditRoutes);
 
@@ -224,6 +229,9 @@ app.use('/api/v1', oauthRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);
+
+// API routes — Data Export (enterprise compliance & data portability)
+app.use('/api/v1/exports', dataExportRoutes);
 
 // Swagger / OpenAPI documentation
 

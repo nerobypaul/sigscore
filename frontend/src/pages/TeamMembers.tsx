@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import { useToast } from '../components/Toast';
 import Spinner from '../components/Spinner';
@@ -451,11 +452,17 @@ export default function TeamMembers() {
         )}
       </div>
 
-      {/* Member count */}
-      <div className="mb-4">
-        <span className="text-sm text-gray-500">
-          {members.length} {members.length === 1 ? 'member' : 'members'}
+      {/* Tab navigation */}
+      <div className="mb-4 flex items-center gap-4 border-b border-gray-200 pb-3">
+        <span className="text-sm font-medium text-indigo-600 border-b-2 border-indigo-600 pb-3 -mb-3">
+          Members ({members.length})
         </span>
+        <Link
+          to="/team/settings"
+          className="text-sm font-medium text-gray-500 hover:text-gray-700 pb-3 -mb-3 transition-colors"
+        >
+          Invitations
+        </Link>
       </div>
 
       {/* Members table */}

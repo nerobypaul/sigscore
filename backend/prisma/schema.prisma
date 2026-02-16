@@ -39,6 +39,7 @@ model User {
   dealsOwned               Deal[]
   notifications            Notification[]
   notificationPreference   NotificationPreference?
+  invitations              Invitation[]
 
   @@index([email])
   @@map("users")
@@ -83,6 +84,7 @@ model Organization {
   ssoConnections     SsoConnection[]
   webhookSubscriptions WebhookSubscription[]
   scoreSnapshots     ScoreSnapshot[]
+  invitations        Invitation[]
 
   @@index([slug])
   @@map("organizations")
@@ -1056,4 +1058,26 @@ model NotificationPreference {
   user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notification_preferences")
+}
+
+// ============================================================
+// TEAM INVITATIONS — Email-based org invite flow
+// ============================================================
+
+model Invitation {
+  id              String    @id @default(cuid())
+  email           String
+  role            OrgRole   @default(MEMBER)
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedById     String
+  invitedBy       User      @relation(fields: [invitedById], references: [id])
+  token           String    @unique @default(cuid())
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("invitations")
 }
