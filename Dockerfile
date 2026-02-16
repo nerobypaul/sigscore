@@ -88,19 +88,14 @@ RUN addgroup --system --gid 1001 nodejs && \
 # Install wget for healthcheck (alpine minimal image)
 RUN apk add --no-cache wget
 
-# Copy production node_modules (includes Prisma client)
+# Copy production node_modules (includes Prisma client via hoisting)
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/backend/node_modules ./backend/node_modules
 
 # Copy compiled backend
 COPY --from=backend-builder /app/backend/dist ./dist
 
 # Copy Prisma schema + migrations (needed for migrate deploy at startup)
 COPY --from=deps /app/backend/prisma ./prisma
-
-# Copy Prisma generated client
-COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=deps /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # Copy built frontend static files
 COPY --from=frontend-builder /app/frontend/dist ./public
