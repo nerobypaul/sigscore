@@ -1,0 +1,64 @@
+# ============================================================
+# DevSignal — Worker Dockerfile (BullMQ background jobs only)
+# ============================================================
+# Reuses the same build stages as the main Dockerfile but runs
+# the worker entry point instead of the HTTP server.
+# ============================================================
+
+# ---- Stage 1: Build the Backend (TypeScript -> JS via tsc) ----
+FROM node:20-alpine AS backend-builder
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+
+RUN npm ci --workspace=backend --include-workspace-root
+
+COPY backend/prisma ./backend/prisma
+RUN npx prisma generate --schema ./backend/prisma/schema.prisma
+
+COPY backend/tsconfig.json ./backend/
+COPY backend/src ./backend/src
+RUN npm run build --workspace=backend
+
+
+# ---- Stage 2: Production dependencies only ----
+FROM node:20-alpine AS deps
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+
+RUN npm ci --workspace=backend --include-workspace-root --omit=dev
+
+COPY backend/prisma ./backend/prisma
+RUN npx prisma generate --schema ./backend/prisma/schema.prisma
+
+
+# ---- Stage 3: Production runtime ----
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 appuser
+
+RUN apk add --no-cache openssl
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=backend-builder /app/backend/dist ./dist
+COPY --from=deps /app/backend/prisma ./prisma
+COPY backend/package.json ./package.json
+
+RUN chown -R appuser:nodejs /app
+
+USER appuser
+
+# Worker has no HTTP server — no EXPOSE, no HEALTHCHECK
+CMD ["node", "dist/worker.js"]
