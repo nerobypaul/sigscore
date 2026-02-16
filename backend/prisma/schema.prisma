@@ -40,6 +40,7 @@ model User {
   notifications            Notification[]
   notificationPreference   NotificationPreference?
   invitations              Invitation[]
+  accountAlertRules        AccountAlertRule[]
 
   @@index([email])
   @@map("users")
@@ -86,6 +87,7 @@ model Organization {
   scoreSnapshots     ScoreSnapshot[]
   invitations        Invitation[]
   customFieldDefinitions CustomFieldDefinition[]
+  accountAlertRules      AccountAlertRule[]
 
   @@index([slug])
   @@map("organizations")
@@ -1104,4 +1106,27 @@ model CustomFieldDefinition {
   @@unique([organizationId, entityType, fieldName])
   @@index([organizationId, entityType])
   @@map("custom_field_definitions")
+}
+
+// ============================================================
+// ACCOUNT ALERT RULES — Configurable account event notifications
+// ============================================================
+
+model AccountAlertRule {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  triggerType     String   // score_drop, score_rise, score_threshold, engagement_drop, new_hot_signal, account_inactive
+  conditions      Json     // { threshold: 70, dropPercent: 20, inactiveDays: 14, sourceTypes: [...] }
+  channels        Json     // { inApp: true, email: true, slack: false, slackChannel: "" }
+  enabled         Boolean  @default(true)
+  createdById     String
+  createdBy       User     @relation(fields: [createdById], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("account_alert_rules")
+  @@index([organizationId])
 }

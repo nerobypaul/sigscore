@@ -67,9 +67,11 @@ import advancedAnalyticsRoutes from './routes/advanced-analytics';
 import customFieldRoutes from './routes/custom-fields';
 import scoreSnapshotRoutes from './routes/score-snapshots';
 import dataExportRoutes from './routes/data-export';
+import accountAlertRoutes from './routes/account-alerts';
 import invitationRoutes from './routes/invitations';
 import healthRoutes from './routes/health';
 import seoRoutes from './routes/seo';
+import changelogRoutes from './routes/changelog';
 import { sentryErrorHandler } from './utils/sentry';
 
 const app = express();
@@ -111,6 +113,9 @@ app.use('/health', healthRoutes);
 
 // SEO — sitemap.xml and robots.txt (must be before API routes)
 app.use(seoRoutes);
+
+// Public changelog API (no auth required — mounted before authenticated routes)
+app.use('/api/v1/changelog', changelogRoutes);
 
 // API routes — Core CRM
 app.use('/api/v1/auth', authRoutes);
@@ -233,6 +238,9 @@ app.use('/api/v1/ai', aiRoutes);
 
 // API routes — Custom Field Definitions & Values
 app.use('/api/v1/custom-fields', customFieldRoutes);
+
+// API routes — Account Alert Rules
+app.use('/api/v1/account-alerts', accountAlertRoutes);
 
 // API routes — Data Export (enterprise compliance & data portability)
 app.use('/api/v1/exports', dataExportRoutes);
