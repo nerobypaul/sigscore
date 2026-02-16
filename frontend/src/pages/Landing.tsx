@@ -94,7 +94,7 @@ const features = [
   {
     icon: SignalIcon,
     title: 'Signal Engine',
-    metric: 'Track 13 signal sources in real-time',
+    metric: 'Track 16 signal sources in real-time',
     description:
       'Ingest signals from npm, PyPI, GitHub, Segment, and your product API. Identity resolution ties anonymous developers to real accounts.',
   },
@@ -137,24 +137,24 @@ const features = [
 
 const integrations = [
   'GitHub', 'npm', 'PyPI', 'Slack', 'HubSpot', 'Salesforce', 'Discord',
-  'Stack Overflow', 'Twitter/X', 'Reddit', 'PostHog', 'Clearbit', 'Segment', 'Zapier',
+  'Stack Overflow', 'Twitter/X', 'Reddit', 'PostHog', 'Clearbit', 'Segment', 'LinkedIn', 'Intercom', 'Zapier',
 ];
 
 const testimonials = [
   {
-    quote: 'Imagine discovering 5 engineers at one company are evaluating your CLI tool — and closing a deal in 2 weeks.',
-    role: 'What devtool growth teams tell us they need',
-    initials: 'DS',
+    quote: '5 engineers at one company star your repo, open issues, and download your package — all in one week. That is a buying signal. DevSignal surfaces it automatically.',
+    role: 'Signal Detection',
+    initials: 'SD',
   },
   {
-    quote: 'Common Room costs $1,000+/mo. DevSignal starts free and onboards in 90 seconds via GitHub.',
-    role: 'Why teams switch to DevSignal',
-    initials: 'DS',
+    quote: 'Common Room charges $1,000+/mo and requires a sales call to start. DevSignal starts at $0, onboards via GitHub in 90 seconds, and gives you scored accounts immediately.',
+    role: 'Price & Speed',
+    initials: 'PS',
   },
   {
-    quote: "Go from 'who's using us?' to 'here are your top 10 accounts' in one day with PQA scoring.",
-    role: 'The DevSignal difference',
-    initials: 'DS',
+    quote: 'Every PLG CRM startup died — Calixa, Koala, Toplyne, Endgame, Pocus. DevSignal is not a CRM. It is developer signal intelligence built for how devtools actually sell.',
+    role: 'Why We Exist',
+    initials: 'WE',
   },
 ];
 
@@ -196,7 +196,7 @@ const faqItems = [
 // Comparison table data
 const comparisonRows: { label: string; ds: string; cr: string; reo: string }[] = [
   { label: 'Price', ds: 'From $0/mo', cr: '$1,000+/mo', reo: '$500+/mo' },
-  { label: 'Signal Sources', ds: '13 built-in', cr: '8-10', reo: '5-6' },
+  { label: 'Signal Sources', ds: '16 built-in', cr: '8-10', reo: '5-6' },
   { label: 'CRM Sync', ds: 'HubSpot + Salesforce', cr: 'Salesforce only', reo: 'HubSpot only' },
   { label: 'Setup Time', ds: '2 minutes', cr: '2-4 weeks', reo: '1-2 weeks' },
   { label: 'Self-serve', ds: 'Yes', cr: 'No (sales-led)', reo: 'No (demo required)' },
@@ -468,7 +468,7 @@ export default function Landing() {
                   </svg>
                 </div>
                 <div className="text-left">
-                  <div className="text-sm font-bold text-white">14+</div>
+                  <div className="text-sm font-bold text-white">16+</div>
                   <div className="text-xs text-gray-500">Integrations</div>
                 </div>
               </div>
@@ -603,7 +603,7 @@ export default function Landing() {
               Connects to everything you already use
             </h2>
             <p className="mt-4 text-lg text-gray-500">
-              13 signal sources + Zapier for 5,000+ apps
+              16 signal sources + Zapier for 5,000+ apps
             </p>
           </div>
 
@@ -764,7 +764,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
           <div className="max-w-2xl mx-auto text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Loved by devtool growth teams
+              Why devtool teams choose DevSignal
             </h2>
           </div>
 
@@ -774,13 +774,6 @@ export default function Landing() {
                 key={i}
                 className="bg-white rounded-xl p-6 border border-gray-200"
               >
-                <div className="flex items-center gap-1 mb-4">
-                  {[...Array(5)].map((_, s) => (
-                    <svg key={s} className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
                 <p className="text-gray-700 leading-relaxed mb-5 italic">
                   "{t.quote}"
                 </p>
@@ -808,7 +801,7 @@ export default function Landing() {
               </div>
               <div className="hidden sm:block w-px h-10 bg-gray-200" />
               <div>
-                <div className="text-2xl font-extrabold text-gray-900">13</div>
+                <div className="text-2xl font-extrabold text-gray-900">16</div>
                 <div className="text-sm text-gray-500">signal sources</div>
               </div>
             </div>
@@ -974,7 +967,7 @@ export default function Landing() {
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700 font-medium">
                   <CheckIcon className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                  14 connectors out of the box
+                  16 connectors out of the box
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700 font-medium">
                   <CheckIcon className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
@@ -1071,8 +1064,7 @@ export default function Landing() {
                 Start finding your hidden pipeline
               </h2>
               <p className="text-lg text-indigo-100 max-w-xl mx-auto mb-3">
-                Join 50+ devtool companies using DevSignal to discover which
-                developers are ready to buy.
+                Discover which developers are ready to buy — before they fill out a form.
               </p>
               <p className="text-sm text-indigo-200 mb-10">
                 Free tier forever. No credit card. Setup in 2 minutes.
