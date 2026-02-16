@@ -179,7 +179,52 @@ interface PostHogStatus {
   sourceId: string | null;
 }
 
-type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord' | 'stackoverflow' | 'twitter' | 'reddit' | 'linkedin' | 'posthog' | 'clearbit';
+interface IntercomStatus {
+  connected: boolean;
+  webhookUrl: string | null;
+  webhookSecret: string | null;
+  trackedEvents: string[];
+  lastSyncAt: string | null;
+  lastSyncResult: {
+    conversationsProcessed: number;
+    signalsCreated: number;
+    contactsResolved: number;
+    errors: string[];
+  } | null;
+  sourceId: string | null;
+  signalStats: {
+    total: number;
+    conversationOpened: number;
+    conversationReplied: number;
+    conversationClosed: number;
+    conversationRated: number;
+  };
+}
+
+interface ZendeskStatus {
+  connected: boolean;
+  subdomain: string | null;
+  webhookUrl: string | null;
+  webhookSecret: string | null;
+  trackedEvents: string[];
+  lastSyncAt: string | null;
+  lastSyncResult: {
+    ticketsProcessed: number;
+    signalsCreated: number;
+    contactsResolved: number;
+    errors: string[];
+  } | null;
+  sourceId: string | null;
+  signalStats: {
+    total: number;
+    ticketCreated: number;
+    ticketUpdated: number;
+    ticketSolved: number;
+    satisfactionRated: number;
+  };
+}
+
+type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord' | 'stackoverflow' | 'twitter' | 'reddit' | 'linkedin' | 'posthog' | 'clearbit' | 'intercom' | 'zendesk';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'api-keys', label: 'API Keys' },
@@ -196,6 +241,8 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'linkedin', label: 'LinkedIn' },
   { id: 'posthog', label: 'PostHog' },
   { id: 'clearbit', label: 'Clearbit' },
+  { id: 'intercom', label: 'Intercom' },
+  { id: 'zendesk', label: 'Zendesk' },
 ];
 
 const ALL_SCOPES = [
@@ -4041,6 +4088,16 @@ export default function Settings() {
           <PostHogTab />
         </div>
       )}
+      {loadedTabsRef.current.has('intercom') && (
+        <div className={activeTab === 'intercom' ? '' : 'hidden'}>
+          <IntercomTab />
+        </div>
+      )}
+      {loadedTabsRef.current.has('zendesk') && (
+        <div className={activeTab === 'zendesk' ? '' : 'hidden'}>
+          <ZendeskTab />
+        </div>
+      )}
     </div>
   );
 }
@@ -5886,6 +5943,944 @@ function RedditTab() {
         >
           {disconnecting ? 'Disconnecting...' : 'Disconnect'}
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Intercom icon (inline SVG)
+// ---------------------------------------------------------------------------
+
+function IntercomIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+      <rect width="24" height="24" rx="4" fill="#286EFA" />
+      <path
+        d="M17 14.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5V9.5c0-.28.22-.5.5-.5s.5.22.5.5v5zM15 16c0 .28-.22.5-.5.5s-.5-.22-.5-.5V8c0-.28.22-.5.5-.5s.5.22.5.5v8zM13 16.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5v-9c0-.28.22-.5.5-.5s.5.22.5.5v9zM11 16.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5v-9c0-.28.22-.5.5-.5s.5.22.5.5v9zM9 16c0 .28-.22.5-.5.5S8 16.28 8 16V8c0-.28.22-.5.5-.5s.5.22.5.5v8zM7 14.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5V9.5c0-.28.22-.5.5-.5s.5.22.5.5v5z"
+        fill="#FFF"
+      />
+      <path
+        d="M17.5 18c0 0-1.5 1.5-5.5 1.5S6.5 18 6.5 18"
+        stroke="#FFF"
+        strokeWidth="1"
+        strokeLinecap="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Zendesk icon (inline SVG)
+// ---------------------------------------------------------------------------
+
+function ZendeskIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+      <rect width="24" height="24" rx="4" fill="#03363D" />
+      <path d="M12 7L6 15h6V7z" fill="#FFF" />
+      <circle cx="15" cy="9" r="3" fill="#FFF" />
+      <path d="M12 17l6-8h-6v8z" fill="#FFF" />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Intercom tracked event options
+// ---------------------------------------------------------------------------
+
+const INTERCOM_EVENTS = [
+  { id: 'conversation.opened', label: 'Conversation Opened' },
+  { id: 'conversation.replied', label: 'Conversation Replied' },
+  { id: 'conversation.closed', label: 'Conversation Closed' },
+  { id: 'conversation.rated', label: 'Conversation Rated' },
+] as const;
+
+// ---------------------------------------------------------------------------
+// Zendesk tracked event options
+// ---------------------------------------------------------------------------
+
+const ZENDESK_EVENTS = [
+  { id: 'ticket.created', label: 'Ticket Created' },
+  { id: 'ticket.updated', label: 'Ticket Updated' },
+  { id: 'ticket.solved', label: 'Ticket Solved' },
+  { id: 'ticket.satisfaction_rated', label: 'Satisfaction Rated' },
+] as const;
+
+// ---------------------------------------------------------------------------
+// Tab: Intercom
+// ---------------------------------------------------------------------------
+
+function IntercomTab() {
+  const toast = useToast();
+  const [status, setStatus] = useState<IntercomStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [accessTokenInput, setAccessTokenInput] = useState('');
+  const [webhookSecretInput, setWebhookSecretInput] = useState('');
+  const [selectedEvents, setSelectedEvents] = useState<string[]>(
+    INTERCOM_EVENTS.map((e) => e.id)
+  );
+  const [copied, setCopied] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get('/connectors/intercom/status');
+      setStatus(data);
+    } catch {
+      setStatus({
+        connected: false,
+        webhookUrl: null,
+        webhookSecret: null,
+        trackedEvents: [],
+        lastSyncAt: null,
+        lastSyncResult: null,
+        sourceId: null,
+        signalStats: {
+          total: 0,
+          conversationOpened: 0,
+          conversationReplied: 0,
+          conversationClosed: 0,
+          conversationRated: 0,
+        },
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStatus();
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
+    };
+  }, [fetchStatus]);
+
+  function toggleEvent(eventId: string) {
+    setSelectedEvents((prev) =>
+      prev.includes(eventId)
+        ? prev.filter((e) => e !== eventId)
+        : [...prev, eventId]
+    );
+  }
+
+  async function handleConnect() {
+    if (selectedEvents.length === 0) {
+      toast.error('Please select at least one event type to track.');
+      return;
+    }
+
+    setConnecting(true);
+    try {
+      const { data } = await api.post('/connectors/intercom/connect', {
+        accessToken: accessTokenInput.trim() || undefined,
+        webhookSecret: webhookSecretInput.trim() || undefined,
+        trackedEvents: selectedEvents,
+      });
+      setAccessTokenInput('');
+      setWebhookSecretInput('');
+      toast.success('Intercom connected successfully.');
+      if (data.webhookUrl) {
+        setStatus((prev) =>
+          prev ? { ...prev, webhookUrl: data.webhookUrl, connected: true } : prev
+        );
+      }
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      await api.post('/connectors/intercom/sync');
+      toast.success('Intercom sync queued.');
+      if (!pollRef.current) {
+        pollRef.current = setInterval(async () => {
+          await fetchStatus();
+        }, 5000);
+        setTimeout(() => {
+          if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+        }, 120_000);
+      }
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    if (
+      !window.confirm(
+        'Disconnect Intercom? Signal data will remain, but syncing will stop.'
+      )
+    ) {
+      return;
+    }
+
+    setDisconnecting(true);
+    try {
+      await api.delete('/connectors/intercom/disconnect');
+      toast.success('Intercom disconnected.');
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  function copyWebhookUrl() {
+    if (status?.webhookUrl) {
+      navigator.clipboard.writeText(status.webhookUrl).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  // Not connected state
+  if (!status?.connected) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+              <IntercomIcon />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                Connect Intercom
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Import support conversations from Intercom as signals. Track when
+                customers open, reply to, close, or rate conversations to identify
+                support-driven churn risk and expansion opportunities.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Access Token (optional)
+                  </label>
+                  <input
+                    type="password"
+                    value={accessTokenInput}
+                    onChange={(e) => setAccessTokenInput(e.target.value)}
+                    placeholder="Optional — for API polling"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Provide an Intercom access token to enable API polling. Leave
+                    blank if you only want webhook-based ingestion.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Webhook Secret (optional)
+                  </label>
+                  <input
+                    type="password"
+                    value={webhookSecretInput}
+                    onChange={(e) => setWebhookSecretInput(e.target.value)}
+                    placeholder="Optional HMAC secret for webhook verification"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tracked Events
+                  </label>
+                  <div className="space-y-2">
+                    {INTERCOM_EVENTS.map((evt) => (
+                      <label
+                        key={evt.id}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedEvents.includes(evt.id)}
+                          onChange={() => toggleEvent(evt.id)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">{evt.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleConnect}
+                  disabled={connecting || selectedEvents.length === 0}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {connecting ? 'Connecting...' : 'Connect Intercom'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">How it works</h4>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
+            <li>Connect with an optional access token for API-based polling</li>
+            <li>Choose which conversation events to track</li>
+            <li>Copy the webhook URL and paste it in Intercom Developer Hub &gt; Webhooks</li>
+            <li>Conversation events create signals with customer and conversation metadata</li>
+            <li>Identity resolution links Intercom users to your existing contacts via email</li>
+            <li>Use signals to detect churn risk, upsell moments, and support trends</li>
+          </ol>
+        </div>
+      </div>
+    );
+  }
+
+  // Connected state
+  const lastSync = status.lastSyncResult;
+  const stats = status.signalStats;
+
+  return (
+    <div className="space-y-6">
+      {/* Connected header */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <IntercomIcon />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Intercom Connected
+              </h3>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Active
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {status.trackedEvents.map((evt) => (
+                <span
+                  key={evt}
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                >
+                  {evt}
+                </span>
+              ))}
+            </div>
+            <p className="text-sm text-gray-500">
+              {status.lastSyncAt && (
+                <>Last synced {new Date(status.lastSyncAt).toLocaleString()}</>
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Webhook URL */}
+      {status.webhookUrl && (
+        <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
+          <h4 className="text-sm font-medium text-blue-800 mb-2">
+            Webhook URL (paste into Intercom)
+          </h4>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 px-3 py-2 bg-white border border-blue-200 rounded-lg text-xs font-mono text-gray-800 truncate">
+              {status.webhookUrl}
+            </code>
+            <button
+              onClick={copyWebhookUrl}
+              className="px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+            >
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <p className="text-xs text-blue-700 mt-2">
+            Paste this URL in Intercom Developer Hub &gt; Webhooks to receive
+            conversation events in real-time.
+          </p>
+        </div>
+      )}
+
+      {/* Signal stats */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+          <p className="text-xs text-gray-500">Total Signals</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-2xl font-bold text-gray-900">{stats.conversationOpened}</p>
+          <p className="text-xs text-gray-500">Opened</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-2xl font-bold text-gray-900">{stats.conversationReplied}</p>
+          <p className="text-xs text-gray-500">Replied</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-2xl font-bold text-gray-900">{stats.conversationClosed}</p>
+          <p className="text-xs text-gray-500">Closed</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-2xl font-bold text-gray-900">{stats.conversationRated}</p>
+          <p className="text-xs text-gray-500">Rated</p>
+        </div>
+      </div>
+
+      {/* Last sync results */}
+      {lastSync && (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">
+              {lastSync.conversationsProcessed}
+            </p>
+            <p className="text-xs text-gray-500">Conversations Processed</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">
+              {lastSync.signalsCreated}
+            </p>
+            <p className="text-xs text-gray-500">Signals Created</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">
+              {lastSync.contactsResolved}
+            </p>
+            <p className="text-xs text-gray-500">Contacts Resolved</p>
+          </div>
+        </div>
+      )}
+
+      {lastSync?.errors && lastSync.errors.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h4 className="text-sm font-medium text-red-800 mb-2">Sync Errors</h4>
+          <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+            {lastSync.errors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-3">
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {syncing ? 'Syncing...' : 'Sync Now'}
+        </button>
+        <button
+          onClick={handleDisconnect}
+          disabled={disconnecting}
+          className="px-4 py-2 bg-white text-red-600 text-sm font-medium rounded-lg border border-red-300 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+        </button>
+      </div>
+
+      <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
+        <p className="text-xs text-blue-700">
+          Intercom conversations are synced via webhooks in real-time. If you provided
+          an access token, you can also trigger a manual sync to backfill historical data.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tab: Zendesk
+// ---------------------------------------------------------------------------
+
+function ZendeskTab() {
+  const toast = useToast();
+  const [status, setStatus] = useState<ZendeskStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [subdomainInput, setSubdomainInput] = useState('');
+  const [emailInput, setEmailInput] = useState('');
+  const [apiTokenInput, setApiTokenInput] = useState('');
+  const [webhookSecretInput, setWebhookSecretInput] = useState('');
+  const [selectedEvents, setSelectedEvents] = useState<string[]>(
+    ZENDESK_EVENTS.map((e) => e.id)
+  );
+  const [copied, setCopied] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get('/connectors/zendesk/status');
+      setStatus(data);
+    } catch {
+      setStatus({
+        connected: false,
+        subdomain: null,
+        webhookUrl: null,
+        webhookSecret: null,
+        trackedEvents: [],
+        lastSyncAt: null,
+        lastSyncResult: null,
+        sourceId: null,
+        signalStats: {
+          total: 0,
+          ticketCreated: 0,
+          ticketUpdated: 0,
+          ticketSolved: 0,
+          satisfactionRated: 0,
+        },
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStatus();
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
+    };
+  }, [fetchStatus]);
+
+  function toggleEvent(eventId: string) {
+    setSelectedEvents((prev) =>
+      prev.includes(eventId)
+        ? prev.filter((e) => e !== eventId)
+        : [...prev, eventId]
+    );
+  }
+
+  async function handleConnect() {
+    if (!subdomainInput.trim()) {
+      toast.error('Please enter your Zendesk subdomain.');
+      return;
+    }
+    if (!emailInput.trim()) {
+      toast.error('Please enter your Zendesk admin email.');
+      return;
+    }
+    if (!apiTokenInput.trim()) {
+      toast.error('Please enter your Zendesk API token.');
+      return;
+    }
+    if (selectedEvents.length === 0) {
+      toast.error('Please select at least one event type to track.');
+      return;
+    }
+
+    setConnecting(true);
+    try {
+      const { data } = await api.post('/connectors/zendesk/connect', {
+        subdomain: subdomainInput.trim(),
+        email: emailInput.trim(),
+        apiToken: apiTokenInput.trim(),
+        webhookSecret: webhookSecretInput.trim() || undefined,
+        trackedEvents: selectedEvents,
+      });
+      setApiTokenInput('');
+      setWebhookSecretInput('');
+      toast.success('Zendesk connected successfully.');
+      if (data.webhookUrl) {
+        setStatus((prev) =>
+          prev
+            ? { ...prev, webhookUrl: data.webhookUrl, connected: true }
+            : prev
+        );
+      }
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      await api.post('/connectors/zendesk/sync');
+      toast.success('Zendesk sync queued.');
+      if (!pollRef.current) {
+        pollRef.current = setInterval(async () => {
+          await fetchStatus();
+        }, 5000);
+        setTimeout(() => {
+          if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+        }, 120_000);
+      }
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    if (
+      !window.confirm(
+        'Disconnect Zendesk? Signal data will remain, but syncing will stop.'
+      )
+    ) {
+      return;
+    }
+
+    setDisconnecting(true);
+    try {
+      await api.delete('/connectors/zendesk/disconnect');
+      toast.success('Zendesk disconnected.');
+      await fetchStatus();
+    } catch (err) {
+      toast.error(extractApiError(err));
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  function copyWebhookUrl() {
+    if (status?.webhookUrl) {
+      navigator.clipboard.writeText(status.webhookUrl).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  // Not connected state
+  if (!status?.connected) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
+              <ZendeskIcon />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                Connect Zendesk
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Import support tickets from Zendesk as signals. Track ticket creation,
+                updates, resolution, and customer satisfaction ratings to identify
+                accounts that need attention.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Zendesk Subdomain
+                  </label>
+                  <div className="flex items-center gap-0">
+                    <input
+                      type="text"
+                      value={subdomainInput}
+                      onChange={(e) => setSubdomainInput(e.target.value)}
+                      placeholder="yourcompany"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                    <span className="px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-sm text-gray-500">
+                      .zendesk.com
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Admin Email
+                  </label>
+                  <input
+                    type="email"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="admin@yourcompany.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    The email address of a Zendesk admin or agent with API access.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    API Token
+                  </label>
+                  <input
+                    type="password"
+                    value={apiTokenInput}
+                    onChange={(e) => setApiTokenInput(e.target.value)}
+                    placeholder="Your Zendesk API token"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Generate one at{' '}
+                    <a
+                      href="https://support.zendesk.com/hc/en-us/articles/4408889192858"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-600 hover:text-emerald-700"
+                    >
+                      Zendesk Admin &gt; Apps and Integrations &gt; API
+                    </a>
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Webhook Secret (optional)
+                  </label>
+                  <input
+                    type="password"
+                    value={webhookSecretInput}
+                    onChange={(e) => setWebhookSecretInput(e.target.value)}
+                    placeholder="Optional HMAC secret for webhook verification"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tracked Events
+                  </label>
+                  <div className="space-y-2">
+                    {ZENDESK_EVENTS.map((evt) => (
+                      <label
+                        key={evt.id}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedEvents.includes(evt.id)}
+                          onChange={() => toggleEvent(evt.id)}
+                          className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm text-gray-700">{evt.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleConnect}
+                  disabled={
+                    connecting ||
+                    !subdomainInput.trim() ||
+                    !emailInput.trim() ||
+                    !apiTokenInput.trim() ||
+                    selectedEvents.length === 0
+                  }
+                  className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {connecting ? 'Connecting...' : 'Connect Zendesk'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">How it works</h4>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
+            <li>Enter your Zendesk subdomain, admin email, and API token</li>
+            <li>Choose which ticket events to track</li>
+            <li>DevSignal polls Zendesk for ticket updates and creates signals</li>
+            <li>Optionally, copy the webhook URL into Zendesk triggers for real-time events</li>
+            <li>Identity resolution links ticket requesters to your existing contacts</li>
+            <li>Use ticket signals to detect churn risk, support burden, and expansion opportunities</li>
+          </ol>
+        </div>
+      </div>
+    );
+  }
+
+  // Connected state
+  const lastSync = status.lastSyncResult;
+  const stats = status.signalStats;
+
+  return (
+    <div className="space-y-6">
+      {/* Connected header */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <ZendeskIcon />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Zendesk Connected
+              </h3>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Active
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 mb-2">
+              Subdomain:{' '}
+              <span className="font-mono text-gray-700">
+                {status.subdomain}.zendesk.com
+              </span>
+            </p>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {status.trackedEvents.map((evt) => (
+                <span
+                  key={evt}
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800"
+                >
+                  {evt}
+                </span>
+              ))}
+            </div>
+            <p className="text-sm text-gray-500">
+              {status.lastSyncAt && (
+                <>Last synced {new Date(status.lastSyncAt).toLocaleString()}</>
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Webhook URL */}
+      {status.webhookUrl && (
+        <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-4">
+          <h4 className="text-sm font-medium text-emerald-800 mb-2">
+            Webhook URL (paste into Zendesk triggers)
+          </h4>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 px-3 py-2 bg-white border border-emerald-200 rounded-lg text-xs font-mono text-gray-800 truncate">
+              {status.webhookUrl}
+            </code>
+            <button
+              onClick={copyWebhookUrl}
+              className="px-3 py-2 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 transition-colors whitespace-nowrap"
+            >
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <p className="text-xs text-emerald-700 mt-2">
+            Paste this URL in Zendesk Admin &gt; Business Rules &gt; Triggers to
+            receive ticket events in real-time.
+          </p>
+        </div>
+      )}
+
+      {/* Signal stats */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+          <p className="text-xs text-gray-500">Total Signals</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-2xl font-bold text-gray-900">{stats.ticketCreated}</p>
+          <p className="text-xs text-gray-500">Created</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-2xl font-bold text-gray-900">{stats.ticketUpdated}</p>
+          <p className="text-xs text-gray-500">Updated</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-2xl font-bold text-gray-900">{stats.ticketSolved}</p>
+          <p className="text-xs text-gray-500">Solved</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-2xl font-bold text-gray-900">
+            {stats.satisfactionRated}
+          </p>
+          <p className="text-xs text-gray-500">Rated</p>
+        </div>
+      </div>
+
+      {/* Last sync results */}
+      {lastSync && (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">
+              {lastSync.ticketsProcessed}
+            </p>
+            <p className="text-xs text-gray-500">Tickets Processed</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">
+              {lastSync.signalsCreated}
+            </p>
+            <p className="text-xs text-gray-500">Signals Created</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">
+              {lastSync.contactsResolved}
+            </p>
+            <p className="text-xs text-gray-500">Contacts Resolved</p>
+          </div>
+        </div>
+      )}
+
+      {lastSync?.errors && lastSync.errors.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h4 className="text-sm font-medium text-red-800 mb-2">Sync Errors</h4>
+          <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+            {lastSync.errors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-3">
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {syncing ? 'Syncing...' : 'Sync Now'}
+        </button>
+        <button
+          onClick={handleDisconnect}
+          disabled={disconnecting}
+          className="px-4 py-2 bg-white text-red-600 text-sm font-medium rounded-lg border border-red-300 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+        </button>
+      </div>
+
+      <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
+        <p className="text-xs text-emerald-700">
+          Zendesk tickets are synced automatically every hour via the API. For real-time
+          ingestion, configure the webhook URL above in a Zendesk trigger.
+        </p>
       </div>
     </div>
   );
