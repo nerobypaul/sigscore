@@ -114,5 +114,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
-# Run prisma migrate deploy, then start the server.
-CMD ["sh", "-c", "echo 'Starting DevSignal...' && echo 'Running migrations...' && npx prisma migrate deploy --schema ./prisma/schema.prisma 2>&1 && echo 'Migrations complete. Starting server...' && node dist/server.js"]
+# Start the server. Migrations are handled externally via CLI.
+CMD ["node", "dist/server.js"]
