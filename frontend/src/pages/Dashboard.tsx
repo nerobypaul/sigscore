@@ -4,7 +4,7 @@ import api from '../lib/api';
 import type { Contact, Deal, Activity, Signal, AccountScore } from '../types';
 import { STAGE_LABELS, STAGE_COLORS, TIER_COLORS } from '../types';
 import Spinner from '../components/Spinner';
-import GettingStarted from '../components/GettingStarted';
+import OnboardingChecklist from '../components/OnboardingChecklist';
 import DemoDataBanner from '../components/DemoDataBanner';
 import ConnectorHealthCard from '../components/ConnectorHealthCard';
 
@@ -119,7 +119,7 @@ export default function Dashboard() {
     return (
       <div className="px-4 py-6 md:px-6 lg:px-8 max-w-7xl mx-auto">
         <DemoDataBanner />
-        <GettingStarted />
+        <OnboardingChecklist />
 
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
@@ -184,7 +184,7 @@ export default function Dashboard() {
       <DemoDataBanner />
 
       {/* Getting Started checklist for new users */}
-      <GettingStarted />
+      <OnboardingChecklist />
 
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
