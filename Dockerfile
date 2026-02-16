@@ -103,6 +103,9 @@ COPY --from=frontend-builder /app/frontend/dist ./public
 # Copy package.json for metadata
 COPY backend/package.json ./package.json
 
+# Give appuser ownership of the app directory (needed for Prisma engines)
+RUN chown -R appuser:nodejs /app
+
 # Switch to non-root user
 USER appuser
 
