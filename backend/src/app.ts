@@ -1,12 +1,18 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
 import { config } from './config';
 import { prisma } from './config/database';
 import { swaggerSpec } from './config/swagger';
 import { errorHandler } from './middleware/error';
+import {
+  authLimiter,
+  apiLimiter,
+  webhookLimiter,
+  demoLimiter,
+  signalLimiter,
+} from './middleware/rate-limit';
 import authRoutes from './routes/auth';
 import organizationRoutes from './routes/organizations';
 import contactRoutes from './routes/contacts';
@@ -52,6 +58,7 @@ import twitterConnectorRoutes from './routes/twitter-connector';
 import redditConnectorRoutes from './routes/reddit-connector';
 import posthogConnectorRoutes from './routes/posthog-connector';
 import linkedinConnectorRoutes from './routes/linkedin-connector';
+import intercomConnectorRoutes from './routes/intercom-connector';
 import ssoRoutes from './routes/sso';
 import oauthRoutes from './routes/oauth';
 import enrichmentRoutes from './routes/enrichment';
@@ -68,33 +75,21 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.max,
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api/', limiter);
+// Rate limiting — see middleware/rate-limit.ts for configuration
+app.use('/api/', apiLimiter);
 
-// Stricter rate limiter for auth endpoints
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 15,
-  message: 'Too many authentication attempts, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Stricter rate limiter for auth endpoints (5 req/min)
 app.use('/api/v1/auth/login', authLimiter);
 app.use('/api/v1/auth/register', authLimiter);
+app.use('/api/v1/auth/forgot-password', authLimiter);
 
-// Higher rate limit for signal ingest (needs to handle high throughput)
-const signalLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000,
-  max: 500,
-  message: 'Signal ingest rate limit exceeded.',
-});
+// Webhook limiter (200 req/min) — applied before individual webhook routes
+app.use('/api/v1/webhooks', webhookLimiter);
+
+// Demo seed limiter (3 req/min) — prevent abuse
+app.use('/api/v1/demo', demoLimiter);
+
+// Higher rate limit for signal ingest (500 req/min)
 app.use('/api/v1/signals', signalLimiter);
 
 // Stripe webhook — must be mounted BEFORE express.json() so the raw body
@@ -181,6 +176,7 @@ app.use('/api/v1/connectors/twitter', twitterConnectorRoutes);
 app.use('/api/v1/connectors/reddit', redditConnectorRoutes);
 app.use('/api/v1/connectors/posthog', posthogConnectorRoutes);
 app.use('/api/v1/connectors/linkedin', linkedinConnectorRoutes);
+app.use('/api/v1/connectors/intercom', intercomConnectorRoutes);
 
 // API routes — Bulk Operations & CSV Export
 app.use('/api/v1/bulk', bulkRoutes);

@@ -22,6 +22,7 @@ export const QUEUE_NAMES = {
   ENRICHMENT_BULK: 'enrichment-bulk',
   POSTHOG_SYNC: 'posthog-sync',
   LINKEDIN_SYNC: 'linkedin-sync',
+  INTERCOM_SYNC: 'intercom-sync',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -108,6 +109,10 @@ export interface PostHogSyncJobData {
 }
 
 export interface LinkedInSyncJobData {
+  organizationId: string;
+}
+
+export interface IntercomSyncJobData {
   organizationId: string;
 }
 
@@ -288,6 +293,18 @@ export const linkedinSyncQueue = new Queue<LinkedInSyncJobData>(
   },
 );
 
+export const intercomSyncQueue = new Queue<IntercomSyncJobData>(
+  QUEUE_NAMES.INTERCOM_SYNC,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 5_000 },
+    },
+  },
+);
+
 export const bulkEnrichmentQueue = new Queue<BulkEnrichmentJobData>(
   QUEUE_NAMES.ENRICHMENT_BULK,
   {
@@ -319,6 +336,7 @@ const allQueues: Queue[] = [
   redditSyncQueue,
   posthogSyncQueue,
   linkedinSyncQueue,
+  intercomSyncQueue,
   bulkEnrichmentQueue,
 ];
 

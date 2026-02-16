@@ -425,6 +425,7 @@ enum SignalSourceType {
   REDDIT
   POSTHOG
   LINKEDIN
+  INTERCOM
   CUSTOM_WEBHOOK
 }
 
@@ -541,6 +542,7 @@ enum IdentityType {
   STACKOVERFLOW
   REDDIT
   POSTHOG
+  INTERCOM
 }
 
 // ============================================================

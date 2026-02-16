@@ -16,6 +16,7 @@ import {
   redditSyncQueue,
   posthogSyncQueue,
   linkedinSyncQueue,
+  intercomSyncQueue,
   bulkEnrichmentQueue,
   SignalProcessingJobData,
   ScoreComputationJobData,
@@ -32,6 +33,7 @@ import {
   RedditSyncJobData,
   PostHogSyncJobData,
   LinkedInSyncJobData,
+  IntercomSyncJobData,
   BulkEnrichmentJobData,
 } from './queue';
 
@@ -386,6 +388,28 @@ export const enqueueLinkedInSync = async (
     },
   );
   logger.debug('Enqueued LinkedIn sync', { jobId: job.id, organizationId });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// Intercom Sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue an Intercom sync job for a specific organization.
+ */
+export const enqueueIntercomSync = async (
+  organizationId: string,
+): Promise<Job<IntercomSyncJobData>> => {
+  const job = await intercomSyncQueue.add(
+    'intercom-sync',
+    { organizationId },
+    {
+      // Deduplication: only one pending sync per org at a time
+      jobId: `intercom-sync-${organizationId}`,
+    },
+  );
+  logger.debug('Enqueued Intercom sync', { jobId: job.id, organizationId });
   return job;
 };
 
