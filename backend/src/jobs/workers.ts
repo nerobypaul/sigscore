@@ -44,7 +44,9 @@ import {
   BulkEnrichmentJobData,
   ScoreSnapshotJobData,
   WeeklyDigestJobData,
+  DataExportJobData,
 } from './queue';
+import { generateExport, setExportStatus } from '../services/data-export';
 import { processEmailStep } from '../services/email-sequences';
 import { generateWeeklyDigest } from '../services/weekly-digest';
 import { renderWeeklyDigestEmail, renderWeeklyDigestSubject } from '../services/email-templates';
@@ -851,6 +853,88 @@ function createWeeklyDigestWorker(): Worker<WeeklyDigestJobData> {
 }
 
 // ---------------------------------------------------------------------------
+// Data Export Worker
+// ---------------------------------------------------------------------------
+function createDataExportWorker(): Worker<DataExportJobData> {
+  return new Worker<DataExportJobData>(
+    QUEUE_NAMES.DATA_EXPORT,
+    async (job: Job<DataExportJobData>) => {
+      const { organizationId, userId, format, entities } = job.data;
+      const jobId = job.id ?? `unknown-${Date.now()}`;
+
+      logger.info('Data export started', {
+        jobId,
+        organizationId,
+        format,
+        entities,
+        attempt: job.attemptsMade + 1,
+      });
+
+      // Mark as processing
+      setExportStatus(jobId, {
+        jobId,
+        organizationId,
+        userId,
+        format,
+        entities,
+        status: 'processing',
+        createdAt: new Date().toISOString(),
+      });
+
+      try {
+        const result = await generateExport(job.data);
+
+        // Mark as completed
+        setExportStatus(jobId, {
+          jobId,
+          organizationId,
+          userId,
+          format,
+          entities,
+          status: 'completed',
+          filePath: result.filePath,
+          fileName: result.fileName,
+          totalRecords: result.totalRecords,
+          recordCounts: result.recordCounts,
+          sizeBytes: result.sizeBytes,
+          createdAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+        });
+
+        logger.info('Data export completed', {
+          jobId,
+          organizationId,
+          totalRecords: result.totalRecords,
+          sizeBytes: result.sizeBytes,
+        });
+
+        return result;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+
+        // Mark as failed
+        setExportStatus(jobId, {
+          jobId,
+          organizationId,
+          userId,
+          format,
+          entities,
+          status: 'failed',
+          error: errorMessage,
+          createdAt: new Date().toISOString(),
+        });
+
+        throw err;
+      }
+    },
+    {
+      connection: bullConnection,
+      concurrency: 2,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Lifecycle helpers
 // ---------------------------------------------------------------------------
 function attachLogging(worker: Worker): void {
@@ -896,8 +980,9 @@ export const startWorkers = (): void => {
   const bulkEnrichmentWorker = createBulkEnrichmentWorker();
   const scoreSnapshotWorker = createScoreSnapshotWorker();
   const weeklyDigestWorker = createWeeklyDigestWorker();
+  const dataExportWorker = createDataExportWorker();
 
-  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, redditSyncWorker, linkedinSyncWorker, posthogSyncWorker, bulkEnrichmentWorker, scoreSnapshotWorker, weeklyDigestWorker].forEach((w) => {
+  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, redditSyncWorker, linkedinSyncWorker, posthogSyncWorker, bulkEnrichmentWorker, scoreSnapshotWorker, weeklyDigestWorker, dataExportWorker].forEach((w) => {
     attachLogging(w);
     workers.push(w);
   });

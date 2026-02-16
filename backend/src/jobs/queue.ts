@@ -26,6 +26,7 @@ export const QUEUE_NAMES = {
   ZENDESK_SYNC: 'zendesk-sync',
   SCORE_SNAPSHOT: 'score-snapshot',
   WEEKLY_DIGEST: 'weekly-digest',
+  DATA_EXPORT: 'data-export',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -138,6 +139,14 @@ export interface ScoreSnapshotJobData {
 
 export interface WeeklyDigestJobData {
   organizationId: string;
+}
+
+export interface DataExportJobData {
+  organizationId: string;
+  userId: string;
+  format: 'json' | 'csv';
+  entities: string[]; // ['contacts', 'companies', 'signals', 'deals', 'activities']
+  filters?: Record<string, unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -374,6 +383,20 @@ export const weeklyDigestQueue = new Queue<WeeklyDigestJobData>(
   },
 );
 
+export const dataExportQueue = new Queue<DataExportJobData>(
+  QUEUE_NAMES.DATA_EXPORT,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 2,
+      backoff: { type: 'exponential' as const, delay: 5_000 },
+      removeOnComplete: { count: 500 },
+      removeOnFail: { count: 1000 },
+    },
+  },
+);
+
 // ---------------------------------------------------------------------------
 // Convenience: all queues in a single array
 // ---------------------------------------------------------------------------
@@ -398,6 +421,7 @@ const allQueues: Queue[] = [
   bulkEnrichmentQueue,
   scoreSnapshotQueue,
   weeklyDigestQueue,
+  dataExportQueue,
 ];
 
 /**

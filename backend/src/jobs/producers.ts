@@ -41,6 +41,8 @@ import {
   ScoreSnapshotJobData,
   weeklyDigestQueue,
   WeeklyDigestJobData,
+  dataExportQueue,
+  DataExportJobData,
 } from './queue';
 
 // ---------------------------------------------------------------------------
@@ -508,5 +510,32 @@ export const enqueueWeeklyDigest = async (
     },
   );
   logger.debug('Enqueued weekly digest', { jobId: job.id, organizationId });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// Data Export
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue a data export job for a specific organization.
+ * Each export gets a unique job ID based on timestamp to allow multiple exports.
+ */
+export const enqueueDataExport = async (
+  data: DataExportJobData,
+): Promise<Job<DataExportJobData>> => {
+  const job = await dataExportQueue.add(
+    'generate-export',
+    data,
+    {
+      jobId: `data-export-${data.organizationId}-${Date.now()}`,
+    },
+  );
+  logger.debug('Enqueued data export', {
+    jobId: job.id,
+    organizationId: data.organizationId,
+    format: data.format,
+    entities: data.entities,
+  });
   return job;
 };
