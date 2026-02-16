@@ -8,6 +8,7 @@ import {
   getAccountScore,
   computeAccountScore,
   getTopAccounts,
+  getDeduplicationStats,
 } from '../controllers/signals';
 import { authenticate, requireOrganization } from '../middleware/auth';
 import { enforceSignalLimit } from '../middleware/usage-limits';
@@ -231,6 +232,83 @@ router.post('/batch', enforceSignalLimit, validate(ingestBatchSchema), ingestSig
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/', getSignals);
+
+/**
+ * @openapi
+ * /signals/dedup-stats:
+ *   get:
+ *     tags: [Signals]
+ *     summary: Get signal deduplication statistics
+ *     description: |
+ *       Returns deduplication statistics for the organization including total signals
+ *       ingested, deduplicated count, and dedup rate percentage for the last 24 hours
+ *       and last 7 days.
+ *     security:
+ *       - BearerAuth: []
+ *       - ApiKeyAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/OrganizationId'
+ *     responses:
+ *       200:
+ *         description: Deduplication statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 last24h:
+ *                   type: object
+ *                   properties:
+ *                     totalIngested:
+ *                       type: integer
+ *                       description: Total signals attempted (stored + deduplicated)
+ *                     totalStored:
+ *                       type: integer
+ *                       description: Total unique signals stored
+ *                     deduplicated:
+ *                       type: integer
+ *                       description: Number of duplicate signals blocked
+ *                     dedupEligible:
+ *                       type: integer
+ *                       description: Signals with dedup keys (dedup-enabled)
+ *                     dedupRate:
+ *                       type: number
+ *                       format: float
+ *                       description: Deduplication rate as a percentage
+ *                 last7d:
+ *                   type: object
+ *                   properties:
+ *                     totalIngested:
+ *                       type: integer
+ *                     totalStored:
+ *                       type: integer
+ *                     deduplicated:
+ *                       type: integer
+ *                     dedupEligible:
+ *                       type: integer
+ *                     dedupRate:
+ *                       type: number
+ *                       format: float
+ *       401:
+ *         description: Missing or invalid authorization
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Access to organization denied
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/dedup-stats', getDeduplicationStats);
 
 /**
  * @openapi

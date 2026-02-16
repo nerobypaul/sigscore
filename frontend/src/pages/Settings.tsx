@@ -224,12 +224,13 @@ interface ZendeskStatus {
   };
 }
 
-type TabId = 'api-keys' | 'webhooks' | 'sources' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord' | 'stackoverflow' | 'twitter' | 'reddit' | 'linkedin' | 'posthog' | 'clearbit' | 'intercom' | 'zendesk';
+type TabId = 'api-keys' | 'webhooks' | 'sources' | 'notifications' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord' | 'stackoverflow' | 'twitter' | 'reddit' | 'linkedin' | 'posthog' | 'clearbit' | 'intercom' | 'zendesk';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'api-keys', label: 'API Keys' },
   { id: 'webhooks', label: 'Webhooks' },
   { id: 'sources', label: 'Signal Sources' },
+  { id: 'notifications', label: 'Notifications' },
   { id: 'slack', label: 'Slack' },
   { id: 'segment', label: 'Segment' },
   { id: 'hubspot', label: 'HubSpot' },
@@ -3978,6 +3979,242 @@ function ClearbitTab() {
 }
 
 // ---------------------------------------------------------------------------
+// Notification Preferences types
+// ---------------------------------------------------------------------------
+
+type EmailDigestFrequency = 'DAILY' | 'WEEKLY' | 'NEVER';
+type SignalAlertLevel = 'ALL' | 'HOT_ONLY' | 'NONE';
+
+interface NotificationPreferences {
+  emailDigest: EmailDigestFrequency;
+  signalAlerts: SignalAlertLevel;
+  workflowNotifications: boolean;
+  teamMentions: boolean;
+  usageLimitWarnings: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// NotificationsTab — per-user notification preference controls
+// ---------------------------------------------------------------------------
+
+function NotificationsTab() {
+  const toast = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [prefs, setPrefs] = useState<NotificationPreferences>({
+    emailDigest: 'WEEKLY',
+    signalAlerts: 'ALL',
+    workflowNotifications: true,
+    teamMentions: true,
+    usageLimitWarnings: true,
+  });
+
+  // Load preferences on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await api.get('/notifications/preferences');
+        if (!cancelled) {
+          setPrefs({
+            emailDigest: data.emailDigest,
+            signalAlerts: data.signalAlerts,
+            workflowNotifications: data.workflowNotifications,
+            teamMentions: data.teamMentions,
+            usageLimitWarnings: data.usageLimitWarnings,
+          });
+        }
+      } catch {
+        if (!cancelled) toast.error('Failed to load notification preferences.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-save a single field change
+  const saveField = useCallback(
+    async (field: keyof NotificationPreferences, value: NotificationPreferences[keyof NotificationPreferences]) => {
+      setSaving(true);
+      try {
+        await api.put('/notifications/preferences', { [field]: value });
+        toast.success('Preference saved.');
+      } catch {
+        toast.error('Failed to save preference.');
+      } finally {
+        setSaving(false);
+      }
+    },
+    [] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  const updatePref = useCallback(
+    <K extends keyof NotificationPreferences>(field: K, value: NotificationPreferences[K]) => {
+      setPrefs((prev) => ({ ...prev, [field]: value }));
+      saveField(field, value);
+    },
+    [saveField]
+  );
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Spinner />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900">Notification Preferences</h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Control what notifications you receive and how often. Changes are saved automatically.
+        </p>
+      </div>
+
+      {/* Email Digest */}
+      <div className="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800">Email Digest</h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Receive a summary of activity and signals delivered to your inbox.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {(['DAILY', 'WEEKLY', 'NEVER'] as EmailDigestFrequency[]).map((opt) => (
+            <button
+              key={opt}
+              onClick={() => updatePref('emailDigest', opt)}
+              disabled={saving}
+              className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors ${
+                prefs.emailDigest === opt
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              {opt === 'DAILY' ? 'Daily' : opt === 'WEEKLY' ? 'Weekly' : 'Never'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Signal Alerts */}
+      <div className="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800">Signal Alerts</h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Choose which signal notifications you receive in real-time.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {(['ALL', 'HOT_ONLY', 'NONE'] as SignalAlertLevel[]).map((opt) => (
+            <button
+              key={opt}
+              onClick={() => updatePref('signalAlerts', opt)}
+              disabled={saving}
+              className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors ${
+                prefs.signalAlerts === opt
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              {opt === 'ALL' ? 'All signals' : opt === 'HOT_ONLY' ? 'Hot signals only' : 'None'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Toggle switches */}
+      <div className="bg-white border border-gray-200 rounded-lg divide-y divide-gray-200">
+        {/* Workflow Notifications */}
+        <div className="flex items-center justify-between p-5">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-800">Workflow Notifications</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Get notified when workflows complete, fail, or require attention.
+            </p>
+          </div>
+          <ToggleSwitch
+            checked={prefs.workflowNotifications}
+            onChange={(v) => updatePref('workflowNotifications', v)}
+            disabled={saving}
+          />
+        </div>
+
+        {/* Team Mentions */}
+        <div className="flex items-center justify-between p-5">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-800">Team Mentions</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Receive a notification when a teammate mentions you in a note or activity.
+            </p>
+          </div>
+          <ToggleSwitch
+            checked={prefs.teamMentions}
+            onChange={(v) => updatePref('teamMentions', v)}
+            disabled={saving}
+          />
+        </div>
+
+        {/* Usage Limit Warnings */}
+        <div className="flex items-center justify-between p-5">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-800">Usage Limit Warnings</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Get alerts when you approach or exceed your plan limits (contacts, signals, users).
+            </p>
+          </div>
+          <ToggleSwitch
+            checked={prefs.usageLimitWarnings}
+            onChange={(v) => updatePref('usageLimitWarnings', v)}
+            disabled={saving}
+          />
+        </div>
+      </div>
+
+      {saving && (
+        <p className="text-xs text-gray-400 text-right">Saving...</p>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ToggleSwitch — accessible toggle component for notification prefs
+// ---------------------------------------------------------------------------
+
+function ToggleSwitch({
+  checked,
+  onChange,
+  disabled = false,
+}: {
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${
+        checked ? 'bg-indigo-600' : 'bg-gray-200'
+      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+    >
+      <span
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+          checked ? 'translate-x-5' : 'translate-x-0'
+        }`}
+      />
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Settings page
 // ---------------------------------------------------------------------------
 
@@ -4031,6 +4268,11 @@ export default function Settings() {
       {loadedTabsRef.current.has('sources') && (
         <div className={activeTab === 'sources' ? '' : 'hidden'}>
           <SignalSourcesTab />
+        </div>
+      )}
+      {loadedTabsRef.current.has('notifications') && (
+        <div className={activeTab === 'notifications' ? '' : 'hidden'}>
+          <NotificationsTab />
         </div>
       )}
       {loadedTabsRef.current.has('slack') && (

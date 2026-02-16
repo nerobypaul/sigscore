@@ -4,6 +4,10 @@ import { broadcastSignalCreated } from './websocket';
 import { resolveSignalIdentity } from './identity-resolution';
 import { fireSignalCreated } from './webhook-events';
 import { logger } from '../utils/logger';
+import { generateDeduplicationKey } from '../utils/deduplication';
+
+/** 24-hour deduplication window */
+const DEDUP_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export interface SignalInput {
   sourceId: string;
@@ -28,6 +32,41 @@ export interface SignalFilters {
 }
 
 export const ingestSignal = async (organizationId: string, data: SignalInput) => {
+  // Look up the source type for dedup key generation
+  const source = await prisma.signalSource.findUnique({
+    where: { id: data.sourceId },
+    select: { type: true },
+  });
+  const sourceType = source?.type ?? 'UNKNOWN';
+
+  // Generate deduplication key
+  const dedupKey = generateDeduplicationKey(
+    sourceType,
+    data.actorId,
+    data.type,
+    data.metadata,
+  );
+
+  // Check for an existing signal with the same dedup key within the 24h window
+  const windowStart = new Date(Date.now() - DEDUP_WINDOW_MS);
+  const existing = await prisma.signal.findFirst({
+    where: {
+      organizationId,
+      deduplicationKey: dedupKey,
+      timestamp: { gte: windowStart },
+    },
+    include: {
+      source: { select: { id: true, name: true, type: true } },
+      actor: { select: { id: true, firstName: true, lastName: true, email: true } },
+      account: { select: { id: true, name: true, domain: true } },
+    },
+  });
+
+  if (existing) {
+    logger.info(`Signal deduplicated: key=${dedupKey} existingId=${existing.id}`);
+    return { ...existing, deduplicated: true };
+  }
+
   // Run identity resolution engine for comprehensive actor/account matching
   const resolved = await resolveSignalIdentity(organizationId, {
     actorId: data.actorId,
@@ -46,6 +85,7 @@ export const ingestSignal = async (organizationId: string, data: SignalInput) =>
       anonymousId: data.anonymousId || null,
       metadata: data.metadata as Prisma.InputJsonValue,
       idempotencyKey: data.idempotencyKey || null,
+      deduplicationKey: dedupKey,
       timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
     },
     include: {
@@ -61,67 +101,115 @@ export const ingestSignal = async (organizationId: string, data: SignalInput) =>
   fireSignalCreated(organizationId, signal as unknown as Record<string, unknown>)
     .catch((err) => logger.error('Webhook fire error (signal.created):', err));
 
-  return signal;
+  return { ...signal, deduplicated: false };
 };
 
 export const ingestSignalBatch = async (organizationId: string, signals: SignalInput[]) => {
-  const results: { success: boolean; signal?: unknown; error?: string; input?: SignalInput }[] = [];
+  const results: { success: boolean; signal?: unknown; error?: string; input?: SignalInput; deduplicated?: boolean }[] = [];
 
-  try {
-    const created = await prisma.$transaction(async (tx) => {
-      const txResults = [];
+  // Pre-fetch source types for all unique sourceIds in the batch
+  const uniqueSourceIds = [...new Set(signals.map((s) => s.sourceId))];
+  const sources = await prisma.signalSource.findMany({
+    where: { id: { in: uniqueSourceIds } },
+    select: { id: true, type: true },
+  });
+  const sourceTypeMap = new Map(sources.map((s) => [s.id, s.type]));
 
-      // Pre-resolve identities outside transaction for each signal
-      const resolvedList = await Promise.all(
-        signals.map((data) =>
-          resolveSignalIdentity(organizationId, {
-            actorId: data.actorId,
-            accountId: data.accountId,
-            anonymousId: data.anonymousId,
-            metadata: data.metadata,
-          }),
-        ),
-      );
+  const windowStart = new Date(Date.now() - DEDUP_WINDOW_MS);
 
-      for (let idx = 0; idx < signals.length; idx++) {
-        const data = signals[idx];
-        const resolved = resolvedList[idx];
+  // Generate dedup keys for the whole batch
+  const dedupKeys = signals.map((data) => {
+    const srcType = sourceTypeMap.get(data.sourceId) ?? 'UNKNOWN';
+    return generateDeduplicationKey(srcType, data.actorId, data.type, data.metadata);
+  });
 
-        const signal = await tx.signal.create({
-          data: {
-            organizationId,
-            sourceId: data.sourceId,
-            type: data.type,
-            actorId: resolved.actorId,
-            accountId: resolved.accountId,
-            anonymousId: data.anonymousId || null,
-            metadata: data.metadata as Prisma.InputJsonValue,
-            idempotencyKey: data.idempotencyKey || null,
-            timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
-          },
-          include: {
-            source: { select: { id: true, name: true, type: true } },
-            actor: { select: { id: true, firstName: true, lastName: true, email: true } },
-            account: { select: { id: true, name: true, domain: true } },
-          },
-        });
+  // Batch-check existing dedup keys within the window
+  const existingSignals = await prisma.signal.findMany({
+    where: {
+      organizationId,
+      deduplicationKey: { in: dedupKeys },
+      timestamp: { gte: windowStart },
+    },
+    include: {
+      source: { select: { id: true, name: true, type: true } },
+      actor: { select: { id: true, firstName: true, lastName: true, email: true } },
+      account: { select: { id: true, name: true, domain: true } },
+    },
+  });
+  const existingByKey = new Map(
+    existingSignals.map((s) => [s.deduplicationKey, s]),
+  );
 
-        txResults.push(signal);
-      }
-
-      return txResults;
-    });
-
-    // All succeeded — map to success results and broadcast each
-    for (let i = 0; i < created.length; i++) {
-      results.push({ success: true, signal: created[i] });
-      broadcastSignalCreated(organizationId, created[i]);
+  // Separate duplicates from new signals
+  const newSignals: { idx: number; data: SignalInput; dedupKey: string }[] = [];
+  for (let i = 0; i < signals.length; i++) {
+    const dup = existingByKey.get(dedupKeys[i]);
+    if (dup) {
+      logger.info(`Batch signal deduplicated: key=${dedupKeys[i]} existingId=${dup.id}`);
+      results[i] = { success: true, signal: dup, deduplicated: true };
+    } else {
+      newSignals.push({ idx: i, data: signals[i], dedupKey: dedupKeys[i] });
     }
-  } catch (error: unknown) {
-    // Transaction failed — all signals rolled back, report each as failed
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    for (const signal of signals) {
-      results.push({ success: false, error: message, input: signal });
+  }
+
+  if (newSignals.length > 0) {
+    try {
+      const created = await prisma.$transaction(async (tx) => {
+        const txResults: { idx: number; signal: unknown }[] = [];
+
+        // Pre-resolve identities outside transaction for each new signal
+        const resolvedList = await Promise.all(
+          newSignals.map(({ data }) =>
+            resolveSignalIdentity(organizationId, {
+              actorId: data.actorId,
+              accountId: data.accountId,
+              anonymousId: data.anonymousId,
+              metadata: data.metadata,
+            }),
+          ),
+        );
+
+        for (let j = 0; j < newSignals.length; j++) {
+          const { idx, data, dedupKey } = newSignals[j];
+          const resolved = resolvedList[j];
+
+          const signal = await tx.signal.create({
+            data: {
+              organizationId,
+              sourceId: data.sourceId,
+              type: data.type,
+              actorId: resolved.actorId,
+              accountId: resolved.accountId,
+              anonymousId: data.anonymousId || null,
+              metadata: data.metadata as Prisma.InputJsonValue,
+              idempotencyKey: data.idempotencyKey || null,
+              deduplicationKey: dedupKey,
+              timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
+            },
+            include: {
+              source: { select: { id: true, name: true, type: true } },
+              actor: { select: { id: true, firstName: true, lastName: true, email: true } },
+              account: { select: { id: true, name: true, domain: true } },
+            },
+          });
+
+          txResults.push({ idx, signal });
+        }
+
+        return txResults;
+      });
+
+      // All succeeded -- map to success results and broadcast each
+      for (const { idx, signal } of created) {
+        results[idx] = { success: true, signal, deduplicated: false };
+        broadcastSignalCreated(organizationId, signal);
+      }
+    } catch (error: unknown) {
+      // Transaction failed -- all new signals rolled back, report each as failed
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      for (const { idx, data } of newSignals) {
+        results[idx] = { success: false, error: message, input: data };
+      }
     }
   }
 
@@ -213,4 +301,100 @@ export const getAccountTimeline = async (organizationId: string, accountId: stri
   ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
   return timeline.slice(0, limit);
+};
+
+/**
+ * Returns deduplication statistics for an organization.
+ * - Total signals ingested (last 24h and last 7d)
+ * - Count of signals with a deduplicationKey set (indicates dedup-eligible)
+ * - Duplicate groups: distinct dedup keys that appear more than once
+ *   (these would have been blocked, so the deduplicated count is inferred
+ *    from the total attempted minus total stored)
+ */
+export const getDeduplicationStats = async (organizationId: string) => {
+  const now = new Date();
+  const twentyFourHoursAgo = new Date(now.getTime() - DEDUP_WINDOW_MS);
+  const sevenDaysAgo = new Date(now.getTime() - 7 * DEDUP_WINDOW_MS);
+
+  const [total24h, total7d, withDedupKey24h, withDedupKey7d, duplicateGroups24h, duplicateGroups7d] =
+    await Promise.all([
+      // Total signals in last 24h
+      prisma.signal.count({
+        where: { organizationId, timestamp: { gte: twentyFourHoursAgo } },
+      }),
+      // Total signals in last 7d
+      prisma.signal.count({
+        where: { organizationId, timestamp: { gte: sevenDaysAgo } },
+      }),
+      // Signals with dedup keys in last 24h (dedup-enabled signals)
+      prisma.signal.count({
+        where: {
+          organizationId,
+          deduplicationKey: { not: null },
+          timestamp: { gte: twentyFourHoursAgo },
+        },
+      }),
+      // Signals with dedup keys in last 7d
+      prisma.signal.count({
+        where: {
+          organizationId,
+          deduplicationKey: { not: null },
+          timestamp: { gte: sevenDaysAgo },
+        },
+      }),
+      // Count duplicate groups in 24h (dedup keys appearing > 1 time)
+      prisma.$queryRaw<{ deduplicated_count: bigint }[]>`
+        SELECT COALESCE(SUM(cnt - 1), 0) as deduplicated_count
+        FROM (
+          SELECT "deduplicationKey", COUNT(*)::bigint as cnt
+          FROM "signals"
+          WHERE "organizationId" = ${organizationId}
+            AND "deduplicationKey" IS NOT NULL
+            AND "timestamp" >= ${twentyFourHoursAgo}
+          GROUP BY "deduplicationKey"
+          HAVING COUNT(*) > 1
+        ) dupes
+      `,
+      // Count duplicate groups in 7d
+      prisma.$queryRaw<{ deduplicated_count: bigint }[]>`
+        SELECT COALESCE(SUM(cnt - 1), 0) as deduplicated_count
+        FROM (
+          SELECT "deduplicationKey", COUNT(*)::bigint as cnt
+          FROM "signals"
+          WHERE "organizationId" = ${organizationId}
+            AND "deduplicationKey" IS NOT NULL
+            AND "timestamp" >= ${sevenDaysAgo}
+          GROUP BY "deduplicationKey"
+          HAVING COUNT(*) > 1
+        ) dupes
+      `,
+    ]);
+
+  const deduplicatedCount24h = Number(duplicateGroups24h[0]?.deduplicated_count ?? 0);
+  const deduplicatedCount7d = Number(duplicateGroups7d[0]?.deduplicated_count ?? 0);
+
+  // The effective total includes stored signals + blocked duplicates
+  const effectiveTotal24h = total24h + deduplicatedCount24h;
+  const effectiveTotal7d = total7d + deduplicatedCount7d;
+
+  return {
+    last24h: {
+      totalIngested: effectiveTotal24h,
+      totalStored: total24h,
+      deduplicated: deduplicatedCount24h,
+      dedupEligible: withDedupKey24h,
+      dedupRate: effectiveTotal24h > 0
+        ? Math.round((deduplicatedCount24h / effectiveTotal24h) * 10000) / 100
+        : 0,
+    },
+    last7d: {
+      totalIngested: effectiveTotal7d,
+      totalStored: total7d,
+      deduplicated: deduplicatedCount7d,
+      dedupEligible: withDedupKey7d,
+      dedupRate: effectiveTotal7d > 0
+        ? Math.round((deduplicatedCount7d / effectiveTotal7d) * 10000) / 100
+        : 0,
+    },
+  };
 };

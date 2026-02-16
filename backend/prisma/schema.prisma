@@ -34,10 +34,11 @@ model User {
   updatedAt     DateTime @updatedAt
   lastLoginAt   DateTime?
 
-  organizations UserOrganization[]
-  activities    Activity[]
-  dealsOwned    Deal[]
-  notifications Notification[]
+  organizations            UserOrganization[]
+  activities               Activity[]
+  dealsOwned               Deal[]
+  notifications            Notification[]
+  notificationPreference   NotificationPreference?
 
   @@index([email])
   @@map("users")
@@ -452,6 +453,7 @@ model Signal {
 
   metadata       Json      // source-specific payload
   idempotencyKey String?   @unique
+  deduplicationKey String? // hash-based key for cross-connector dedup (sourceType:actorId:type:metadataHash)
   timestamp      DateTime
 
   createdAt      DateTime  @default(now())
@@ -468,6 +470,7 @@ model Signal {
   @@index([sourceId])
   @@index([organizationId, type, timestamp(sort: Desc)])
   @@index([organizationId, sourceId, timestamp(sort: Desc)])
+  @@index([organizationId, deduplicationKey, timestamp(sort: Desc)])
   @@map("signals")
 }
 
@@ -1021,4 +1024,36 @@ model ScoreSnapshot {
   @@index([companyId, capturedAt])
   @@index([organizationId, capturedAt])
   @@map("score_snapshots")
+}
+
+// ============================================================
+// NOTIFICATION PREFERENCES — Per-user notification controls
+// ============================================================
+
+enum EmailDigestFrequency {
+  DAILY
+  WEEKLY
+  NEVER
+}
+
+enum SignalAlertLevel {
+  ALL
+  HOT_ONLY
+  NONE
+}
+
+model NotificationPreference {
+  id                    String                @id @default(cuid())
+  userId                String                @unique
+  emailDigest           EmailDigestFrequency  @default(WEEKLY)
+  signalAlerts          SignalAlertLevel       @default(ALL)
+  workflowNotifications Boolean               @default(true)
+  teamMentions          Boolean               @default(true)
+  usageLimitWarnings    Boolean               @default(true)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
 }

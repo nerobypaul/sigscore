@@ -5,6 +5,8 @@ import {
   getUnreadCount,
   markAsRead,
   markAllAsRead,
+  getNotificationPreferences,
+  upsertNotificationPreferences,
 } from '../services/notifications';
 import { logger } from '../utils/logger';
 
@@ -217,6 +219,163 @@ router.post('/read-all', async (req: Request, res: Response) => {
     res.json(result);
   } catch (error) {
     logger.error('Failed to mark all notifications as read', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /notifications/preferences — get notification preferences
+// ---------------------------------------------------------------------------
+
+/**
+ * @openapi
+ * /notifications/preferences:
+ *   get:
+ *     tags: [Notifications]
+ *     summary: Get notification preferences
+ *     description: Returns the notification preferences for the authenticated user.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/OrganizationId'
+ *     responses:
+ *       200:
+ *         description: Notification preferences
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 emailDigest:
+ *                   type: string
+ *                   enum: [DAILY, WEEKLY, NEVER]
+ *                 signalAlerts:
+ *                   type: string
+ *                   enum: [ALL, HOT_ONLY, NONE]
+ *                 workflowNotifications:
+ *                   type: boolean
+ *                 teamMentions:
+ *                   type: boolean
+ *                 usageLimitWarnings:
+ *                   type: boolean
+ *       401:
+ *         description: Missing or invalid authorization
+ *       403:
+ *         description: Access to organization denied
+ */
+router.get('/preferences', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const preferences = await getNotificationPreferences(userId);
+    res.json(preferences);
+  } catch (error) {
+    logger.error('Failed to get notification preferences', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// PUT /notifications/preferences — update notification preferences
+// ---------------------------------------------------------------------------
+
+/**
+ * @openapi
+ * /notifications/preferences:
+ *   put:
+ *     tags: [Notifications]
+ *     summary: Update notification preferences
+ *     description: Updates notification preferences for the authenticated user. All fields are optional — only provided fields are updated.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/OrganizationId'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               emailDigest:
+ *                 type: string
+ *                 enum: [DAILY, WEEKLY, NEVER]
+ *               signalAlerts:
+ *                 type: string
+ *                 enum: [ALL, HOT_ONLY, NONE]
+ *               workflowNotifications:
+ *                 type: boolean
+ *               teamMentions:
+ *                 type: boolean
+ *               usageLimitWarnings:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Updated notification preferences
+ *       400:
+ *         description: Invalid preference value
+ *       401:
+ *         description: Missing or invalid authorization
+ *       403:
+ *         description: Access to organization denied
+ */
+router.put('/preferences', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const {
+      emailDigest,
+      signalAlerts,
+      workflowNotifications,
+      teamMentions,
+      usageLimitWarnings,
+    } = req.body;
+
+    // Validate enum values if provided
+    const validDigest = ['DAILY', 'WEEKLY', 'NEVER'];
+    const validAlerts = ['ALL', 'HOT_ONLY', 'NONE'];
+
+    if (emailDigest !== undefined && !validDigest.includes(emailDigest)) {
+      res.status(400).json({
+        error: `Invalid emailDigest value. Must be one of: ${validDigest.join(', ')}`,
+      });
+      return;
+    }
+
+    if (signalAlerts !== undefined && !validAlerts.includes(signalAlerts)) {
+      res.status(400).json({
+        error: `Invalid signalAlerts value. Must be one of: ${validAlerts.join(', ')}`,
+      });
+      return;
+    }
+
+    if (
+      workflowNotifications !== undefined &&
+      typeof workflowNotifications !== 'boolean'
+    ) {
+      res.status(400).json({ error: 'workflowNotifications must be a boolean' });
+      return;
+    }
+
+    if (teamMentions !== undefined && typeof teamMentions !== 'boolean') {
+      res.status(400).json({ error: 'teamMentions must be a boolean' });
+      return;
+    }
+
+    if (usageLimitWarnings !== undefined && typeof usageLimitWarnings !== 'boolean') {
+      res.status(400).json({ error: 'usageLimitWarnings must be a boolean' });
+      return;
+    }
+
+    const preferences = await upsertNotificationPreferences(userId, {
+      emailDigest,
+      signalAlerts,
+      workflowNotifications,
+      teamMentions,
+      usageLimitWarnings,
+    });
+
+    res.json(preferences);
+  } catch (error) {
+    logger.error('Failed to update notification preferences', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

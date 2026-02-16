@@ -12,6 +12,14 @@ export const ingestSignal = async (req: Request, res: Response, next: NextFuncti
     const organizationId = req.organizationId!;
 
     const signal = await signalService.ingestSignal(organizationId, req.body);
+
+    // If deduplicated, return the existing signal with 200 instead of 201
+    if ('deduplicated' in signal && signal.deduplicated) {
+      logger.info(`Signal deduplicated: ${signal.id} (${signal.type})`);
+      res.status(200).json(signal);
+      return;
+    }
+
     logger.info(`Signal ingested: ${signal.id} (${signal.type})`);
 
     // Enqueue webhook delivery via BullMQ (reliable retry)
@@ -177,6 +185,16 @@ export const getTopAccounts = async (req: Request, res: Response, next: NextFunc
     );
 
     res.json({ accounts });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getDeduplicationStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const organizationId = req.organizationId!;
+    const stats = await signalService.getDeduplicationStats(organizationId);
+    res.json(stats);
   } catch (error) {
     next(error);
   }

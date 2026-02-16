@@ -1,3 +1,4 @@
+import type { EmailDigestFrequency, SignalAlertLevel } from '@prisma/client';
 import { prisma } from '../config/database';
 import { broadcast } from './websocket';
 import { AppError } from '../utils/errors';
@@ -192,4 +193,94 @@ export async function notifyOrgUsers(
   });
 
   return notifications;
+}
+
+// ---------------------------------------------------------------------------
+// Notification preference types
+// ---------------------------------------------------------------------------
+
+export interface NotificationPreferenceData {
+  emailDigest: EmailDigestFrequency;
+  signalAlerts: SignalAlertLevel;
+  workflowNotifications: boolean;
+  teamMentions: boolean;
+  usageLimitWarnings: boolean;
+}
+
+export interface NotificationPreferenceResponse extends NotificationPreferenceData {
+  id: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ---------------------------------------------------------------------------
+// Get notification preferences (returns defaults if none exist yet)
+// ---------------------------------------------------------------------------
+
+const DEFAULT_PREFERENCES: NotificationPreferenceData = {
+  emailDigest: 'WEEKLY' as EmailDigestFrequency,
+  signalAlerts: 'ALL' as SignalAlertLevel,
+  workflowNotifications: true,
+  teamMentions: true,
+  usageLimitWarnings: true,
+};
+
+export async function getNotificationPreferences(
+  userId: string
+): Promise<NotificationPreferenceResponse> {
+  const existing = await prisma.notificationPreference.findUnique({
+    where: { userId },
+  });
+
+  if (existing) {
+    return existing;
+  }
+
+  // Return a virtual default (not yet persisted) so the frontend always gets a response
+  return {
+    id: '',
+    userId,
+    ...DEFAULT_PREFERENCES,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Upsert notification preferences
+// ---------------------------------------------------------------------------
+
+export async function upsertNotificationPreferences(
+  userId: string,
+  data: Partial<NotificationPreferenceData>
+): Promise<NotificationPreferenceResponse> {
+  const preference = await prisma.notificationPreference.upsert({
+    where: { userId },
+    create: {
+      userId,
+      emailDigest: data.emailDigest ?? DEFAULT_PREFERENCES.emailDigest,
+      signalAlerts: data.signalAlerts ?? DEFAULT_PREFERENCES.signalAlerts,
+      workflowNotifications:
+        data.workflowNotifications ?? DEFAULT_PREFERENCES.workflowNotifications,
+      teamMentions: data.teamMentions ?? DEFAULT_PREFERENCES.teamMentions,
+      usageLimitWarnings:
+        data.usageLimitWarnings ?? DEFAULT_PREFERENCES.usageLimitWarnings,
+    },
+    update: {
+      ...(data.emailDigest !== undefined && { emailDigest: data.emailDigest }),
+      ...(data.signalAlerts !== undefined && { signalAlerts: data.signalAlerts }),
+      ...(data.workflowNotifications !== undefined && {
+        workflowNotifications: data.workflowNotifications,
+      }),
+      ...(data.teamMentions !== undefined && { teamMentions: data.teamMentions }),
+      ...(data.usageLimitWarnings !== undefined && {
+        usageLimitWarnings: data.usageLimitWarnings,
+      }),
+    },
+  });
+
+  logger.debug('Notification preferences updated', { userId, data });
+
+  return preference;
 }
