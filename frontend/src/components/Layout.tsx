@@ -16,6 +16,8 @@ interface NavItem {
   to: string;
   label: string;
   icon: () => JSX.Element;
+  /** data-tour attribute for product tour targeting */
+  dataTour?: string;
 }
 
 interface NavSection {
@@ -35,9 +37,9 @@ const navSections: NavSection[] = [
       { to: '/contacts', label: 'Contacts', icon: ContactsIcon },
       { to: '/enrichment', label: 'Enrichment', icon: EnrichmentIcon },
       { to: '/companies', label: 'Companies', icon: CompaniesIcon },
-      { to: '/signals', label: 'Signals', icon: SignalsIcon },
+      { to: '/signals', label: 'Signals', icon: SignalsIcon, dataTour: 'nav-signals' },
       { to: '/signals/feed', label: 'Signal Feed', icon: SignalFeedIcon },
-      { to: '/scores', label: 'PQA Scores', icon: ScoresIcon },
+      { to: '/scores', label: 'PQA Scores', icon: ScoresIcon, dataTour: 'nav-scores' },
       { to: '/reports', label: 'Reports', icon: ReportsIcon },
     ],
   },
@@ -45,7 +47,7 @@ const navSections: NavSection[] = [
     id: 'automation',
     label: 'AUTOMATION',
     items: [
-      { to: '/workflows', label: 'Workflows', icon: WorkflowsIcon },
+      { to: '/workflows', label: 'Workflows', icon: WorkflowsIcon, dataTour: 'nav-workflows' },
       { to: '/playbooks', label: 'Playbooks', icon: PlaybooksIcon },
       { to: '/sequences', label: 'Sequences', icon: SequencesIcon },
     ],
@@ -65,7 +67,7 @@ const navSections: NavSection[] = [
     collapsible: true,
     defaultCollapsed: true,
     items: [
-      { to: '/settings', label: 'Integrations', icon: IntegrationsIcon },
+      { to: '/settings', label: 'Integrations', icon: IntegrationsIcon, dataTour: 'nav-integrations' },
       { to: '/webhooks', label: 'Webhooks', icon: WebhooksIcon },
       { to: '/api-usage', label: 'API Usage', icon: ApiUsageIcon },
       { to: '/scoring', label: 'Scoring Rules', icon: ScoringBuilderIcon },
@@ -232,6 +234,7 @@ export default function Layout() {
                               : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
                           }`
                         }
+                        {...(item.dataTour ? { 'data-tour': item.dataTour } : {})}
                       >
                         <item.icon />
                         {item.label}

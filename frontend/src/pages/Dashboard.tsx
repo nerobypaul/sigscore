@@ -7,6 +7,8 @@ import Spinner from '../components/Spinner';
 import OnboardingChecklist from '../components/OnboardingChecklist';
 import DemoDataBanner from '../components/DemoDataBanner';
 import ConnectorHealthCard from '../components/ConnectorHealthCard';
+import ProductTour from '../components/ProductTour';
+import { useProductTour } from '../lib/useProductTour';
 
 interface DashboardStats {
   contacts: { total: number; recent: Contact[] };
@@ -27,6 +29,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const tour = useProductTour();
 
   useEffect(() => {
     async function fetchStats() {
@@ -121,7 +124,7 @@ export default function Dashboard() {
         <DemoDataBanner />
         <OnboardingChecklist />
 
-        <div className="mb-8">
+        <div className="mb-8" data-tour="dashboard-title">
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           <p className="mt-1 text-sm text-gray-500">Overview of your signal intelligence</p>
         </div>
@@ -135,6 +138,17 @@ export default function Dashboard() {
             <RecentActivityFeed signals={stats.signals.recent} activities={stats.activities.recent} />
           </div>
         )}
+
+        {/* Product Tour Overlay */}
+        <ProductTour
+          active={tour.isTourActive}
+          step={tour.step}
+          currentStep={tour.currentStep}
+          totalSteps={tour.totalSteps}
+          onNext={tour.nextStep}
+          onPrev={tour.prevStep}
+          onSkip={tour.skipTour}
+        />
       </div>
     );
   }
@@ -186,9 +200,23 @@ export default function Dashboard() {
       {/* Getting Started checklist for new users */}
       <OnboardingChecklist />
 
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">Overview of your signal intelligence</p>
+      <div className="mb-8 flex items-center justify-between" data-tour="dashboard-title">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500">Overview of your signal intelligence</p>
+        </div>
+        {tour.hasCompletedTour && (
+          <button
+            onClick={tour.startTour}
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-indigo-600 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-gray-100"
+            title="Restart product tour"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+            </svg>
+            Restart tour
+          </button>
+        )}
       </div>
 
       {/* Daily Digest Card */}
@@ -200,7 +228,7 @@ export default function Dashboard() {
       />
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" data-tour="stat-cards">
         {statCards.map((card) => (
           <Link
             key={card.label}
@@ -290,6 +318,17 @@ export default function Dashboard() {
           <TopSignalTypesChart topSignals={analytics.topSignals} />
         )}
       </div>
+
+      {/* Product Tour Overlay */}
+      <ProductTour
+        active={tour.isTourActive}
+        step={tour.step}
+        currentStep={tour.currentStep}
+        totalSteps={tour.totalSteps}
+        onNext={tour.nextStep}
+        onPrev={tour.prevStep}
+        onSkip={tour.skipTour}
+      />
     </div>
   );
 }
