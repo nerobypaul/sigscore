@@ -459,8 +459,47 @@ export default function Landing() {
               <p className="mt-4 text-sm text-red-400">{demoError}</p>
             )}
 
+            {/* Hero stats */}
+            <div className="mt-10 flex items-center justify-center gap-6 sm:gap-10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+                  <svg className="w-4.5 h-4.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-bold text-white">14+</div>
+                  <div className="text-xs text-gray-500">Integrations</div>
+                </div>
+              </div>
+              <div className="w-px h-8 bg-gray-700" />
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                  <svg className="w-4.5 h-4.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-bold text-white">5 min</div>
+                  <div className="text-xs text-gray-500">Setup</div>
+                </div>
+              </div>
+              <div className="w-px h-8 bg-gray-700" />
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-lg bg-amber-500/15 flex items-center justify-center">
+                  <svg className="w-4.5 h-4.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-bold text-white">12x</div>
+                  <div className="text-xs text-gray-500">Cheaper</div>
+                </div>
+              </div>
+            </div>
+
             {/* Social proof pills */}
-            <div className="mt-12">
+            <div className="mt-10">
               <p className="text-sm text-gray-500 mb-4">Built for developer-first companies like</p>
               <div className="flex flex-wrap items-center justify-center gap-3">
                 {['CLI Tools', 'API Platforms', 'Open Source', 'SDKs', 'Dev Infrastructure'].map((name) => (
@@ -622,9 +661,106 @@ export default function Landing() {
       </section>
 
       {/* ----------------------------------------------------------------- */}
+      {/* Pricing Anchor */}
+      {/* ----------------------------------------------------------------- */}
+      <section id="pricing-preview" className="bg-white text-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
+          <div className="max-w-2xl mx-auto text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Simple, transparent pricing
+            </h2>
+            <p className="mt-4 text-lg text-gray-500">
+              Start free. Scale when you're ready. No surprises.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+            {[
+              {
+                name: 'Free',
+                price: '$0',
+                period: '/mo',
+                highlight: false,
+                features: ['1,000 contacts', '5,000 signals/mo', '1 user'],
+              },
+              {
+                name: 'Pro',
+                price: '$79',
+                period: '/mo',
+                highlight: true,
+                features: ['25,000 contacts', '100,000 signals/mo', '10 users'],
+              },
+              {
+                name: 'Growth',
+                price: '$199',
+                period: '/mo',
+                highlight: false,
+                features: ['100,000 contacts', '500,000 signals/mo', '25 users'],
+              },
+              {
+                name: 'Scale',
+                price: '$299',
+                period: '/mo',
+                highlight: false,
+                features: ['Unlimited contacts', 'Unlimited signals', 'SSO + SLA'],
+              },
+            ].map((tier) => (
+              <div
+                key={tier.name}
+                className={`relative rounded-2xl p-6 border ${
+                  tier.highlight
+                    ? 'border-indigo-300 bg-indigo-50/50 shadow-lg shadow-indigo-100'
+                    : 'border-gray-200 bg-white'
+                }`}
+              >
+                {tier.highlight && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-bold bg-indigo-600 text-white">
+                      Most Popular
+                    </span>
+                  </div>
+                )}
+                <div className="text-sm font-semibold text-gray-500 mb-3">{tier.name}</div>
+                <div className="flex items-baseline gap-1 mb-4">
+                  <span className="text-3xl font-extrabold text-gray-900">{tier.price}</span>
+                  <span className="text-sm text-gray-400">{tier.period}</span>
+                </div>
+                <ul className="space-y-2">
+                  {tier.features.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-gray-600">
+                      <CheckIcon className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 text-center">
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3 rounded-xl text-base transition-colors"
+            >
+              Start Free — No Credit Card
+              <ArrowRightIcon />
+            </Link>
+            <div className="mt-4">
+              <Link
+                to="/pricing"
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
+              >
+                See full comparison &rarr;
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ----------------------------------------------------------------- */}
       {/* Social Proof / Testimonials */}
       {/* ----------------------------------------------------------------- */}
-      <section className="bg-white text-gray-900">
+      <section className="bg-gray-50 text-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
           <div className="max-w-2xl mx-auto text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
@@ -636,7 +772,7 @@ export default function Landing() {
             {testimonials.map((t, i) => (
               <div
                 key={i}
-                className="bg-gray-50 rounded-xl p-6 border border-gray-200"
+                className="bg-white rounded-xl p-6 border border-gray-200"
               >
                 <div className="flex items-center gap-1 mb-4">
                   {[...Array(5)].map((_, s) => (
@@ -683,7 +819,7 @@ export default function Landing() {
       {/* ----------------------------------------------------------------- */}
       {/* Competitive Comparison Table */}
       {/* ----------------------------------------------------------------- */}
-      <section className="bg-gray-50 text-gray-900">
+      <section className="bg-white text-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
           <div className="max-w-2xl mx-auto text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
@@ -734,9 +870,166 @@ export default function Landing() {
       </section>
 
       {/* ----------------------------------------------------------------- */}
-      {/* FAQ Section */}
+      {/* Why DevSignal — Build vs Buy vs DevSignal */}
+      {/* ----------------------------------------------------------------- */}
+      <section className="bg-gray-50 text-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
+          <div className="max-w-2xl mx-auto text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Why DevSignal?
+            </h2>
+            <p className="mt-4 text-lg text-gray-500">
+              You have three choices. Only one gets you live in 5 minutes.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {/* Build In-House */}
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-7">
+              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center mb-4">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17l-5.384-3.19m0 0A5.985 5.985 0 014.5 9a6 6 0 1111.076 3.18M15.563 9.74a6 6 0 01-4.143 5.43M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">Build In-House</h3>
+              <p className="text-sm text-red-600 font-medium mb-4">Not recommended</p>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-2.5 text-sm text-gray-600">
+                  <svg className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  6+ months of engineering time
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-600">
+                  <svg className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  $200K+ in eng salary costs
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-600">
+                  <svg className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Ongoing maintenance burden
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-600">
+                  <svg className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Distracts from core product
+                </li>
+              </ul>
+            </div>
+
+            {/* Generic CRM */}
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-7">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mb-4">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">Generic CRM</h3>
+              <p className="text-sm text-amber-600 font-medium mb-4">Wrong tool for the job</p>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-2.5 text-sm text-gray-600">
+                  <svg className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Not built for developer signals
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-600">
+                  <svg className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  No npm/PyPI/GitHub tracking
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-600">
+                  <svg className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Manual data entry still required
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-600">
+                  <svg className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  $50-150/user/mo for bloated features
+                </li>
+              </ul>
+            </div>
+
+            {/* DevSignal */}
+            <div className="rounded-2xl border-2 border-indigo-300 bg-indigo-50/60 p-7 shadow-lg shadow-indigo-100">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center mb-4">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">DevSignal</h3>
+              <p className="text-sm text-indigo-600 font-medium mb-4">Purpose-built for devtools</p>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-2.5 text-sm text-gray-700 font-medium">
+                  <CheckIcon className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  Launch in 5 minutes flat
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700 font-medium">
+                  <CheckIcon className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  14 connectors out of the box
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700 font-medium">
+                  <CheckIcon className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  AI-powered PQA scoring
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700 font-medium">
+                  <CheckIcon className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  From $0/mo — 12x cheaper
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ----------------------------------------------------------------- */}
+      {/* Founder Credibility */}
       {/* ----------------------------------------------------------------- */}
       <section className="bg-white text-gray-900">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+          <div className="text-center">
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              Built by developers, for developer tool companies
+            </h2>
+            <p className="mt-5 text-base sm:text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
+              We've been in the PLG trenches. Every PLG CRM startup died — Calixa, Koala, Toplyne, Endgame, Pocus. DevSignal is different: we're signal intelligence, not another CRM.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <a
+                href="https://github.com/nerobypaul/headless-crm"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
+              >
+                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                </svg>
+                Star on GitHub
+              </a>
+              <Link
+                to="/changelog"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
+              >
+                Read our story
+                <ArrowRightIcon />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ----------------------------------------------------------------- */}
+      {/* FAQ Section */}
+      {/* ----------------------------------------------------------------- */}
+      <section className="bg-gray-50 text-gray-900">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
           <div className="text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
