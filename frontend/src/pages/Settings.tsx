@@ -227,27 +227,53 @@ interface ZendeskStatus {
 
 type TabId = 'api-keys' | 'webhooks' | 'sources' | 'notifications' | 'custom-fields' | 'ai-config' | 'slack' | 'segment' | 'hubspot' | 'salesforce' | 'discord' | 'stackoverflow' | 'twitter' | 'reddit' | 'linkedin' | 'posthog' | 'clearbit' | 'intercom' | 'zendesk';
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'api-keys', label: 'API Keys' },
-  { id: 'webhooks', label: 'Webhooks' },
-  { id: 'sources', label: 'Signal Sources' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'custom-fields', label: 'Custom Fields' },
-  { id: 'ai-config', label: 'AI Configuration' },
-  { id: 'slack', label: 'Slack' },
-  { id: 'segment', label: 'Segment' },
-  { id: 'hubspot', label: 'HubSpot' },
-  { id: 'salesforce', label: 'Salesforce' },
-  { id: 'discord', label: 'Discord' },
-  { id: 'stackoverflow', label: 'Stack Overflow' },
-  { id: 'twitter', label: 'Twitter / X' },
-  { id: 'reddit', label: 'Reddit' },
-  { id: 'linkedin', label: 'LinkedIn' },
-  { id: 'posthog', label: 'PostHog' },
-  { id: 'clearbit', label: 'Clearbit' },
-  { id: 'intercom', label: 'Intercom' },
-  { id: 'zendesk', label: 'Zendesk' },
+interface TabGroup {
+  label: string;
+  tabs: { id: TabId; label: string }[];
+}
+
+const TAB_GROUPS: TabGroup[] = [
+  {
+    label: 'General',
+    tabs: [
+      { id: 'api-keys', label: 'API Keys' },
+      { id: 'webhooks', label: 'Webhooks' },
+      { id: 'sources', label: 'Signal Sources' },
+      { id: 'notifications', label: 'Notifications' },
+      { id: 'custom-fields', label: 'Custom Fields' },
+      { id: 'ai-config', label: 'AI Configuration' },
+    ],
+  },
+  {
+    label: 'CRM',
+    tabs: [
+      { id: 'hubspot', label: 'HubSpot' },
+      { id: 'salesforce', label: 'Salesforce' },
+    ],
+  },
+  {
+    label: 'Communication',
+    tabs: [
+      { id: 'slack', label: 'Slack' },
+      { id: 'discord', label: 'Discord' },
+      { id: 'intercom', label: 'Intercom' },
+      { id: 'zendesk', label: 'Zendesk' },
+    ],
+  },
+  {
+    label: 'Signals',
+    tabs: [
+      { id: 'segment', label: 'Segment' },
+      { id: 'posthog', label: 'PostHog' },
+      { id: 'stackoverflow', label: 'Stack Overflow' },
+      { id: 'twitter', label: 'Twitter / X' },
+      { id: 'reddit', label: 'Reddit' },
+      { id: 'linkedin', label: 'LinkedIn' },
+      { id: 'clearbit', label: 'Clearbit' },
+    ],
+  },
 ];
+
 
 const ALL_SCOPES = [
   'signals:read',
@@ -4437,21 +4463,29 @@ export default function Settings() {
         Manage API keys, webhooks, integrations, and signal sources.
       </p>
 
-      {/* Tab bar */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex gap-6" aria-label="Settings tabs">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab.label}
-            </button>
+      {/* Tab bar — grouped by category, horizontally scrollable */}
+      <div className="border-b border-gray-200 mb-6 overflow-x-auto scrollbar-hide">
+        <nav className="-mb-px flex items-end gap-1 min-w-max" aria-label="Settings tabs">
+          {TAB_GROUPS.map((group, gi) => (
+            <div key={group.label} className="flex items-end">
+              {gi > 0 && <div className="w-px h-6 bg-gray-200 mx-2 mb-1 flex-shrink-0" />}
+              <span className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mr-2 mb-3.5 flex-shrink-0">
+                {group.label}
+              </span>
+              {group.tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={`pb-3 px-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+                    activeTab === tab.id
+                      ? 'border-indigo-600 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
       </div>

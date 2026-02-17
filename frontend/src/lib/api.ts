@@ -21,6 +21,8 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     config.headers['X-Organization-Id'] = orgId;
   }
 
+  config.headers['X-Client'] = 'web';
+
   return config;
 });
 

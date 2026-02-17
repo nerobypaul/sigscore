@@ -13,6 +13,7 @@ export const errorHandler = (
     message: err.message,
     stack: err.stack,
     path: req.path,
+    requestId: req.requestId,
   });
 
   if (err instanceof ZodError) {

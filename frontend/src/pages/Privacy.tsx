@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import PublicNav from '../components/PublicNav';
+import PublicFooter from '../components/PublicFooter';
 
 const LAST_UPDATED = 'February 16, 2026';
 
@@ -454,42 +455,8 @@ export default function Privacy() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-200">
-      {/* Header */}
-      <header className="border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
-                  />
-                </svg>
-              </div>
-              <span className="text-xl font-bold tracking-tight text-white">DevSignal</span>
-            </Link>
-            <div className="flex items-center gap-4 text-sm">
-              <Link to="/terms" className="text-gray-400 hover:text-white transition-colors">
-                Terms of Service
-              </Link>
-              <Link
-                to="/"
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                Back to Home
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Navigation */}
+      <PublicNav />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Page title */}
@@ -543,23 +510,7 @@ export default function Privacy() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-gray-600">
-              &copy; {new Date().getFullYear()} DevSignal, Inc. All rights reserved.
-            </p>
-            <div className="flex items-center gap-6 text-sm text-gray-500">
-              <Link to="/" className="hover:text-gray-300 transition-colors">Home</Link>
-              <Link to="/pricing" className="hover:text-gray-300 transition-colors">Pricing</Link>
-              <Link to="/developers" className="hover:text-gray-300 transition-colors">Developers</Link>
-              <Link to="/changelog" className="hover:text-gray-300 transition-colors">Changelog</Link>
-              <Link to="/terms" className="hover:text-gray-300 transition-colors">Terms</Link>
-              <Link to="/privacy" className="hover:text-gray-300 transition-colors">Privacy</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
 
       <style>{`
         .legal-content .prose-legal p {

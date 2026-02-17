@@ -342,6 +342,13 @@ export default function Billing() {
                     >
                       Downgrade
                     </button>
+                  ) : plan.key === 'scale' ? (
+                    <a
+                      href="mailto:hello@devsignal.dev?subject=DevSignal Scale Plan"
+                      className="block w-full py-2.5 rounded-lg text-sm font-medium text-center bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+                    >
+                      Contact Sales
+                    </a>
                   ) : (
                     <button
                       onClick={() => handleUpgrade(plan.key)}

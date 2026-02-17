@@ -86,6 +86,9 @@ export function apiUsageTracker(req: Request, res: Response, next: NextFunction)
     const orgId = req.organizationId;
     if (!orgId) return; // Skip requests without org context (e.g., auth endpoints)
 
+    // Skip requests from the web frontend — only track external/programmatic API usage
+    if (req.headers['x-client'] === 'web') return;
+
     const now = Date.now();
     const record: ApiRequestRecord = {
       endpoint: normalizeEndpoint(req.route?.path || req.path),

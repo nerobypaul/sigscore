@@ -76,12 +76,16 @@ import healthRoutes from './routes/health';
 import seoRoutes from './routes/seo';
 import changelogRoutes from './routes/changelog';
 import { apiUsageTracker } from './middleware/api-usage';
+import { requestIdMiddleware } from './middleware/request-id';
 import { sentryErrorHandler } from './utils/sentry';
 
 const app = express();
 
 // Trust Railway/proxy X-Forwarded-For headers for rate limiting and IP detection
 app.set('trust proxy', 1);
+
+// Request ID tracing — assign early so every middleware and handler can access it
+app.use(requestIdMiddleware);
 
 // Security middleware
 app.use(helmet({
