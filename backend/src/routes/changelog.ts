@@ -82,7 +82,7 @@ function parseChangelogFile(filePath: string, dateStr: string): ChangelogEntry[]
 }
 
 function loadAllEntries(): ChangelogEntry[] {
-  const changelogDir = path.resolve(__dirname, '../../../.changelog');
+  const changelogDir = path.join(process.cwd(), '.changelog');
 
   if (!fs.existsSync(changelogDir)) {
     return [];

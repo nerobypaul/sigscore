@@ -140,21 +140,21 @@ const integrations = [
   'Stack Overflow', 'Twitter/X', 'Reddit', 'PostHog', 'Clearbit', 'Segment', 'LinkedIn', 'Intercom', 'Zapier',
 ];
 
-const testimonials = [
+const valueProps = [
   {
-    quote: '5 engineers at one company star your repo, open issues, and download your package — all in one week. That is a buying signal. DevSignal surfaces it automatically.',
-    role: 'Signal Detection',
-    initials: 'SD',
+    text: '5 engineers at one company star your repo, open issues, and download your package — all in one week. That is a buying signal. DevSignal surfaces it automatically.',
+    label: 'Signal Detection',
+    icon: 'signal',
   },
   {
-    quote: 'Common Room charges $1,000+/mo and requires a sales call to start. DevSignal starts at $0, onboards via GitHub in 90 seconds, and gives you scored accounts immediately.',
-    role: 'Price & Speed',
-    initials: 'PS',
+    text: 'Common Room charges $1,000+/mo and requires a sales call to start. DevSignal starts at $0, onboards via GitHub in 90 seconds, and gives you scored accounts immediately.',
+    label: 'Price & Speed',
+    icon: 'price',
   },
   {
-    quote: 'Every PLG CRM startup died — Calixa, Koala, Toplyne, Endgame, Pocus. DevSignal is not a CRM. It is developer signal intelligence built for how devtools actually sell.',
-    role: 'Why We Exist',
-    initials: 'WE',
+    text: 'Every PLG CRM startup died — Calixa, Koala, Toplyne, Endgame, Pocus. DevSignal is not a CRM. It is developer signal intelligence built for how devtools actually sell.',
+    label: 'Why We Exist',
+    icon: 'why',
   },
 ];
 
@@ -345,8 +345,8 @@ export default function Landing() {
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
       localStorage.setItem('organizationId', data.organizationId);
-      // Navigate to dashboard - full reload so AuthProvider picks up the new tokens
-      window.location.href = '/';
+      // Navigate to dashboard — replace ensures clean history entry
+      window.location.replace('/');
     } catch (err) {
       console.error('Demo seed failed:', err);
       setDemoError('Failed to load demo. Please try again.');
@@ -758,7 +758,7 @@ export default function Landing() {
       </section>
 
       {/* ----------------------------------------------------------------- */}
-      {/* Social Proof / Testimonials */}
+      {/* Value Propositions */}
       {/* ----------------------------------------------------------------- */}
       <section className="bg-gray-50 text-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
@@ -769,20 +769,17 @@ export default function Landing() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {testimonials.map((t, i) => (
+            {valueProps.map((v, i) => (
               <div
                 key={i}
                 className="bg-white rounded-xl p-6 border border-gray-200"
               >
-                <p className="text-gray-700 leading-relaxed mb-5 italic">
-                  "{t.quote}"
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">
-                    {t.initials}
-                  </div>
-                  <span className="text-sm text-gray-500">{t.role}</span>
+                <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
+                  {v.label}
                 </div>
+                <p className="text-gray-700 leading-relaxed">
+                  {v.text}
+                </p>
               </div>
             ))}
           </div>
@@ -858,6 +855,21 @@ export default function Landing() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="mt-8 flex items-center justify-center gap-6">
+            <Link
+              to="/compare/common-room"
+              className="text-sm font-semibold text-indigo-600 hover:text-indigo-500 transition-colors"
+            >
+              Full comparison vs Common Room &rarr;
+            </Link>
+            <Link
+              to="/compare/reo-dev"
+              className="text-sm font-semibold text-indigo-600 hover:text-indigo-500 transition-colors"
+            >
+              Full comparison vs Reo.dev &rarr;
+            </Link>
           </div>
         </div>
       </section>

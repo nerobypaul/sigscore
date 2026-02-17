@@ -103,6 +103,9 @@ COPY --from=frontend-builder /app/frontend/dist ./public
 # Copy package.json for metadata
 COPY backend/package.json ./package.json
 
+# Copy changelog files (read by the changelog API at runtime)
+COPY .changelog ./.changelog
+
 # Give appuser ownership of the app directory (needed for Prisma engines)
 RUN chown -R appuser:nodejs /app
 

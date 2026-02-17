@@ -114,6 +114,8 @@ function AppRoutes() {
         <Route path="/changelog" element={<Changelog />} />
         <Route path="/compare/common-room" element={<CompareCommonRoom />} />
         <Route path="/compare/reo-dev" element={<CompareReodev />} />
+        <Route path="/dashboard" element={<Navigate to="/" replace />} />
+        <Route path="/demo" element={<Navigate to="/landing" replace />} />
         <Route path="/sso/callback" element={<SsoCallback />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
         <Route path="/shared/:shareToken" element={<SharedReport />} />
