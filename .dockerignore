@@ -53,7 +53,6 @@ CLAUDE.md
 claude-flow-md/
 .claude-flow/
 nero.sh
-.changelog/
 
 # Docker files themselves (prevent recursive context)
 docker-compose*.yml
