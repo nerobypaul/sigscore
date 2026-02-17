@@ -458,7 +458,7 @@ export default function Privacy() {
       <header className="border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/landing" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">
                 <svg
                   className="w-5 h-5 text-white"
@@ -481,7 +481,7 @@ export default function Privacy() {
                 Terms of Service
               </Link>
               <Link
-                to="/landing"
+                to="/"
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 Back to Home
@@ -550,7 +550,7 @@ export default function Privacy() {
               &copy; {new Date().getFullYear()} DevSignal, Inc. All rights reserved.
             </p>
             <div className="flex items-center gap-6 text-sm text-gray-500">
-              <Link to="/landing" className="hover:text-gray-300 transition-colors">Home</Link>
+              <Link to="/" className="hover:text-gray-300 transition-colors">Home</Link>
               <Link to="/pricing" className="hover:text-gray-300 transition-colors">Pricing</Link>
               <Link to="/developers" className="hover:text-gray-300 transition-colors">Developers</Link>
               <Link to="/changelog" className="hover:text-gray-300 transition-colors">Changelog</Link>

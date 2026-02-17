@@ -1861,7 +1861,7 @@ export default function DevPortal() {
               </svg>
             </button>
 
-            <Link to="/landing" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
                 <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
@@ -1873,7 +1873,7 @@ export default function DevPortal() {
 
             <nav className="hidden md:flex items-center gap-1 ml-4">
               <Link
-                to="/landing"
+                to="/"
                 className="px-2.5 py-1.5 text-sm text-gray-400 hover:text-white transition-colors rounded-md hover:bg-gray-800/50"
               >
                 Home
@@ -2108,7 +2108,7 @@ export default function DevPortal() {
               <div className="mt-8 flex items-center justify-between text-xs text-gray-600">
                 <span>DevSignal -- Built for devtool PLG teams</span>
                 <div className="flex items-center gap-4">
-                  <Link to="/landing" className="hover:text-gray-400 transition-colors">Home</Link>
+                  <Link to="/" className="hover:text-gray-400 transition-colors">Home</Link>
                   <Link to="/pricing" className="hover:text-gray-400 transition-colors">Pricing</Link>
                   <Link to="/login" className="hover:text-gray-400 transition-colors">Sign In</Link>
                 </div>

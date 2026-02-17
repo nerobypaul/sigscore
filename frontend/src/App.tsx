@@ -103,6 +103,9 @@ function AppRoutes() {
     <CommandPalette />
     <Suspense fallback={<PageLoader />}>
       <Routes>
+        {/* Root route: Landing for visitors, falls through to protected Dashboard for logged-in users */}
+        {!isAuthenticated && <Route path="/" element={<Landing />} />}
+
         {/* Public routes */}
         <Route path="/landing" element={<Landing />} />
         <Route path="/use-cases" element={<UseCases />} />
@@ -115,7 +118,7 @@ function AppRoutes() {
         <Route path="/compare/common-room" element={<CompareCommonRoom />} />
         <Route path="/compare/reo-dev" element={<CompareReodev />} />
         <Route path="/dashboard" element={<Navigate to="/" replace />} />
-        <Route path="/demo" element={<Navigate to="/landing" replace />} />
+        <Route path="/demo" element={<Navigate to="/" replace />} />
         <Route path="/sso/callback" element={<SsoCallback />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
         <Route path="/shared/:shareToken" element={<SharedReport />} />

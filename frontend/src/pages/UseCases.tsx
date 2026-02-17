@@ -345,7 +345,7 @@ export default function UseCases() {
       <nav className="relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
-            <Link to="/landing" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
@@ -354,7 +354,7 @@ export default function UseCases() {
               <span className="text-xl font-bold tracking-tight">DevSignal</span>
             </Link>
             <div className="hidden sm:flex items-center gap-6 text-sm text-gray-400">
-              <Link to="/landing" className="hover:text-white transition-colors">Home</Link>
+              <Link to="/" className="hover:text-white transition-colors">Home</Link>
               <Link to="/use-cases" className="text-white font-medium">Use Cases</Link>
               <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
             </div>
@@ -497,7 +497,7 @@ export default function UseCases() {
               <span className="text-sm font-semibold text-gray-400">DevSignal</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-500">
-              <Link to="/landing" className="hover:text-gray-300 transition-colors">Home</Link>
+              <Link to="/" className="hover:text-gray-300 transition-colors">Home</Link>
               <Link to="/use-cases" className="hover:text-gray-300 transition-colors">Use Cases</Link>
               <Link to="/pricing" className="hover:text-gray-300 transition-colors">Pricing</Link>
               <Link to="/developers" className="hover:text-gray-300 transition-colors">Developers</Link>
