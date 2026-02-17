@@ -500,6 +500,10 @@ export default function UseCases() {
               <Link to="/landing" className="hover:text-gray-300 transition-colors">Home</Link>
               <Link to="/use-cases" className="hover:text-gray-300 transition-colors">Use Cases</Link>
               <Link to="/pricing" className="hover:text-gray-300 transition-colors">Pricing</Link>
+              <Link to="/developers" className="hover:text-gray-300 transition-colors">Developers</Link>
+              <Link to="/changelog" className="hover:text-gray-300 transition-colors">Changelog</Link>
+              <Link to="/terms" className="hover:text-gray-300 transition-colors">Terms</Link>
+              <Link to="/privacy" className="hover:text-gray-300 transition-colors">Privacy</Link>
               <Link to="/login" className="hover:text-gray-300 transition-colors">Sign in</Link>
             </div>
             <p className="text-xs text-gray-600">
