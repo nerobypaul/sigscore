@@ -26,6 +26,56 @@
     <!-- Additional SEO -->
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#4f46e5" />
+
+    <!-- Analytics (privacy-friendly, no cookies) -->
+    <script defer data-domain="devsignal.dev" src="https://plausible.io/js/script.js"></script>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "DevSignal",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "description": "Developer signal intelligence for devtool companies. Aggregates signals from 16 sources, scores accounts, and surfaces ready-to-buy developers.",
+      "url": "https://devsignal.dev",
+      "offers": [
+        {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+          "name": "Free",
+          "description": "1,000 contacts, 5,000 signals/mo, 1 user"
+        },
+        {
+          "@type": "Offer",
+          "price": "79",
+          "priceCurrency": "USD",
+          "name": "Pro",
+          "description": "25,000 contacts, 100,000 signals/mo, 10 users"
+        },
+        {
+          "@type": "Offer",
+          "price": "199",
+          "priceCurrency": "USD",
+          "name": "Growth",
+          "description": "100,000 contacts, 500,000 signals/mo, 25 users"
+        },
+        {
+          "@type": "Offer",
+          "price": "299",
+          "priceCurrency": "USD",
+          "name": "Scale",
+          "description": "Unlimited contacts, signals, and users with SSO and SLA"
+        }
+      ],
+      "author": {
+        "@type": "Organization",
+        "name": "DevSignal"
+      }
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

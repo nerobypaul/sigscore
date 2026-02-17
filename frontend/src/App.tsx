@@ -59,6 +59,8 @@ const AccountReports = lazy(() => import('./pages/AccountReports'));
 const SharedReport = lazy(() => import('./pages/SharedReport'));
 const ApiUsage = lazy(() => import('./pages/ApiUsage'));
 const Changelog = lazy(() => import('./pages/Changelog'));
+const CompareCommonRoom = lazy(() => import('./pages/CompareCommonRoom'));
+const CompareReodev = lazy(() => import('./pages/CompareReodev'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
@@ -110,6 +112,8 @@ function AppRoutes() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/changelog" element={<Changelog />} />
+        <Route path="/compare/common-room" element={<CompareCommonRoom />} />
+        <Route path="/compare/reo-dev" element={<CompareReodev />} />
         <Route path="/sso/callback" element={<SsoCallback />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
         <Route path="/shared/:shareToken" element={<SharedReport />} />

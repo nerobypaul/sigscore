@@ -1,3 +1,68 @@
+# Paul's Priority Tasks (Manual — Only You Can Do These)
+
+**These are the tasks NERO can't handle. They require human account creation, payment info, or external service setup.**
+
+## LAUNCH CRITICAL (Do these first)
+
+### 1. Register devsignal.dev domain (~5 min)
+- Go to Namecheap or Cloudflare Registrar
+- Buy `devsignal.dev` (should be ~$12/year)
+- Point CNAME to `energetic-wisdom-production.up.railway.app`
+- Then tell NERO and I'll update all URLs + Railway config
+
+### 2. Create Stripe account + products (~15 min)
+- Sign up at https://stripe.com
+- Create 3 products: Pro ($79/mo), Growth ($199/mo), Scale ($299/mo)
+- Copy the 4 keys (secret, publishable, 3 price IDs, webhook secret)
+- Set them in Railway: `railway variables set STRIPE_SECRET_KEY=sk_live_...` (etc.)
+- Full instructions in the deployment checklist below
+
+### 3. Create Resend account + verify domain (~10 min, then wait for DNS)
+- Sign up at https://resend.com (free tier is fine to start)
+- Add your domain, copy DNS records to your registrar
+- Create API key → `railway variables set RESEND_API_KEY=re_...`
+
+### 4. Set up GitHub OAuth app (~5 min)
+- Go to https://github.com/settings/developers > New OAuth App
+- Homepage: `https://devsignal.dev` (or Railway URL)
+- Callback: `https://devsignal.dev/api/v1/auth/github/callback`
+- Copy client ID + secret → set in Railway
+
+### 5. Set up Google OAuth (~10 min)
+- Go to Google Cloud Console > APIs & Services > Credentials
+- Create OAuth 2.0 Client ID (Web application)
+- Authorized redirect: `https://devsignal.dev/api/v1/auth/google/callback`
+- Copy client ID + secret → set in Railway
+
+## NICE TO HAVE (After launch)
+
+### 6. Create Sentry project (~5 min)
+- Sign up at https://sentry.io
+- Create Node.js project
+- Copy DSN → `railway variables set SENTRY_DSN=https://...`
+
+### 7. Set up Plausible Analytics (~5 min)
+- Sign up at https://plausible.io ($9/mo or self-host)
+- Add site: devsignal.dev
+- The tracking script is already in the code
+
+### 8. Publish SDK to npm (~5 min)
+- `npm login` with your npm account
+- Create @devsignal org on npmjs.com if needed
+- `cd packages/sdk && npm publish --access public`
+
+### 9. Make GitHub repo public
+- Go to https://github.com/nerobypaul/headless-crm/settings
+- Scroll to "Danger Zone" > Change visibility > Make public
+
+### 10. Submit Show HN post
+- Go to https://news.ycombinator.com/submit
+- Use the draft in `marketing/show-hn.md`
+- Best times: Tuesday-Thursday, 8-10 AM ET
+- Be ready to respond to comments for 2-3 hours
+
+---
+
 # Production Deployment Checklist
 
 **Current Status:** App deployed to Railway at https://energetic-wisdom-production.up.railway.app
