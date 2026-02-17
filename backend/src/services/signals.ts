@@ -39,7 +39,15 @@ export const ingestSignal = async (organizationId: string, data: SignalInput) =>
     where: { id: data.sourceId },
     select: { type: true },
   });
-  const sourceType = source?.type ?? 'UNKNOWN';
+
+  if (!source) {
+    throw Object.assign(
+      new Error(`Signal source '${data.sourceId}' not found. Create a signal source first via POST /api/v1/signal-sources, or use the SDK.`),
+      { statusCode: 400 },
+    );
+  }
+
+  const sourceType = source.type;
 
   // Generate deduplication key
   const dedupKey = generateDeduplicationKey(

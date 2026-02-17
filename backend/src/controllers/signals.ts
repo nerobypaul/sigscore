@@ -60,6 +60,10 @@ export const ingestSignal = async (req: Request, res: Response, next: NextFuncti
 
     res.status(201).json(signal);
   } catch (error) {
+    if (error instanceof Error && (error as any).statusCode === 400) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
     next(error);
   }
 };
