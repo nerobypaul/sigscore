@@ -5,5 +5,7 @@ watchPatterns = ["backend/**", "package.json", "package-lock.json"]
 
 [deploy]
 startCommand = "node dist/worker.js"
+healthcheckPath = "/"
+healthcheckTimeout = 120
 restartPolicyType = "ALWAYS"
 restartPolicyMaxRetries = 5

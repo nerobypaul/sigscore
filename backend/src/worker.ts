@@ -14,9 +14,12 @@ import { initSentry } from './utils/sentry';
 // Initialise Sentry before any other imports.
 initSentry();
 
+import http from 'http';
 import { prisma } from './config/database';
 import { startWorkers, stopWorkers, closeAllQueues, setupScheduler } from './jobs';
 import { logger } from './utils/logger';
+
+const HEALTH_PORT = parseInt(process.env.WORKER_HEALTH_PORT || '3001', 10);
 
 (async () => {
   logger.info('DevSignal worker process starting...');
@@ -27,9 +30,19 @@ import { logger } from './utils/logger';
 
   logger.info('All BullMQ workers and scheduler running');
 
+  // ---- Minimal health endpoint for orchestrators (Railway / Docker) ----
+  const healthServer = http.createServer((_req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', service: 'worker', uptime: process.uptime() }));
+  });
+  healthServer.listen(HEALTH_PORT, () => {
+    logger.info(`Worker health endpoint listening on :${HEALTH_PORT}/`);
+  });
+
   // ---- Graceful shutdown ----
   const shutdown = async (signal: string) => {
     logger.info(`Worker received ${signal}. Shutting down gracefully...`);
+    healthServer.close();
     await stopWorkers();
     await closeAllQueues();
     await prisma.$disconnect();
