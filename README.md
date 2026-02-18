@@ -31,7 +31,7 @@ Self-host it for free or use the managed service starting at $0/month. Either wa
 
 Try DevSignal now -- no signup required:
 
-**[Launch Live Demo](https://energetic-wisdom-production.up.railway.app/landing)** -- Click "Try Live Demo" on the landing page to get a pre-seeded environment with realistic data.
+**[Launch Live Demo](https://devsignal.dev/landing)** -- Click "Try Live Demo" on the landing page to get a pre-seeded environment with realistic data.
 
 ## Why Not a CRM?
 
@@ -138,7 +138,7 @@ cp .env.example .env
 docker compose -f docker-compose.prod.yml up -d --build
 
 # Or try the live demo instantly:
-# https://energetic-wisdom-production.up.railway.app/landing
+# https://devsignal.dev/landing
 ```
 
 This starts four containers: PostgreSQL 16, Redis 7, the API server (serving the static frontend), and BullMQ workers. Migrations run automatically on first boot.
@@ -176,17 +176,17 @@ DevSignal exposes both REST and GraphQL endpoints, authenticated via JWT or API 
 ```bash
 # List top-scoring accounts
 curl -H "Authorization: Bearer $TOKEN" \
-  https://energetic-wisdom-production.up.railway.app/api/v1/companies?sort=pqaScore&order=desc&limit=10
+  https://devsignal.dev/api/v1/companies?sort=pqaScore&order=desc&limit=10
 
 # Ingest a signal
 curl -X POST -H "X-API-Key: ds_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"type":"feature_used","sourceId":"app","metadata":{"feature":"api","action":"called"}}' \
-  https://energetic-wisdom-production.up.railway.app/api/v1/signals
+  https://devsignal.dev/api/v1/signals
 
 # Get account brief (AI-generated)
 curl -H "Authorization: Bearer $TOKEN" \
-  https://energetic-wisdom-production.up.railway.app/api/v1/companies/:id/brief
+  https://devsignal.dev/api/v1/companies/:id/brief
 ```
 
 ### GraphQL
@@ -212,7 +212,7 @@ query TopAccounts {
 }
 ```
 
-The GraphQL playground is available at /api/v1/graphql in development mode. See the [live demo](https://energetic-wisdom-production.up.railway.app/landing) to explore.
+The GraphQL playground is available at /api/v1/graphql in development mode. See the [live demo](https://devsignal.dev/landing) to explore.
 
 ## SDK
 
@@ -303,7 +303,7 @@ npm run lint --workspace=backend
 npm run lint --workspace=frontend
 ```
 
-See the [API docs page](https://energetic-wisdom-production.up.railway.app/api-docs) for endpoint documentation. The GraphQL schema is self-documenting via introspection.
+See the [API docs page](https://devsignal.dev/api-docs) for endpoint documentation. The GraphQL schema is self-documenting via introspection.
 
 ## License
 
@@ -315,6 +315,6 @@ See the [API docs page](https://energetic-wisdom-production.up.railway.app/api-d
 
 **DevSignal** -- Developer signal intelligence for devtool companies that want to know who loves their product.
 
-[Live Demo](https://energetic-wisdom-production.up.railway.app) | [Website](https://devsignal.dev) | [GitHub](https://github.com/nerobypaul/headless-crm)
+[Live Demo](https://devsignal.dev) | [Website](https://devsignal.dev) | [GitHub](https://github.com/nerobypaul/headless-crm)
 
 </div>

@@ -24,7 +24,7 @@ I built DevSignal to solve this. It pulls signals from 16 sources, resolves iden
 
 It's open source (MIT) and self-hostable: https://github.com/nerobypaul/headless-crm
 
-Or try the live demo: https://energetic-wisdom-production.up.railway.app
+Or try the live demo: https://devsignal.dev
 
 Worth 10 minutes to see if it fits?
 
@@ -48,7 +48,7 @@ DevSignal aggregates all of that automatically. It connects GitHub, Discord, Sta
 
 Free to self-host, open source: https://github.com/nerobypaul/headless-crm
 
-Live demo here if you want to poke around: https://energetic-wisdom-production.up.railway.app
+Live demo here if you want to poke around: https://devsignal.dev
 
 -- [Your name]
 
@@ -70,7 +70,7 @@ I built DevSignal as an open-source alternative. Same signal aggregation (16 sou
 
 The tradeoff: it's earlier-stage software. But it's MIT licensed, so you own your data and your pipeline.
 
-Try it: https://energetic-wisdom-production.up.railway.app
+Try it: https://devsignal.dev
 
 Or self-host in 10 minutes: https://github.com/nerobypaul/headless-crm
 
@@ -92,7 +92,7 @@ DevSignal tracks the signals that actually indicate product-market fit in devtoo
 
 It's open source and free to self-host. I built it specifically for Series A-C devtool companies because the existing tools (Common Room at $1K+/mo) are priced for enterprises, not startups.
 
-5-minute demo: https://energetic-wisdom-production.up.railway.app
+5-minute demo: https://devsignal.dev
 
 GitHub: https://github.com/nerobypaul/headless-crm
 
@@ -118,7 +118,7 @@ DevSignal surfaces those signals. It tracks activity across GitHub, npm, communi
 
 Not a CRM -- it feeds into whatever you already use (HubSpot, Salesforce, or just Slack alerts).
 
-See it working: https://energetic-wisdom-production.up.railway.app
+See it working: https://devsignal.dev
 
 Open source, free to self-host: https://github.com/nerobypaul/headless-crm
 

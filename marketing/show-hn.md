@@ -22,6 +22,6 @@ Tech stack: Express + TypeScript + Prisma + PostgreSQL + Redis + BullMQ on the b
 
 Self-hosting is free. The managed service starts at $0/mo for 1,000 contacts. For context, Common Room charges $1K+/mo and Reo.dev $500+/mo.
 
-Live demo: https://energetic-wisdom-production.up.railway.app
+Live demo: https://devsignal.dev
 
 I'd love feedback on the product, the scoring model, or the approach in general. Happy to answer questions about the architecture too.
