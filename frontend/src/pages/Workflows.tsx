@@ -49,28 +49,51 @@ interface WorkflowForm {
 }
 
 const TRIGGER_EVENTS = [
-  { value: 'signal_received', label: 'Signal Received' },
-  { value: 'contact_created', label: 'Contact Created' },
-  { value: 'deal_stage_changed', label: 'Deal Stage Changed' },
-  { value: 'score_changed', label: 'Score Changed' },
+  { value: 'signal_received', label: 'Signal Received', description: 'When a new signal is ingested from any source', icon: 'signal' },
+  { value: 'contact_created', label: 'Contact Created', description: 'When a new contact is added to the system', icon: 'user-plus' },
+  { value: 'contact_updated', label: 'Contact Updated', description: 'When a contact profile is modified', icon: 'user-edit' },
+  { value: 'company_created', label: 'Company Created', description: 'When a new company is added', icon: 'building' },
+  { value: 'deal_created', label: 'Deal Created', description: 'When a new deal is opened', icon: 'deal' },
+  { value: 'deal_stage_changed', label: 'Deal Stage Changed', description: 'When a deal moves to a different stage', icon: 'stage' },
+  { value: 'score_changed', label: 'Score Changed', description: 'When a contact or company score is recalculated', icon: 'score' },
+  { value: 'score_threshold', label: 'Score Threshold Crossed', description: 'When a score crosses a defined threshold', icon: 'threshold' },
+  { value: 'tag_added', label: 'Tag Added', description: 'When a tag is applied to any entity', icon: 'tag' },
 ];
 
-const ACTION_TYPES: { value: ActionType; label: string }[] = [
-  { value: 'create_deal', label: 'Create Deal' },
-  { value: 'update_deal_stage', label: 'Update Deal Stage' },
-  { value: 'send_webhook', label: 'Send Webhook' },
-  { value: 'send_slack', label: 'Send Slack Message' },
-  { value: 'add_tag', label: 'Add Tag' },
-  { value: 'log', label: 'Log Event' },
+const ACTION_TYPES: { value: ActionType; label: string; description: string; color: string }[] = [
+  { value: 'create_deal', label: 'Create Deal', description: 'Open a new deal in the pipeline', color: 'bg-green-100 text-green-700' },
+  { value: 'update_deal_stage', label: 'Update Deal Stage', description: 'Move a deal to a different stage', color: 'bg-blue-100 text-blue-700' },
+  { value: 'send_webhook', label: 'Send Webhook', description: 'POST data to an external URL', color: 'bg-orange-100 text-orange-700' },
+  { value: 'send_slack', label: 'Send Slack Message', description: 'Notify a Slack channel', color: 'bg-purple-100 text-purple-700' },
+  { value: 'add_tag', label: 'Add Tag', description: 'Tag the triggering entity', color: 'bg-yellow-100 text-yellow-700' },
+  { value: 'log', label: 'Log Event', description: 'Record an event in the activity log', color: 'bg-gray-100 text-gray-600' },
 ];
 
-const ACTION_PARAM_HINTS: Record<ActionType, string[]> = {
-  create_deal: ['title', 'stage', 'amount'],
-  update_deal_stage: ['dealId', 'stage'],
-  send_webhook: ['url', 'method'],
-  send_slack: ['channel', 'message'],
-  add_tag: ['tagName'],
-  log: ['message', 'level'],
+const ACTION_PARAM_HINTS: Record<ActionType, { key: string; label: string; placeholder: string }[]> = {
+  create_deal: [
+    { key: 'title', label: 'Deal title', placeholder: 'e.g. Enterprise upgrade' },
+    { key: 'stage', label: 'Initial stage', placeholder: 'e.g. qualification' },
+    { key: 'amount', label: 'Amount ($)', placeholder: 'e.g. 5000' },
+  ],
+  update_deal_stage: [
+    { key: 'dealId', label: 'Deal ID', placeholder: 'Leave empty to use trigger context' },
+    { key: 'stage', label: 'New stage', placeholder: 'e.g. negotiation' },
+  ],
+  send_webhook: [
+    { key: 'url', label: 'Webhook URL', placeholder: 'https://hooks.example.com/...' },
+    { key: 'method', label: 'HTTP method', placeholder: 'POST' },
+  ],
+  send_slack: [
+    { key: 'channel', label: 'Channel', placeholder: '#sales-alerts' },
+    { key: 'message', label: 'Message template', placeholder: 'New hot lead: {{contact.name}}' },
+  ],
+  add_tag: [
+    { key: 'tagName', label: 'Tag name', placeholder: 'e.g. hot-lead' },
+  ],
+  log: [
+    { key: 'message', label: 'Log message', placeholder: 'e.g. Workflow triggered for {{contact.email}}' },
+    { key: 'level', label: 'Level', placeholder: 'info' },
+  ],
 };
 
 const RUN_STATUS_COLORS: Record<string, string> = {
@@ -381,16 +404,31 @@ export default function Workflows() {
                   </div>
                 </div>
 
-                {/* Actions summary */}
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {w.actions.map((a, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded"
-                    >
-                      {a.type.replace(/_/g, ' ')}
-                    </span>
-                  ))}
+                {/* Visual flow summary: trigger → actions */}
+                <div className="mt-3 flex items-center flex-wrap gap-1.5">
+                  <span className="inline-flex items-center text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-medium">
+                    {w.trigger.event.replace(/_/g, ' ')}
+                  </span>
+                  {w.actions.length > 0 && (
+                    <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                  )}
+                  {w.actions.map((a, i) => {
+                    const meta = ACTION_TYPES.find((at) => at.value === a.type);
+                    return (
+                      <span key={i} className="inline-flex items-center gap-1">
+                        {i > 0 && (
+                          <svg className="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                          </svg>
+                        )}
+                        <span className={`text-xs px-2 py-0.5 rounded ${meta?.color || 'bg-gray-100 text-gray-600'}`}>
+                          {a.type.replace(/_/g, ' ')}
+                        </span>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -498,18 +536,26 @@ export default function Workflows() {
 
               {/* Trigger Event */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Trigger Event</label>
-                <select
-                  value={form.triggerEvent}
-                  onChange={(e) => setForm((p) => ({ ...p, triggerEvent: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
-                >
+                <label className="block text-sm font-medium text-gray-700 mb-2">When this happens...</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {TRIGGER_EVENTS.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => setForm((p) => ({ ...p, triggerEvent: t.value }))}
+                      className={`text-left p-3 rounded-lg border-2 transition-all ${
+                        form.triggerEvent === t.value
+                          ? 'border-indigo-500 bg-indigo-50'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className={`text-sm font-medium ${form.triggerEvent === t.value ? 'text-indigo-700' : 'text-gray-900'}`}>
+                        {t.label}
+                      </span>
+                      <p className="text-xs text-gray-500 mt-0.5">{t.description}</p>
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
 
               {/* Trigger Filters */}
@@ -566,62 +612,93 @@ export default function Workflows() {
               {/* Actions */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-gray-700">Actions</label>
+                  <label className="text-sm font-medium text-gray-700">...then do this</label>
                   <button
                     type="button"
                     onClick={addAction}
-                    className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                    className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 font-medium"
                   >
-                    + Add Action
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Add Action
                   </button>
                 </div>
                 {form.actions.length === 0 && (
-                  <p className="text-xs text-gray-400">No actions configured. Add at least one action.</p>
-                )}
-                <div className="space-y-4">
-                  {form.actions.map((action, i) => (
-                    <div
-                      key={i}
-                      className="border border-gray-200 rounded-lg p-4 bg-gray-50/50"
+                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
+                    <p className="text-sm text-gray-400">No actions configured.</p>
+                    <button
+                      type="button"
+                      onClick={addAction}
+                      className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
                     >
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Action {i + 1}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeAction(i)}
-                          className="text-xs text-red-500 hover:text-red-600 font-medium"
-                        >
-                          Remove
-                        </button>
+                      Add your first action
+                    </button>
+                  </div>
+                )}
+                <div className="space-y-3">
+                  {form.actions.map((action, i) => {
+                    const actionMeta = ACTION_TYPES.find((at) => at.value === action.type);
+                    return (
+                      <div key={i}>
+                        {/* Visual flow connector */}
+                        {i > 0 && (
+                          <div className="flex justify-center py-1">
+                            <svg className="w-4 h-6 text-gray-300" fill="none" viewBox="0 0 16 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" d="M8 0v24M4 18l4 6 4-6" />
+                            </svg>
+                          </div>
+                        )}
+                        <div className="border border-gray-200 rounded-lg overflow-hidden">
+                          <div className="flex items-center justify-between bg-gray-50 px-4 py-2.5 border-b border-gray-200">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${actionMeta?.color || 'bg-gray-100 text-gray-600'}`}>
+                                Step {i + 1}
+                              </span>
+                              <select
+                                value={action.type}
+                                onChange={(e) => updateAction(i, 'type', e.target.value)}
+                                className="border-0 bg-transparent text-sm font-medium text-gray-900 focus:ring-0 outline-none cursor-pointer pr-6"
+                              >
+                                {ACTION_TYPES.map((at) => (
+                                  <option key={at.value} value={at.value}>
+                                    {at.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeAction(i)}
+                              className="text-gray-400 hover:text-red-500 transition-colors"
+                              title="Remove action"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                              </svg>
+                            </button>
+                          </div>
+                          <div className="p-4 space-y-3">
+                            {actionMeta && (
+                              <p className="text-xs text-gray-400">{actionMeta.description}</p>
+                            )}
+                            {(ACTION_PARAM_HINTS[action.type] || []).map((param) => (
+                              <div key={param.key}>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">{param.label}</label>
+                                <input
+                                  type="text"
+                                  value={action.params[param.key] || ''}
+                                  onChange={(e) => updateAction(i, param.key, e.target.value)}
+                                  placeholder={param.placeholder}
+                                  className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <select
-                          value={action.type}
-                          onChange={(e) => updateAction(i, 'type', e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
-                        >
-                          {ACTION_TYPES.map((at) => (
-                            <option key={at.value} value={at.value}>
-                              {at.label}
-                            </option>
-                          ))}
-                        </select>
-                        {/* Param fields based on action type */}
-                        {(ACTION_PARAM_HINTS[action.type] || []).map((paramKey) => (
-                          <input
-                            key={paramKey}
-                            type="text"
-                            value={action.params[paramKey] || ''}
-                            onChange={(e) => updateAction(i, paramKey, e.target.value)}
-                            placeholder={paramKey}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

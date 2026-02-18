@@ -85,7 +85,9 @@ export default function ContactDetail() {
             </h1>
             {contact.title && <p className="text-gray-500">{contact.title}</p>}
             {contact.company && (
-              <p className="text-sm text-indigo-600">{contact.company.name}</p>
+              <Link to={`/companies/${contact.company.id}`} className="text-sm text-indigo-600 hover:text-indigo-500 transition-colors">
+                {contact.company.name}
+              </Link>
             )}
           </div>
         </div>
@@ -158,7 +160,7 @@ export default function ContactDetail() {
                 {contact.deals.map((deal) => (
                   <Link
                     key={deal.id}
-                    to="/deals"
+                    to={`/deals/${deal.id}`}
                     className="block p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
                   >
                     <p className="text-sm font-medium text-gray-900">{deal.title}</p>

@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import type { Contact, Pagination } from '../types';
-import Spinner from '../components/Spinner';
+import { TableSkeleton } from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
 import CSVImport from '../components/CSVImport';
@@ -21,6 +21,31 @@ export default function Contacts() {
   const [showCreate, setShowCreate] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
+  // Sort state
+  const [sortField, setSortField] = useState<string>('createdAt');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    setPage(1);
+  };
+
+  // Filter state
+  const [companyFilter, setCompanyFilter] = useState('');
+  const [companiesList, setCompaniesList] = useState<{ id: string; name: string }[]>([]);
+
+  // Load companies for filter dropdown
+  useEffect(() => {
+    api.get('/companies', { params: { limit: 200 } })
+      .then(({ data }) => setCompaniesList(data.companies || []))
+      .catch(() => {});
+  }, []);
+
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -28,7 +53,14 @@ export default function Contacts() {
     setLoading(true);
     try {
       const { data } = await api.get('/contacts', {
-        params: { search: search || undefined, page, limit: 20 },
+        params: {
+          search: search || undefined,
+          page,
+          limit: 20,
+          sortField,
+          sortDirection,
+          companyId: companyFilter || undefined,
+        },
       });
       setContacts(data.contacts || []);
       setPagination(data.pagination || null);
@@ -37,7 +69,7 @@ export default function Contacts() {
     } finally {
       setLoading(false);
     }
-  }, [search, page]);
+  }, [search, page, sortField, sortDirection, companyFilter]);
 
   useEffect(() => {
     fetchContacts();
@@ -176,24 +208,69 @@ export default function Contacts() {
         onFiltersChange={handleViewFiltersChange}
       />
 
-      {/* Search */}
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Search contacts by name or email..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          className="w-full sm:max-w-md px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-        />
+      {/* Filter bar */}
+      <div className="mb-4 flex flex-wrap items-end gap-3">
+        <div className="flex-1 min-w-[200px] max-w-md">
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+            />
+          </div>
+        </div>
+        <div>
+          <select
+            value={companyFilter}
+            onChange={(e) => { setCompanyFilter(e.target.value); setPage(1); }}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
+          >
+            <option value="">All companies</option>
+            {companiesList.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+        {(search || companyFilter) && (
+          <button
+            onClick={() => { setSearchInput(''); setSearch(''); setCompanyFilter(''); setPage(1); }}
+            className="px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
       {/* Contact List */}
       {loading ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="flex items-center justify-center py-16">
-            <Spinner />
+        <>
+          {/* Mobile skeleton */}
+          <div className="md:hidden space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 animate-pulse">
+                <div className="flex items-start gap-3">
+                  <div className="h-4 w-4 bg-gray-200 rounded mt-1" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-9 h-9 rounded-full bg-gray-200" />
+                      <div><div className="h-4 w-28 bg-gray-200 rounded mb-1" /><div className="h-3 w-20 bg-gray-200 rounded" /></div>
+                    </div>
+                    <div className="flex gap-4"><div className="h-3 w-36 bg-gray-200 rounded" /><div className="h-3 w-20 bg-gray-200 rounded" /></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+          {/* Desktop skeleton */}
+          <div className="hidden md:block">
+            <TableSkeleton rows={8} columns={6} />
+          </div>
+        </>
       ) : contacts.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {search ? (
@@ -291,18 +368,18 @@ export default function Contacts() {
                         className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                       />
                     </th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-600">Name</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-600">Email</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-600">Title</th>
+                    <SortableHeader field="firstName" label="Name" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} />
+                    <SortableHeader field="email" label="Email" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} />
+                    <SortableHeader field="title" label="Title" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} />
                     <th className="text-left py-3 px-4 font-semibold text-gray-600">Company</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-600">Created</th>
+                    <SortableHeader field="createdAt" label="Created" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {contacts.map((contact) => (
                     <tr
                       key={contact.id}
-                      className={`hover:bg-gray-50 cursor-pointer transition-colors ${
+                      className={`group hover:bg-gray-50 cursor-pointer transition-colors ${
                         selectedIds.has(contact.id) ? 'bg-indigo-50/50' : ''
                       }`}
                     >
@@ -330,7 +407,7 @@ export default function Contacts() {
                       <td className="py-3 px-4">
                         {contact.company ? (
                           <Link
-                            to={`/companies`}
+                            to={`/companies/${contact.company.id}`}
                             onClick={(e) => e.stopPropagation()}
                             className="text-indigo-600 hover:text-indigo-500"
                           >
@@ -340,8 +417,40 @@ export default function Contacts() {
                           <span className="text-gray-400">--</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-gray-500" onClick={() => navigate(`/contacts/${contact.id}`)}>
-                        {new Date(contact.createdAt).toLocaleDateString()}
+                      <td className="py-3 px-4 text-gray-500 relative" onClick={() => navigate(`/contacts/${contact.id}`)}>
+                        <span className="group-hover:invisible">
+                          {new Date(contact.createdAt).toLocaleDateString()}
+                        </span>
+                        <div
+                          className="absolute inset-0 items-center justify-end gap-1 pr-4 hidden group-hover:flex"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() => navigate(`/contacts/${contact.id}`)}
+                            className="px-2.5 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                            title="View details"
+                          >
+                            View
+                          </button>
+                          {contact.email && (
+                            <a
+                              href={`mailto:${contact.email}`}
+                              className="px-2.5 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100 transition-colors"
+                              title="Send email"
+                            >
+                              Email
+                            </a>
+                          )}
+                          {contact.company && (
+                            <button
+                              onClick={() => navigate(`/companies/${contact.company!.id}`)}
+                              className="px-2.5 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md hover:bg-emerald-100 transition-colors"
+                              title="View company"
+                            >
+                              Company
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -353,23 +462,48 @@ export default function Contacts() {
           {/* Pagination */}
           {pagination && pagination.totalPages > 1 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1 md:px-4 py-3 md:bg-white md:rounded-xl md:shadow-sm md:border md:border-gray-200">
-              <p className="text-sm text-gray-600">
-                Page {pagination.page} of {pagination.totalPages}
+              <p className="text-sm text-gray-500">
+                Showing <span className="font-medium text-gray-700">{(page - 1) * 20 + 1}–{Math.min(page * 20, pagination.total)}</span> of <span className="font-medium text-gray-700">{pagination.total}</span>
               </p>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Previous
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
                 </button>
+                {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+                  let pageNum: number;
+                  if (pagination.totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (page <= 3) {
+                    pageNum = i + 1;
+                  } else if (page >= pagination.totalPages - 2) {
+                    pageNum = pagination.totalPages - 4 + i;
+                  } else {
+                    pageNum = page - 2 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setPage(pageNum)}
+                      className={`w-8 h-8 text-sm rounded-lg transition-colors ${
+                        page === pageNum
+                          ? 'bg-indigo-600 text-white font-semibold'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
                 <button
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page >= (pagination?.totalPages ?? 1)}
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Next
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
                 </button>
               </div>
             </div>
@@ -413,6 +547,41 @@ export default function Contacts() {
   );
 }
 
+function SortableHeader({
+  field,
+  label,
+  sortField: currentSort,
+  sortDirection: currentDir,
+  onSort,
+}: {
+  field: string;
+  label: string;
+  sortField: string;
+  sortDirection: 'asc' | 'desc';
+  onSort: (field: string) => void;
+}) {
+  const isActive = currentSort === field;
+  return (
+    <th
+      className="text-left py-3 px-4 font-semibold text-gray-600 cursor-pointer select-none hover:text-gray-900 transition-colors"
+      onClick={() => onSort(field)}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        <svg className={`w-3.5 h-3.5 transition-colors ${isActive ? 'text-indigo-600' : 'text-gray-300'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          {isActive && currentDir === 'asc' ? (
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+          ) : isActive && currentDir === 'desc' ? (
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+          ) : (
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+          )}
+        </svg>
+      </span>
+    </th>
+  );
+}
+
 function CreateContactModal({
   onClose,
   onCreated,
@@ -431,6 +600,7 @@ function CreateContactModal({
   });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showMore, setShowMore] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -509,36 +679,52 @@ function CreateContactModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-              <input
-                type="text"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-              />
-            </div>
-          </div>
+          {/* Progressive disclosure: more details */}
+          {!showMore ? (
+            <button
+              type="button"
+              onClick={() => setShowMore(true)}
+              className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Add more details
+            </button>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <input
+                    type="text"
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-            <textarea
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
+                />
+              </div>
+            </>
+          )}
 
           <div className="flex justify-end gap-3 pt-2">
             <button

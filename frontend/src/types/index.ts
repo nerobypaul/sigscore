@@ -95,6 +95,7 @@ export interface Company {
   githubOrg?: string | null;
   description?: string | null;
   tags?: TagRelation[];
+  _count?: { contacts: number; deals: number };
   createdAt: string;
   updatedAt: string;
 }
