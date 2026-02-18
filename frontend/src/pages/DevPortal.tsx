@@ -644,7 +644,7 @@ ds.signals.ingest(
     },
     actor_id="contact_abc123",
 )`,
-  curl: `curl -X POST https://api.devsignal.io/api/v1/signals \\
+  curl: `curl -X POST https://devsignal.dev/api/v1/signals \\
   -H "Authorization: Bearer $DEVSIGNAL_API_KEY" \\
   -H "X-Organization-Id: $DEVSIGNAL_ORG_ID" \\
   -H "Content-Type: application/json" \\
@@ -1199,7 +1199,7 @@ function SdkTab() {
 
 const ds = new DevSignal({
   apiKey: 'ds_live_xxxxxxxxxxxx',   // Required. Your API key.
-  baseUrl: 'https://api.devsignal.io', // Optional. Defaults to https://api.devsignal.dev
+  baseUrl: 'https://devsignal.dev', // Optional. Defaults to https://api.devsignal.dev
 });`}
           language="typescript"
         />
@@ -1388,7 +1388,7 @@ function WebhooksTab() {
           Your endpoint must be a publicly accessible HTTPS URL.
         </p>
         <CodeBlock
-          code={`curl -X POST https://api.devsignal.io/api/v1/webhooks \\
+          code={`curl -X POST https://devsignal.dev/api/v1/webhooks \\
   -H "Authorization: Bearer ds_live_YOUR_KEY" \\
   -H "X-Organization-Id: YOUR_ORG_ID" \\
   -H "Content-Type: application/json" \\
@@ -1579,7 +1579,7 @@ function AuthTab() {
         </p>
         <CodeBlock
           code={`# Pass the API key in the Authorization header
-curl https://api.devsignal.io/api/v1/signals \\
+curl https://devsignal.dev/api/v1/signals \\
   -H "Authorization: Bearer ds_live_a1b2c3d4e5f6g7h8" \\
   -H "X-Organization-Id: org_abc123"`}
           language="bash"
@@ -1626,7 +1626,7 @@ curl https://api.devsignal.io/api/v1/signals \\
         </p>
         <CodeBlock
           code={`# 1. Login to get tokens
-curl -X POST https://api.devsignal.io/api/v1/auth/login \\
+curl -X POST https://devsignal.dev/api/v1/auth/login \\
   -H "Content-Type: application/json" \\
   -d '{ "email": "you@company.com", "password": "your-password" }'
 
@@ -1634,12 +1634,12 @@ curl -X POST https://api.devsignal.io/api/v1/auth/login \\
 # { "accessToken": "eyJhbG...", "refreshToken": "eyJhbG..." }
 
 # 2. Use the access token
-curl https://api.devsignal.io/api/v1/contacts \\
+curl https://devsignal.dev/api/v1/contacts \\
   -H "Authorization: Bearer eyJhbG..." \\
   -H "X-Organization-Id: org_abc123"
 
 # 3. Refresh when expired (access tokens expire in 15 minutes)
-curl -X POST https://api.devsignal.io/api/v1/auth/refresh \\
+curl -X POST https://devsignal.dev/api/v1/auth/refresh \\
   -H "Content-Type: application/json" \\
   -d '{ "refreshToken": "eyJhbG..." }'`}
           language="bash"
@@ -2039,7 +2039,7 @@ export default function DevPortal() {
                   <span className="text-xs font-medium text-emerald-400">All systems operational</span>
                 </div>
                 <p className="text-[10px] text-gray-500">
-                  Base URL: <code className="text-gray-400">api.devsignal.io</code>
+                  Base URL: <code className="text-gray-400">devsignal.dev</code>
                 </p>
                 <p className="text-[10px] text-gray-500 mt-0.5">
                   API version: <code className="text-gray-400">v1</code>

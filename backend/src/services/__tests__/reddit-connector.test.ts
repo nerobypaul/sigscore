@@ -101,7 +101,7 @@ function makePost(overrides: Record<string, unknown> = {}) {
     score: 42,
     num_comments: 5,
     permalink: '/r/webdev/comments/abc123/check_out_devsignal/',
-    url: 'https://devsignal.io',
+    url: 'https://devsignal.dev',
     created_utc: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
     is_self: true,
     link_flair_text: null,

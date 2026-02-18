@@ -446,7 +446,7 @@ const API_CATEGORIES: EndpointCategory[] = [
   "name": "Onboarding Drip",
   "triggerType": "contact_created",
   "fromName": "DevSignal",
-  "fromEmail": "hello@devsignal.io"
+  "fromEmail": "hello@devsignal.dev"
 }`,
       },
       { method: 'PUT', path: '/sequences/:id', description: 'Update sequence name, status, or trigger', auth: 'Bearer JWT (Admin)' },
@@ -1356,7 +1356,7 @@ export default function ApiDocs() {
                 <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-5">
                   <h3 className="text-sm font-semibold text-gray-300">Base URL</h3>
                   <code className="mt-2 block text-sm text-indigo-400 font-mono">
-                    https://api.devsignal.io/api/v1
+                    https://api.devsignal.dev/api/v1
                   </code>
                 </div>
                 <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-5">
@@ -1579,7 +1579,7 @@ Retry-After: 42
                   <h3 className="text-sm font-semibold text-gray-300 mb-3">3. Or use curl directly</h3>
                   <CodeBlock
                     language="bash"
-                    code={`curl -X POST https://api.devsignal.io/api/v1/signals \\
+                    code={`curl -X POST https://api.devsignal.dev/api/v1/signals \\
   -H "Authorization: Bearer ds_live_YOUR_KEY" \\
   -H "x-organization-id: YOUR_ORG_ID" \\
   -H "Content-Type: application/json" \\
@@ -1610,7 +1610,7 @@ Retry-After: 42
                   <h3 className="text-sm font-semibold text-gray-300 mb-3">5. Verify your signal was received</h3>
                   <CodeBlock
                     language="bash"
-                    code={`curl "https://api.devsignal.io/api/v1/signals?type=repo_clone&limit=5" \\
+                    code={`curl "https://api.devsignal.dev/api/v1/signals?type=repo_clone&limit=5" \\
   -H "Authorization: Bearer ds_live_YOUR_KEY" \\
   -H "x-organization-id: YOUR_ORG_ID"`}
                   />

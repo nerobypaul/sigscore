@@ -78,7 +78,7 @@ run_cors_test() {
   local raw
   raw=$(curl -s -D "$tmpfile" -o /dev/null -w "%{http_code}|%{time_total}" \
     --max-time "$MAX_TIME" -X OPTIONS \
-    -H "Origin: https://app.devsignal.io" \
+    -H "Origin: https://devsignal.dev" \
     -H "Access-Control-Request-Method: POST" \
     "$url" 2>/dev/null) || {
     log_fail "$label" "CORS headers" "timeout/error" "$MAX_TIME"
