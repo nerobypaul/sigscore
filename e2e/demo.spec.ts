@@ -39,11 +39,118 @@ test.describe('Demo Flow', () => {
     await expect(page.locator('aside')).toBeVisible();
   });
 
+  test('demo visitor sees conversion banner with CTAs', async ({ page }) => {
+    await page.goto('/');
+
+    // Seed the demo
+    const demoButton = page.getByRole('button', { name: /explore live demo/i });
+    await demoButton.click();
+    await page.waitForURL('/', { timeout: 20000 });
+    await expect(page.locator('aside')).toBeVisible({ timeout: 5000 });
+
+    // DemoModeBanner should be visible with conversion CTAs
+    await expect(page.getByText(/exploring demo/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('link', { name: /start free/i })).toBeVisible();
+  });
+
+  test('demo visitor sees onboarding hints overlay', async ({ page }) => {
+    await page.goto('/');
+
+    // Seed the demo
+    const demoButton = page.getByRole('button', { name: /explore live demo/i });
+    await demoButton.click();
+    await page.waitForURL('/', { timeout: 20000 });
+    await expect(page.locator('aside')).toBeVisible({ timeout: 5000 });
+
+    // DemoOnboardingHints should show the welcome step
+    await expect(page.getByText(/welcome to devsignal/i)).toBeVisible({ timeout: 5000 });
+
+    // Should have Next button to advance steps
+    const nextButton = page.getByRole('button', { name: /next/i });
+    await expect(nextButton).toBeVisible();
+
+    // Advance through steps
+    await nextButton.click();
+    await expect(page.getByText(/signal feed/i)).toBeVisible({ timeout: 3000 });
+
+    // Skip should dismiss
+    const skipButton = page.getByRole('button', { name: /skip/i });
+    await skipButton.click();
+    await expect(page.getByText(/welcome to devsignal/i)).not.toBeVisible({ timeout: 3000 });
+  });
+
+  test('demo nav hides irrelevant items', async ({ page }) => {
+    await page.goto('/');
+
+    // Seed the demo
+    const demoButton = page.getByRole('button', { name: /explore live demo/i });
+    await demoButton.click();
+    await page.waitForURL('/', { timeout: 20000 });
+    await expect(page.locator('aside')).toBeVisible({ timeout: 5000 });
+
+    // These nav items should be hidden for demo users
+    const hiddenItems = ['Enrichment', 'Playbooks', 'Sequences', 'Webhooks', 'API Usage'];
+    for (const item of hiddenItems) {
+      await expect(page.locator('aside').getByText(item, { exact: true })).not.toBeVisible();
+    }
+
+    // These nav items should still be visible
+    const visibleItems = ['Dashboard', 'PQA Scores', 'Signals'];
+    for (const item of visibleItems) {
+      await expect(page.locator('aside').getByText(item, { exact: true })).toBeVisible();
+    }
+  });
+
+  test('PQA dashboard shows score overview chart', async ({ page }) => {
+    await page.goto('/');
+
+    // Seed the demo
+    const demoButton = page.getByRole('button', { name: /explore live demo/i });
+    await demoButton.click();
+    await page.waitForURL('/', { timeout: 20000 });
+    await expect(page.locator('aside')).toBeVisible({ timeout: 5000 });
+
+    // Navigate to PQA Scores
+    await page.locator('aside').getByText('PQA Scores', { exact: true }).click();
+    await expect(page.getByText('PQA Scores')).toBeVisible({ timeout: 5000 });
+
+    // Summary cards should show account counts
+    await expect(page.getByText('Total Scored')).toBeVisible();
+    await expect(page.getByText('HOT Accounts')).toBeVisible();
+
+    // OrgScoreTrendChart should render with "Score Overview" title
+    await expect(page.getByText('Score Overview')).toBeVisible({ timeout: 5000 });
+
+    // The chart SVG should be rendered (responsive, inside the chart container)
+    await expect(page.locator('svg').first()).toBeVisible();
+  });
+
+  test('companies page shows score trend sparklines', async ({ page }) => {
+    await page.goto('/');
+
+    // Seed the demo
+    const demoButton = page.getByRole('button', { name: /explore live demo/i });
+    await demoButton.click();
+    await page.waitForURL('/', { timeout: 20000 });
+    await expect(page.locator('aside')).toBeVisible({ timeout: 5000 });
+
+    // Navigate to Companies
+    await page.locator('aside').getByText('Companies', { exact: true }).click();
+    await expect(page.getByText('Companies')).toBeVisible({ timeout: 5000 });
+
+    // Should see demo companies listed
+    await expect(page.getByText('Acme DevTools')).toBeVisible({ timeout: 5000 });
+
+    // Sparkline SVGs should be rendered (one per company row)
+    const sparklines = page.locator('svg[aria-label^="Score trend"]');
+    await expect(sparklines.first()).toBeVisible({ timeout: 5000 });
+  });
+
   test('registration page loads correctly', async ({ page }) => {
     await page.goto('/register');
 
     // Check for registration form elements
-    await expect(page.getByRole('heading', { name: /headless crm/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /devsignal/i })).toBeVisible();
     await expect(page.getByLabel('First name')).toBeVisible();
     await expect(page.getByLabel('Last name')).toBeVisible();
     await expect(page.getByLabel('Email')).toBeVisible();
@@ -55,7 +162,7 @@ test.describe('Demo Flow', () => {
     await page.goto('/login');
 
     // Check for login form elements
-    await expect(page.getByRole('heading', { name: /headless crm/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /devsignal/i })).toBeVisible();
     await expect(page.getByLabel('Email')).toBeVisible();
     await expect(page.getByLabel('Password')).toBeVisible();
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
