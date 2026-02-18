@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
 
-const LAST_UPDATED = 'February 16, 2026';
+const LAST_UPDATED = 'February 18, 2026';
 
 interface Section {
   id: string;
@@ -284,8 +284,36 @@ const sections: Section[] = [
     ),
   },
   {
+    id: 'indemnification',
+    title: '9. Indemnification',
+    content: (
+      <>
+        <p>
+          You agree to indemnify, defend, and hold harmless DevSignal, its officers, directors,
+          employees, agents, and affiliates from and against any claims, liabilities, damages, losses,
+          costs, and expenses (including reasonable attorneys' fees) arising out of or relating to:
+        </p>
+        <ul>
+          <li>Your use of the Service in violation of these Terms.</li>
+          <li>Your violation of any applicable law, regulation, or third-party right.</li>
+          <li>
+            Any data or content you submit to the Service, including any claim that such data
+            infringes or misappropriates the intellectual property rights of a third party.
+          </li>
+          <li>Your negligence or willful misconduct.</li>
+        </ul>
+        <p>
+          DevSignal will promptly notify you of any such claim and will reasonably cooperate with
+          you (at your expense) in the defense of such claim. DevSignal reserves the right, at its
+          own expense, to assume the exclusive defense and control of any matter subject to
+          indemnification by you.
+        </p>
+      </>
+    ),
+  },
+  {
     id: 'termination',
-    title: '9. Termination',
+    title: '10. Termination',
     content: (
       <>
         <p>
@@ -316,7 +344,7 @@ const sections: Section[] = [
   },
   {
     id: 'modifications',
-    title: '10. Modifications to Terms',
+    title: '11. Modifications to Terms',
     content: (
       <>
         <p>
@@ -343,7 +371,7 @@ const sections: Section[] = [
   },
   {
     id: 'governing-law',
-    title: '11. Governing Law',
+    title: '12. Governing Law',
     content: (
       <>
         <p>
@@ -363,8 +391,40 @@ const sections: Section[] = [
     ),
   },
   {
+    id: 'force-majeure',
+    title: '13. Force Majeure',
+    content: (
+      <>
+        <p>
+          Neither party shall be liable for any failure or delay in performing its obligations under
+          these Terms where such failure or delay results from circumstances beyond the reasonable
+          control of that party, including but not limited to:
+        </p>
+        <ul>
+          <li>Natural disasters, epidemics, or pandemics.</li>
+          <li>War, terrorism, riots, or civil unrest.</li>
+          <li>
+            Government actions, sanctions, embargoes, or regulatory changes.
+          </li>
+          <li>
+            Internet or telecommunications failures, cyberattacks, or denial-of-service attacks.
+          </li>
+          <li>
+            Third-party service provider outages (including cloud hosting, payment processors, or
+            API providers).
+          </li>
+        </ul>
+        <p>
+          The affected party shall promptly notify the other party of the force majeure event and
+          shall use reasonable efforts to mitigate its effects. If a force majeure event continues
+          for more than 60 days, either party may terminate these Terms upon written notice.
+        </p>
+      </>
+    ),
+  },
+  {
     id: 'contact',
-    title: '12. Contact',
+    title: '14. Contact',
     content: (
       <>
         <p>If you have questions about these Terms of Service, please contact us at:</p>

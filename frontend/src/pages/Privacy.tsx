@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
 
-const LAST_UPDATED = 'February 16, 2026';
+const LAST_UPDATED = 'February 18, 2026';
 
 interface Section {
   id: string;
@@ -358,8 +358,42 @@ const sections: Section[] = [
     ),
   },
   {
+    id: 'breach-notification',
+    title: '9. Data Breach Notification',
+    content: (
+      <>
+        <p>
+          In the event of a data breach that affects your personal information, DevSignal will:
+        </p>
+        <ul>
+          <li>
+            <strong>Notify affected users</strong> via email within 72 hours of becoming aware of
+            the breach, as required by GDPR Article 33.
+          </li>
+          <li>
+            <strong>Notify supervisory authorities</strong> in applicable jurisdictions within the
+            timeframes required by law.
+          </li>
+          <li>
+            <strong>Provide details</strong> about the nature of the breach, the categories and
+            approximate number of individuals affected, the likely consequences, and the measures
+            taken or proposed to address the breach.
+          </li>
+          <li>
+            <strong>Take immediate remedial action</strong> to contain the breach, mitigate its
+            effects, and prevent recurrence.
+          </li>
+        </ul>
+        <p>
+          If you believe your data has been compromised, please contact us immediately at{' '}
+          <a href="mailto:security@devsignal.dev">security@devsignal.dev</a>.
+        </p>
+      </>
+    ),
+  },
+  {
     id: 'children',
-    title: '9. Children\'s Privacy',
+    title: '10. Children\'s Privacy',
     content: (
       <>
         <p>
@@ -374,7 +408,7 @@ const sections: Section[] = [
   },
   {
     id: 'changes',
-    title: '10. Changes to This Policy',
+    title: '11. Changes to This Policy',
     content: (
       <>
         <p>
@@ -399,7 +433,7 @@ const sections: Section[] = [
   },
   {
     id: 'contact',
-    title: '11. Contact Us',
+    title: '12. Contact Us',
     content: (
       <>
         <p>
