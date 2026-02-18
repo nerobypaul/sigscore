@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
+import { useToast } from './Toast';
 
 export default function DemoDataBanner() {
+  const toast = useToast();
   const [hasDemoData, setHasDemoData] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -36,6 +38,7 @@ export default function DemoDataBanner() {
       // Reload the page so dashboard reflects the cleared data
       window.location.reload();
     } catch {
+      toast.error('Failed to clear demo data');
       setClearing(false);
     }
   };

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../lib/api';
+import { useToast } from '../components/Toast';
 import WebhookTestPanel from '../components/WebhookTestPanel';
 
 interface WebhookSubscription {
@@ -37,6 +38,7 @@ const EVENT_COLORS: Record<string, string> = {
 
 export default function WebhookManager() {
   useEffect(() => { document.title = 'Webhooks — DevSignal'; }, []);
+  const toast = useToast();
 
   const [subscriptions, setSubscriptions] = useState<WebhookSubscription[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +112,7 @@ export default function WebhookManager() {
       setSubscriptions((prev) => prev.filter((s) => s.id !== id));
       if (newSecret?.id === id) setNewSecret(null);
     } catch {
-      // Ignore delete errors silently
+      toast.error('Failed to delete webhook subscription');
     }
   };
 
@@ -119,7 +121,7 @@ export default function WebhookManager() {
       const { data } = await api.patch(`/webhooks/subscribe/${id}`, { active: !active });
       setSubscriptions((prev) => prev.map((s) => (s.id === id ? data : s)));
     } catch {
-      // Ignore toggle errors silently
+      toast.error('Failed to update webhook subscription');
     }
   };
 
