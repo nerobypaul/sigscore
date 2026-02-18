@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import { signalSyncQueue, hubspotSyncQueue, discordSyncQueue, salesforceSyncQueue, stackoverflowSyncQueue, twitterSyncQueue, redditSyncQueue, linkedinSyncQueue, posthogSyncQueue, bulkEnrichmentQueue, scoreSnapshotQueue, weeklyDigestQueue } from './queue';
+import { signalSyncQueue, hubspotSyncQueue, discordSyncQueue, salesforceSyncQueue, stackoverflowSyncQueue, twitterSyncQueue, redditSyncQueue, linkedinSyncQueue, posthogSyncQueue, bulkEnrichmentQueue, scoreSnapshotQueue, weeklyDigestQueue, demoCleanupQueue } from './queue';
 import { getConnectedOrganizations } from '../services/hubspot-sync';
 import { getConnectedOrganizations as getSalesforceConnectedOrganizations } from '../services/salesforce-sync';
 import { getDiscordConnectedOrganizations } from '../services/discord-connector';
@@ -155,6 +155,17 @@ export const setupScheduler = async (): Promise<void> => {
     },
   );
 
+  // Demo org cleanup daily at 4 AM UTC — removes stale demo orgs older than 24 hours
+  // to prevent DB bloat from visitors who explore the live demo and never return.
+  await demoCleanupQueue.add(
+    'demo-cleanup-scheduler',
+    { trigger: 'scheduled' as const },
+    {
+      repeat: { pattern: '0 4 * * *' },
+      jobId: 'scheduled-demo-cleanup',
+    },
+  );
+
   logger.info('BullMQ scheduled jobs configured', {
     jobs: [
       { name: 'sync-all-npm', schedule: 'every 6 hours' },
@@ -169,6 +180,7 @@ export const setupScheduler = async (): Promise<void> => {
       { name: 'posthog-sync', schedule: 'every hour' },
       { name: 'clearbit-enrichment', schedule: 'daily at 3 AM' },
       { name: 'score-snapshot', schedule: 'daily at 2 AM' },
+      { name: 'demo-cleanup', schedule: 'daily at 4 AM' },
     ],
   });
 };

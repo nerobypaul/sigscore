@@ -27,6 +27,7 @@ export const QUEUE_NAMES = {
   SCORE_SNAPSHOT: 'score-snapshot',
   WEEKLY_DIGEST: 'weekly-digest',
   DATA_EXPORT: 'data-export',
+  DEMO_CLEANUP: 'demo-cleanup',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -147,6 +148,11 @@ export interface DataExportJobData {
   format: 'json' | 'csv';
   entities: string[]; // ['contacts', 'companies', 'signals', 'deals', 'activities']
   filters?: Record<string, unknown>;
+}
+
+export interface DemoCleanupJobData {
+  /** Placeholder field — the job is self-contained (finds stale orgs itself). */
+  trigger: 'scheduled' | 'manual';
 }
 
 // ---------------------------------------------------------------------------
@@ -397,6 +403,18 @@ export const dataExportQueue = new Queue<DataExportJobData>(
   },
 );
 
+export const demoCleanupQueue = new Queue<DemoCleanupJobData>(
+  QUEUE_NAMES.DEMO_CLEANUP,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 5_000 },
+    },
+  },
+);
+
 // ---------------------------------------------------------------------------
 // Convenience: all queues in a single array
 // ---------------------------------------------------------------------------
@@ -422,6 +440,7 @@ const allQueues: Queue[] = [
   scoreSnapshotQueue,
   weeklyDigestQueue,
   dataExportQueue,
+  demoCleanupQueue,
 ];
 
 /**

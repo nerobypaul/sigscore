@@ -45,12 +45,14 @@ import {
   ScoreSnapshotJobData,
   WeeklyDigestJobData,
   DataExportJobData,
+  DemoCleanupJobData,
 } from './queue';
 import { generateExport, setExportStatus } from '../services/data-export';
 import { processEmailStep } from '../services/email-sequences';
 import { generateWeeklyDigest } from '../services/weekly-digest';
 import { renderWeeklyDigestEmail, renderWeeklyDigestSubject } from '../services/email-templates';
 import { sendEmail } from '../services/email-sender';
+import { cleanupDemoOrg } from '../services/demo-seed';
 import { prisma } from '../config/database';
 import { config } from '../config';
 
@@ -935,6 +937,75 @@ function createDataExportWorker(): Worker<DataExportJobData> {
 }
 
 // ---------------------------------------------------------------------------
+// Demo Cleanup Worker
+// ---------------------------------------------------------------------------
+function createDemoCleanupWorker(): Worker<DemoCleanupJobData> {
+  return new Worker<DemoCleanupJobData>(
+    QUEUE_NAMES.DEMO_CLEANUP,
+    async (job: Job<DemoCleanupJobData>) => {
+      logger.info('Demo cleanup started', {
+        jobId: job.id,
+        trigger: job.data.trigger,
+        attempt: job.attemptsMade + 1,
+      });
+
+      // Find demo orgs older than 24 hours
+      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const staleOrgs = await prisma.organization.findMany({
+        where: {
+          slug: { startsWith: 'devsignal-demo' },
+          createdAt: { lt: cutoff },
+        },
+        select: { id: true, slug: true, createdAt: true },
+      });
+
+      if (staleOrgs.length === 0) {
+        logger.info('Demo cleanup completed — no stale orgs found', { jobId: job.id });
+        return { cleaned: 0 };
+      }
+
+      let cleaned = 0;
+      const errors: string[] = [];
+
+      for (const org of staleOrgs) {
+        try {
+          await cleanupDemoOrg(org.id);
+          cleaned++;
+          logger.info('Cleaned up stale demo org', {
+            jobId: job.id,
+            orgId: org.id,
+            slug: org.slug,
+            createdAt: org.createdAt.toISOString(),
+          });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          errors.push(`${org.id}: ${msg}`);
+          logger.error('Failed to clean up stale demo org', {
+            jobId: job.id,
+            orgId: org.id,
+            slug: org.slug,
+            error: msg,
+          });
+        }
+      }
+
+      logger.info('Demo cleanup completed', {
+        jobId: job.id,
+        found: staleOrgs.length,
+        cleaned,
+        failed: errors.length,
+      });
+
+      return { found: staleOrgs.length, cleaned, failed: errors.length, errors };
+    },
+    {
+      connection: bullConnection,
+      concurrency: 1, // Only one cleanup at a time to avoid race conditions
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Lifecycle helpers
 // ---------------------------------------------------------------------------
 function attachLogging(worker: Worker): void {
@@ -981,8 +1052,9 @@ export const startWorkers = (): void => {
   const scoreSnapshotWorker = createScoreSnapshotWorker();
   const weeklyDigestWorker = createWeeklyDigestWorker();
   const dataExportWorker = createDataExportWorker();
+  const demoCleanupWorker = createDemoCleanupWorker();
 
-  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, redditSyncWorker, linkedinSyncWorker, posthogSyncWorker, bulkEnrichmentWorker, scoreSnapshotWorker, weeklyDigestWorker, dataExportWorker].forEach((w) => {
+  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, redditSyncWorker, linkedinSyncWorker, posthogSyncWorker, bulkEnrichmentWorker, scoreSnapshotWorker, weeklyDigestWorker, dataExportWorker, demoCleanupWorker].forEach((w) => {
     attachLogging(w);
     workers.push(w);
   });

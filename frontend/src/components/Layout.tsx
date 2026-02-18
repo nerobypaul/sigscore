@@ -8,6 +8,7 @@ import DemoModeBanner from './DemoModeBanner';
 import UsageBanner from './UsageBanner';
 import UpgradeModal from './UpgradeModal';
 import type { UpgradeModalProps } from './UpgradeModal';
+import DemoOnboardingHints from './DemoOnboardingHints';
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts';
 
 // --- Grouped Navigation Structure ---
@@ -318,6 +319,7 @@ export default function Layout() {
         limit={upgradeModal?.limit}
         tier={upgradeModal?.tier}
       />
+      <DemoOnboardingHints />
       </div>
     </div>
   );

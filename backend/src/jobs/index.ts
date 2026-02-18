@@ -7,6 +7,7 @@ export {
   enrichmentQueue,
   signalSyncQueue,
   workflowExecutionQueue,
+  demoCleanupQueue,
   closeAllQueues,
 } from './queue';
 
@@ -18,6 +19,7 @@ export type {
   EnrichmentJobData,
   SignalSyncJobData,
   WorkflowExecutionJobData,
+  DemoCleanupJobData,
 } from './queue';
 
 export { startWorkers, stopWorkers } from './workers';

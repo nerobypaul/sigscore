@@ -118,7 +118,7 @@ export async function createDemoEnvironment(): Promise<DemoSeedResult> {
 // Cleanup
 // ---------------------------------------------------------------------------
 
-async function cleanupDemoOrg(orgId: string): Promise<void> {
+export async function cleanupDemoOrg(orgId: string): Promise<void> {
   // Find users linked to this org
   const userOrgs = await prisma.userOrganization.findMany({
     where: { organizationId: orgId },
