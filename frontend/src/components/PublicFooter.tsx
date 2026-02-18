@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 /**
  * Shared footer for all public-facing marketing & legal pages.
- * Consistent links: Home, Use Cases, Pricing, Developers, Changelog, Terms, Privacy, Sign in.
+ * Consistent links: Home, Use Cases, Pricing, Developers, Changelog, Terms, Privacy, DPA, Cookies, Acceptable Use, Sign in.
  */
 export default function PublicFooter() {
   return (
