@@ -122,6 +122,7 @@ const STATUS_BADGES: Record<PlanStatus, { label: string; className: string }> = 
 // ---------------------------------------------------------------------------
 
 export default function Billing() {
+  useEffect(() => { document.title = 'Billing — DevSignal'; }, []);
   const toast = useToast();
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [usage, setUsage] = useState<UsageInfo | null>(null);

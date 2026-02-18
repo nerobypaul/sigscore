@@ -9,6 +9,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
  * We store them in localStorage and redirect to the dashboard.
  */
 export default function SsoCallback() {
+  useEffect(() => { document.title = 'Signing In — DevSignal'; }, []);
+
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);

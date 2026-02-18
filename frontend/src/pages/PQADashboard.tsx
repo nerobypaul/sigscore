@@ -54,6 +54,7 @@ function TierBadge({ tier }: { tier: ScoreTier }) {
 }
 
 export default function PQADashboard() {
+  useEffect(() => { document.title = 'PQA Scores — DevSignal'; }, []);
   const [scores, setScores] = useState<AccountScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);

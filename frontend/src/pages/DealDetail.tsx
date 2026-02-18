@@ -223,6 +223,7 @@ function InlineEdit({
 // ---------- Main component ----------
 
 export default function DealDetailPage() {
+  useEffect(() => { document.title = 'Deal Detail — DevSignal'; }, []);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const toast = useToast();

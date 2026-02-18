@@ -54,6 +54,8 @@ function timeAgo(date: string): string {
 }
 
 export default function Signals() {
+  useEffect(() => { document.title = 'Signals — DevSignal'; }, []);
+
   const [signals, setSignals] = useState<Signal[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [page, setPage] = useState(1);

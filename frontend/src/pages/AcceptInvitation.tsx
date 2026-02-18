@@ -30,6 +30,7 @@ interface InvitationInfo {
 // ---------------------------------------------------------------------------
 
 export default function AcceptInvitation() {
+  useEffect(() => { document.title = 'Accept Invitation — DevSignal'; }, []);
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading, refreshUser, setOrganizationId } = useAuth();

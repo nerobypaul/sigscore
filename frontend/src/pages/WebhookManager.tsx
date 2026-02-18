@@ -36,6 +36,8 @@ const EVENT_COLORS: Record<string, string> = {
 };
 
 export default function WebhookManager() {
+  useEffect(() => { document.title = 'Webhooks — DevSignal'; }, []);
+
   const [subscriptions, setSubscriptions] = useState<WebhookSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

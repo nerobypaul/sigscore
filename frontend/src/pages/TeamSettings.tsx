@@ -174,6 +174,8 @@ function Avatar({ user, size = 'md' }: { user: MemberUser; size?: 'sm' | 'md' })
 // ---------------------------------------------------------------------------
 
 export default function TeamSettings() {
+  useEffect(() => { document.title = 'Team Settings — DevSignal'; }, []);
+
   const toast = useToast();
   const [members, setMembers] = useState<Member[]>([]);
   const [invitations, setInvitations] = useState<PendingInvitation[]>([]);

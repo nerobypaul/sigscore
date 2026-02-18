@@ -8,6 +8,7 @@ import ActivityTimeline from '../components/ActivityTimeline';
 import CustomFieldsDisplay from '../components/CustomFieldsDisplay';
 
 export default function ContactDetail() {
+  useEffect(() => { document.title = 'Contact Detail — DevSignal'; }, []);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const toast = useToast();

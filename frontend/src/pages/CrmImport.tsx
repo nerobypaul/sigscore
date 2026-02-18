@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import { useToast } from '../components/Toast';
@@ -37,6 +37,7 @@ const ENTITY_LABELS: Record<EntityKey, string> = {
 };
 
 export default function CrmImport() {
+  useEffect(() => { document.title = 'CRM Import — DevSignal'; }, []);
   const toast = useToast();
   const [step, setStep] = useState(1);
   const [source, setSource] = useState<CrmSource | null>(null);

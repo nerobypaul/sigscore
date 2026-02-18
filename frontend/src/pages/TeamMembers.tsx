@@ -268,6 +268,8 @@ function ConfirmModal({
 // ---------------------------------------------------------------------------
 
 export default function TeamMembers() {
+  useEffect(() => { document.title = 'Team Members — DevSignal'; }, []);
+
   const toast = useToast();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);

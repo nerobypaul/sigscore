@@ -45,6 +45,7 @@ const TRIGGER_TYPES = [
 ];
 
 export default function EmailSequences() {
+  useEffect(() => { document.title = 'Email Sequences — DevSignal'; }, []);
   const navigate = useNavigate();
   const toast = useToast();
   const [sequences, setSequences] = useState<Sequence[]>([]);

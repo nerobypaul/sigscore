@@ -4447,6 +4447,7 @@ function ToggleSwitch({
 // ---------------------------------------------------------------------------
 
 export default function Settings() {
+  useEffect(() => { document.title = 'Settings — DevSignal'; }, []);
   const [activeTab, setActiveTab] = useState<TabId>('api-keys');
   const loadedTabsRef = useRef<Set<TabId>>(new Set(['api-keys']));
 

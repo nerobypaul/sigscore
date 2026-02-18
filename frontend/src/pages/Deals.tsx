@@ -13,6 +13,7 @@ import SavedViewSelector from '../components/SavedViewSelector';
 type ViewMode = 'pipeline' | 'list';
 
 export default function Deals() {
+  useEffect(() => { document.title = 'Deals — DevSignal'; }, []);
   const toast = useToast();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);

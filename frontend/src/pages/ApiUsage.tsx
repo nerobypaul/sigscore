@@ -96,6 +96,7 @@ function sortEndpoints(
 // ---------------------------------------------------------------------------
 
 export default function ApiUsage() {
+  useEffect(() => { document.title = 'API Usage — DevSignal'; }, []);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<UsageSummary | null>(null);

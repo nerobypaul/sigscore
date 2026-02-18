@@ -63,6 +63,7 @@ const TEMPLATE_VARS = [
 ];
 
 export default function EmailSequenceDetail() {
+  useEffect(() => { document.title = 'Email Sequence — DevSignal'; }, []);
   const { id } = useParams<{ id: string }>();
   const toast = useToast();
 

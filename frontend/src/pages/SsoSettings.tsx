@@ -27,6 +27,8 @@ interface OidcDiscovery {
 }
 
 export default function SsoSettings() {
+  useEffect(() => { document.title = 'SSO Settings — DevSignal'; }, []);
+
   const { user } = useAuth();
   const [connection, setConnection] = useState<SsoConnection | null>(null);
   const [loading, setLoading] = useState(true);

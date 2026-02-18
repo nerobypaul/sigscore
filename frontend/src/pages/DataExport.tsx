@@ -41,6 +41,7 @@ const FORMAT_OPTIONS = [
 // ---------------------------------------------------------------------------
 
 export default function DataExport() {
+  useEffect(() => { document.title = 'Data Export — DevSignal'; }, []);
   const toast = useToast();
 
   // Form state

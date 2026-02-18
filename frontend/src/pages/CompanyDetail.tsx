@@ -82,6 +82,7 @@ interface AIAction {
 // ---------------------------------------------------------------------------
 
 export default function CompanyDetail() {
+  useEffect(() => { document.title = 'Company Detail — DevSignal'; }, []);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const toast = useToast();

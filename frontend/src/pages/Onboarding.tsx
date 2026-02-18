@@ -50,6 +50,7 @@ interface CrawlProgress {
 // ---- Main component ----
 
 export default function Onboarding() {
+  useEffect(() => { document.title = 'Get Started — DevSignal'; }, []);
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);

@@ -260,6 +260,8 @@ function FeedSignalCard({
 // ---------------------------------------------------------------------------
 
 export default function SignalFeed() {
+  useEffect(() => { document.title = 'Signal Feed — DevSignal'; }, []);
+
   // Data state
   const [signals, setSignals] = useState<Signal[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);

@@ -156,6 +156,8 @@ function sizeLabel(size: string | null): string {
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export default function SharedReport() {
+  useEffect(() => { document.title = 'Account Report — DevSignal'; }, []);
+
   const { shareToken } = useParams<{ shareToken: string }>();
   const [report, setReport] = useState<SharedReportData | null>(null);
   const [loading, setLoading] = useState(true);

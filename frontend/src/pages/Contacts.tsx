@@ -10,6 +10,7 @@ import SavedViewSelector from '../components/SavedViewSelector';
 import BulkActionBar from '../components/BulkActionBar';
 
 export default function Contacts() {
+  useEffect(() => { document.title = 'Contacts — DevSignal'; }, []);
   const navigate = useNavigate();
   const toast = useToast();
   const [contacts, setContacts] = useState<Contact[]>([]);

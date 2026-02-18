@@ -120,6 +120,7 @@ function conditionSummary(triggerType: string, conditions: Record<string, unknow
 // ---------------------------------------------------------------------------
 
 export default function AccountAlerts() {
+  useEffect(() => { document.title = 'Account Alerts — DevSignal'; }, []);
   const toast = useToast();
   const [tab, setTab] = useState<'rules' | 'history'>('rules');
 
