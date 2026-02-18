@@ -9,7 +9,10 @@ export interface SignalSourceInput {
 }
 
 export const getSignalSources = async (organizationId: string) => {
-  return prisma.signalSource.findMany({
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const sources = await prisma.signalSource.findMany({
     where: { organizationId },
     orderBy: { createdAt: 'desc' },
     select: {
@@ -24,6 +27,20 @@ export const getSignalSources = async (organizationId: string) => {
       _count: { select: { signals: true } },
     },
   });
+
+  // Fetch recent signal counts in parallel
+  const recentCounts = await Promise.all(
+    sources.map((s) =>
+      prisma.signal.count({
+        where: { sourceId: s.id, timestamp: { gte: sevenDaysAgo } },
+      })
+    )
+  );
+
+  return sources.map((s, i) => ({
+    ...s,
+    recentSignals: recentCounts[i],
+  }));
 };
 
 export const getSignalSourceById = async (id: string, organizationId: string) => {
@@ -98,4 +115,165 @@ export const testSignalSource = async (id: string, organizationId: string) => {
     status: source.status,
     lastSyncAt: source.lastSyncAt,
   };
+};
+
+// ============================================================
+// INTEGRATION CATALOG — Metadata for all available source types
+// ============================================================
+
+export const INTEGRATION_CATALOG: Record<string, {
+  type: string;
+  name: string;
+  description: string;
+  category: 'Developer Activity' | 'Package Registry' | 'Analytics' | 'CRM' | 'Communication' | 'Community' | 'Custom';
+  setupType: 'webhook' | 'api_key' | 'oauth' | 'manual';
+  configFields: string[];
+}> = {
+  GITHUB: {
+    type: 'GITHUB',
+    name: 'GitHub',
+    description: 'Track repository stars, forks, pull requests, issues, and developer activity via webhooks',
+    category: 'Developer Activity',
+    setupType: 'webhook',
+    configFields: ['webhookSecret'],
+  },
+  NPM: {
+    type: 'NPM',
+    name: 'npm',
+    description: 'Monitor package downloads, maintainer activity, and adoption trends',
+    category: 'Package Registry',
+    setupType: 'api_key',
+    configFields: ['packages'],
+  },
+  PYPI: {
+    type: 'PYPI',
+    name: 'PyPI',
+    description: 'Track Python package downloads and release activity',
+    category: 'Package Registry',
+    setupType: 'api_key',
+    configFields: ['packages'],
+  },
+  WEBSITE: {
+    type: 'WEBSITE',
+    name: 'Website',
+    description: 'Track website page views, signups, and visitor behavior',
+    category: 'Analytics',
+    setupType: 'manual',
+    configFields: ['domain', 'trackingId'],
+  },
+  DOCS: {
+    type: 'DOCS',
+    name: 'Documentation',
+    description: 'Monitor documentation page views, search queries, and popular topics',
+    category: 'Analytics',
+    setupType: 'manual',
+    configFields: ['docsUrl'],
+  },
+  PRODUCT_API: {
+    type: 'PRODUCT_API',
+    name: 'Product API',
+    description: 'Ingest API usage events, rate limits, and endpoint activity',
+    category: 'Analytics',
+    setupType: 'api_key',
+    configFields: ['apiEndpoint'],
+  },
+  SEGMENT: {
+    type: 'SEGMENT',
+    name: 'Segment',
+    description: 'Receive track, identify, and group events via Segment webhooks',
+    category: 'Analytics',
+    setupType: 'webhook',
+    configFields: ['sharedSecret'],
+  },
+  DISCORD: {
+    type: 'DISCORD',
+    name: 'Discord',
+    description: 'Monitor community server messages, support channels, and engagement',
+    category: 'Communication',
+    setupType: 'api_key',
+    configFields: ['botToken', 'guildId'],
+  },
+  TWITTER: {
+    type: 'TWITTER',
+    name: 'Twitter / X',
+    description: 'Track brand mentions, keyword discussions, and developer sentiment',
+    category: 'Community',
+    setupType: 'api_key',
+    configFields: ['bearerToken', 'keywords'],
+  },
+  STACKOVERFLOW: {
+    type: 'STACKOVERFLOW',
+    name: 'Stack Overflow',
+    description: 'Monitor questions tagged with your technology and community answers',
+    category: 'Community',
+    setupType: 'api_key',
+    configFields: ['tags'],
+  },
+  REDDIT: {
+    type: 'REDDIT',
+    name: 'Reddit',
+    description: 'Track subreddit discussions, mentions, and developer sentiment',
+    category: 'Community',
+    setupType: 'api_key',
+    configFields: ['clientId', 'clientSecret', 'subreddits', 'keywords'],
+  },
+  POSTHOG: {
+    type: 'POSTHOG',
+    name: 'PostHog',
+    description: 'Receive product analytics events, feature flag data, and user actions',
+    category: 'Analytics',
+    setupType: 'webhook',
+    configFields: ['apiKey', 'webhookSecret'],
+  },
+  LINKEDIN: {
+    type: 'LINKEDIN',
+    name: 'LinkedIn',
+    description: 'Track company page engagement, employee advocacy, and professional signals',
+    category: 'Community',
+    setupType: 'oauth',
+    configFields: ['accessToken'],
+  },
+  INTERCOM: {
+    type: 'INTERCOM',
+    name: 'Intercom',
+    description: 'Sync conversations, user data, and support interactions',
+    category: 'Communication',
+    setupType: 'api_key',
+    configFields: ['accessToken'],
+  },
+  ZENDESK: {
+    type: 'ZENDESK',
+    name: 'Zendesk',
+    description: 'Import support tickets, satisfaction ratings, and customer interactions',
+    category: 'Communication',
+    setupType: 'api_key',
+    configFields: ['subdomain', 'email', 'apiToken'],
+  },
+  CUSTOM_WEBHOOK: {
+    type: 'CUSTOM_WEBHOOK',
+    name: 'Custom Webhook',
+    description: 'Send any event data via HTTP webhook with custom payload mapping',
+    category: 'Custom',
+    setupType: 'webhook',
+    configFields: [],
+  },
+};
+
+export const getIntegrationCatalog = () => {
+  return Object.values(INTEGRATION_CATALOG);
+};
+
+export const getSyncHistory = async (sourceId: string, organizationId: string) => {
+  // Verify source belongs to org
+  const source = await prisma.signalSource.findFirst({
+    where: { id: sourceId, organizationId },
+    select: { id: true },
+  });
+  if (!source) throw new AppError('Signal source not found', 404);
+
+  return prisma.syncHistory.findMany({
+    where: { sourceId },
+    orderBy: { startedAt: 'desc' },
+    take: 50,
+  });
 };

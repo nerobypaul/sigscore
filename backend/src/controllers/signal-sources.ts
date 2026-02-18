@@ -68,3 +68,22 @@ export const testSignalSource = async (req: Request, res: Response, next: NextFu
     next(error);
   }
 };
+
+export const getCatalog = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const catalog = signalSourceService.getIntegrationCatalog();
+    res.json({ integrations: catalog });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getSyncHistory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const organizationId = req.organizationId!;
+    const history = await signalSourceService.getSyncHistory(req.params.id, organizationId);
+    res.json({ history });
+  } catch (error) {
+    next(error);
+  }
+};

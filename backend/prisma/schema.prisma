@@ -418,9 +418,36 @@ model SignalSource {
 
   organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   signals        Signal[]
+  syncHistory    SyncHistory[]
 
   @@index([organizationId, type])
   @@map("signal_sources")
+}
+
+// Track each sync attempt for observability
+model SyncHistory {
+  id             String            @id @default(cuid())
+  sourceId       String
+  status         SyncHistoryStatus @default(RUNNING)
+  signalsCreated Int               @default(0)
+  signalsUpdated Int               @default(0)
+  errors         Int               @default(0)
+  errorDetails   String?           // Last error message if any
+  durationMs     Int?              // How long the sync took
+  startedAt      DateTime          @default(now())
+  completedAt    DateTime?
+
+  source         SignalSource      @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId, startedAt(sort: Desc)])
+  @@map("sync_history")
+}
+
+enum SyncHistoryStatus {
+  RUNNING
+  COMPLETED
+  PARTIAL
+  FAILED
 }
 
 enum SignalSourceType {

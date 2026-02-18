@@ -6,6 +6,8 @@ import {
   updateSignalSource,
   deleteSignalSource,
   testSignalSource,
+  getCatalog,
+  getSyncHistory,
 } from '../controllers/signal-sources';
 import { authenticate, requireOrganization } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -17,7 +19,7 @@ router.use(authenticate);
 router.use(requireOrganization);
 
 const createSourceSchema = z.object({
-  type: z.enum(['GITHUB', 'NPM', 'WEBSITE', 'DOCS', 'PRODUCT_API', 'SEGMENT', 'CUSTOM_WEBHOOK']),
+  type: z.enum(['GITHUB', 'NPM', 'PYPI', 'WEBSITE', 'DOCS', 'PRODUCT_API', 'SEGMENT', 'DISCORD', 'TWITTER', 'STACKOVERFLOW', 'REDDIT', 'POSTHOG', 'LINKEDIN', 'INTERCOM', 'ZENDESK', 'CUSTOM_WEBHOOK']),
   name: z.string().min(1),
   config: z.record(z.unknown()),
 });
@@ -101,6 +103,22 @@ const updateSourceSchema = z.object({
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/', getSignalSources);
+
+/**
+ * @openapi
+ * /sources/catalog:
+ *   get:
+ *     tags: [Signal Sources]
+ *     summary: Get integration catalog
+ *     description: Returns metadata for all available integration types.
+ *     security:
+ *       - BearerAuth: []
+ *       - ApiKeyAuth: []
+ *     responses:
+ *       200:
+ *         description: Integration catalog
+ */
+router.get('/catalog', getCatalog);
 
 /**
  * @openapi
@@ -386,5 +404,28 @@ router.delete('/:id', deleteSignalSource);
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/:id/test', testSignalSource);
+
+/**
+ * @openapi
+ * /sources/{id}/history:
+ *   get:
+ *     tags: [Signal Sources]
+ *     summary: Get sync history for a source
+ *     description: Returns the sync history for a signal source, most recent first.
+ *     security:
+ *       - BearerAuth: []
+ *       - ApiKeyAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/OrganizationId'
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Sync history entries
+ */
+router.get('/:id/history', getSyncHistory);
 
 export default router;

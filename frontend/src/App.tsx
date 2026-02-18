@@ -65,6 +65,8 @@ const ApiUsage = lazy(() => import('./pages/ApiUsage'));
 const Changelog = lazy(() => import('./pages/Changelog'));
 const CompareCommonRoom = lazy(() => import('./pages/CompareCommonRoom'));
 const CompareReodev = lazy(() => import('./pages/CompareReodev'));
+const Integrations = lazy(() => import('./pages/Integrations'));
+const IntegrationDetail = lazy(() => import('./pages/IntegrationDetail'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
@@ -200,6 +202,8 @@ function AppRoutes() {
           <Route path="/reports" element={<AccountReports />} />
           <Route path="/enrichment" element={<EnrichmentQueue />} />
           <Route path="/api-usage" element={<ApiUsage />} />
+          <Route path="/integrations" element={<Integrations />} />
+          <Route path="/integrations/:type" element={<IntegrationDetail />} />
         </Route>
 
         {/* 404 catch-all */}

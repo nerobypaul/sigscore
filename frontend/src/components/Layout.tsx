@@ -70,7 +70,7 @@ const navSections: NavSection[] = [
     collapsible: true,
     defaultCollapsed: true,
     items: [
-      { to: '/settings', label: 'Integrations', icon: IntegrationsIcon, dataTour: 'nav-integrations' },
+      { to: '/integrations', label: 'Integrations', icon: IntegrationsIcon, dataTour: 'nav-integrations' },
       { to: '/webhooks', label: 'Webhooks', icon: WebhooksIcon, hideInDemo: true },
       { to: '/api-usage', label: 'API Usage', icon: ApiUsageIcon, hideInDemo: true },
       { to: '/scoring', label: 'Scoring Rules', icon: ScoringBuilderIcon },
@@ -84,7 +84,7 @@ const navSections: NavSection[] = [
 ];
 
 // Paths that belong to the Settings section (used to auto-expand when navigating directly)
-const SETTINGS_PATHS = ['/settings', '/webhooks', '/api-usage', '/scoring', '/team', '/team/settings', '/billing', '/audit', '/sso-settings', '/settings/export'];
+const SETTINGS_PATHS = ['/settings', '/integrations', '/webhooks', '/api-usage', '/scoring', '/team', '/team/settings', '/billing', '/audit', '/sso-settings', '/settings/export'];
 
 export default function Layout() {
   const { user, logout } = useAuth();

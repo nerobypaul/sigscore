@@ -254,7 +254,7 @@ export interface PaginatedResponse<T> {
 
 // === Signals ===
 
-export type SignalSourceType = 'GITHUB' | 'NPM' | 'WEBSITE' | 'DOCS' | 'PRODUCT_API' | 'SEGMENT' | 'CUSTOM_WEBHOOK';
+export type SignalSourceType = 'GITHUB' | 'NPM' | 'PYPI' | 'WEBSITE' | 'DOCS' | 'PRODUCT_API' | 'SEGMENT' | 'DISCORD' | 'TWITTER' | 'STACKOVERFLOW' | 'REDDIT' | 'POSTHOG' | 'LINKEDIN' | 'INTERCOM' | 'ZENDESK' | 'CUSTOM_WEBHOOK';
 
 export interface Signal {
   id: string;
@@ -338,4 +338,44 @@ export interface SavedView {
   color?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+// === Integrations ===
+
+export type IntegrationCategory = 'Developer Activity' | 'Package Registry' | 'Analytics' | 'CRM' | 'Communication' | 'Community' | 'Custom';
+export type SetupType = 'webhook' | 'api_key' | 'oauth' | 'manual';
+
+export interface IntegrationMeta {
+  type: SignalSourceType;
+  name: string;
+  description: string;
+  category: IntegrationCategory;
+  setupType: SetupType;
+  configFields: string[];
+}
+
+export interface SignalSource {
+  id: string;
+  type: SignalSourceType;
+  name: string;
+  status: 'ACTIVE' | 'PAUSED' | 'ERROR';
+  lastSyncAt: string | null;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count: { signals: number };
+  recentSignals: number;
+}
+
+export interface SyncHistoryEntry {
+  id: string;
+  sourceId: string;
+  status: 'RUNNING' | 'COMPLETED' | 'PARTIAL' | 'FAILED';
+  signalsCreated: number;
+  signalsUpdated: number;
+  errors: number;
+  errorDetails: string | null;
+  durationMs: number | null;
+  startedAt: string;
+  completedAt: string | null;
 }
