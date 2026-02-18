@@ -104,4 +104,13 @@ const ENABLE_WORKERS = process.env.ENABLE_WORKERS === 'true';
 
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
+
+  process.on('uncaughtException', (err) => {
+    logger.error('Uncaught exception', { error: err.message, stack: err.stack });
+    shutdown('uncaughtException');
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    logger.error('Unhandled rejection', { reason: String(reason) });
+  });
 })();

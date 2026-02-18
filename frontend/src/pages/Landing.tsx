@@ -336,6 +336,7 @@ function ProductMockup() {
 export default function Landing() {
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const handleStartDemo = async () => {
     setDemoLoading(true);
@@ -392,9 +393,35 @@ export default function Landing() {
                 Get Started
                 <ArrowRightIcon />
               </Link>
+              <button
+                onClick={() => setMobileNavOpen(!mobileNavOpen)}
+                className="sm:hidden ml-1 p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                aria-label="Toggle menu"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  {mobileNavOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                  )}
+                </svg>
+              </button>
             </div>
           </div>
         </div>
+
+        {mobileNavOpen && (
+          <div className="sm:hidden bg-gray-900/95 backdrop-blur border-t border-gray-800">
+            <div className="max-w-7xl mx-auto px-4 py-3 space-y-1">
+              <a href="#features" onClick={() => setMobileNavOpen(false)} className="block px-3 py-2 rounded-md text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">Features</a>
+              <a href="#how-it-works" onClick={() => setMobileNavOpen(false)} className="block px-3 py-2 rounded-md text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">How It Works</a>
+              <Link to="/use-cases" onClick={() => setMobileNavOpen(false)} className="block px-3 py-2 rounded-md text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">Use Cases</Link>
+              <Link to="/pricing" onClick={() => setMobileNavOpen(false)} className="block px-3 py-2 rounded-md text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">Pricing</Link>
+              <Link to="/developers" onClick={() => setMobileNavOpen(false)} className="block px-3 py-2 rounded-md text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">Developers</Link>
+              <Link to="/login" onClick={() => setMobileNavOpen(false)} className="block px-3 py-2 rounded-md text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">Sign in</Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* ----------------------------------------------------------------- */}

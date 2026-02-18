@@ -40,6 +40,12 @@ import { logger } from './utils/logger';
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
 
-  // Keep the process alive (workers are event-driven via BullMQ).
-  // If all workers close unexpectedly the process will exit.
+  process.on('uncaughtException', (err) => {
+    logger.error('Uncaught exception in worker', { error: err.message, stack: err.stack });
+    shutdown('uncaughtException');
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    logger.error('Unhandled rejection in worker', { reason: String(reason) });
+  });
 })();

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 function ArrowRightIcon() {
@@ -12,9 +13,11 @@ function ArrowRightIcon() {
  * Shared navigation bar for public-facing marketing pages.
  * Shows: Home | Use Cases | Pricing | Developers + Sign in / Get Started.
  * Highlights the current page based on the route.
+ * Includes mobile hamburger menu.
  */
 export default function PublicNav() {
   const { pathname } = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const navLinks = [
     { to: '/', label: 'Home' },
@@ -65,9 +68,52 @@ export default function PublicNav() {
               Get Started
               <ArrowRightIcon />
             </Link>
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="sm:hidden ml-1 p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                {mobileOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile dropdown */}
+      {mobileOpen && (
+        <div className="sm:hidden bg-gray-900/95 backdrop-blur border-t border-gray-800">
+          <div className="max-w-7xl mx-auto px-4 py-3 space-y-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setMobileOpen(false)}
+                className={`block px-3 py-2 rounded-md text-sm ${
+                  isActive(link.to)
+                    ? 'text-white font-medium bg-gray-800'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                } transition-colors`}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <Link
+              to="/login"
+              onClick={() => setMobileOpen(false)}
+              className="block px-3 py-2 rounded-md text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            >
+              Sign in
+            </Link>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
