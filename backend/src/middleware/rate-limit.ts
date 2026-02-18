@@ -1,16 +1,22 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { type Options } from 'express-rate-limit';
+import { RedisStore } from 'rate-limit-redis';
+import { redis } from '../config/redis';
 
 // ---------------------------------------------------------------------------
-// Rate Limiters
-//
-// All limiters use the in-memory store by default. For multi-instance
-// deployments, swap to rate-limit-redis:
-//
-//   import { RedisStore } from 'rate-limit-redis';
-//   import { redis } from '../config/redis';
-//   store: new RedisStore({ sendCommand: (...args) => redis.call(...args) })
-//
+// Redis-backed store for production (shared across instances).
+// Falls back to in-memory in development/test.
 // ---------------------------------------------------------------------------
+
+function getStore(): Options['store'] | undefined {
+  if (process.env.NODE_ENV === 'production') {
+    return new RedisStore({
+      sendCommand: (...args: string[]) =>
+        redis.call(args[0], ...args.slice(1)) as Promise<never>,
+      prefix: 'rl:',
+    });
+  }
+  return undefined; // uses default in-memory store
+}
 
 /**
  * Auth limiter -- strict limit for authentication endpoints to prevent
@@ -27,6 +33,7 @@ export const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  store: getStore(),
 });
 
 /**
@@ -43,6 +50,7 @@ export const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  store: getStore(),
 });
 
 /**
@@ -60,6 +68,7 @@ export const webhookLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  store: getStore(),
 });
 
 /**
@@ -77,6 +86,7 @@ export const demoLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  store: getStore(),
 });
 
 /**
@@ -94,4 +104,5 @@ export const signalLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  store: getStore(),
 });
