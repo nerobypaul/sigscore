@@ -197,6 +197,15 @@ function getSignalSourceBg(source?: string | null): string {
   if (s.includes('WEBSITE') || s.includes('DOCS')) return 'bg-emerald-500 text-white';
   if (s.includes('SEGMENT')) return 'bg-green-600 text-white';
   if (s.includes('API') || s.includes('PRODUCT')) return 'bg-violet-600 text-white';
+  if (s.includes('DISCORD')) return 'bg-violet-500 text-white';
+  if (s.includes('TWITTER')) return 'bg-sky-500 text-white';
+  if (s.includes('STACKOVERFLOW')) return 'bg-orange-500 text-white';
+  if (s.includes('REDDIT')) return 'bg-orange-600 text-white';
+  if (s.includes('POSTHOG')) return 'bg-blue-600 text-white';
+  if (s.includes('LINKEDIN')) return 'bg-blue-700 text-white';
+  if (s.includes('INTERCOM')) return 'bg-indigo-600 text-white';
+  if (s.includes('ZENDESK')) return 'bg-green-700 text-white';
+  if (s.includes('CLEARBIT')) return 'bg-purple-600 text-white';
   return 'bg-amber-500 text-white';
 }
 

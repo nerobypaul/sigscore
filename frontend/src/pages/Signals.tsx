@@ -18,10 +18,20 @@ const SIGNAL_TYPE_COLORS: Record<string, string> = {
 const SOURCE_TYPE_COLORS: Record<string, string> = {
   GITHUB: 'bg-gray-800 text-white',
   NPM: 'bg-red-100 text-red-700',
+  PYPI: 'bg-yellow-100 text-yellow-800',
   WEBSITE: 'bg-blue-100 text-blue-700',
   DOCS: 'bg-teal-100 text-teal-700',
   PRODUCT_API: 'bg-indigo-100 text-indigo-700',
   SEGMENT: 'bg-green-100 text-green-700',
+  DISCORD: 'bg-violet-100 text-violet-700',
+  TWITTER: 'bg-sky-100 text-sky-700',
+  STACKOVERFLOW: 'bg-orange-100 text-orange-700',
+  REDDIT: 'bg-orange-200 text-orange-800',
+  POSTHOG: 'bg-blue-200 text-blue-800',
+  LINKEDIN: 'bg-blue-100 text-blue-700',
+  INTERCOM: 'bg-indigo-200 text-indigo-800',
+  ZENDESK: 'bg-green-200 text-green-800',
+  CLEARBIT: 'bg-purple-100 text-purple-700',
   CUSTOM_WEBHOOK: 'bg-orange-100 text-orange-700',
 };
 
