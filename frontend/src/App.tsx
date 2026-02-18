@@ -7,6 +7,7 @@ import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Spinner from './components/Spinner';
 import CommandPalette from './components/CommandPalette';
+import CookieConsent from './components/CookieConsent';
 
 // Lazy-loaded pages — each becomes its own chunk for faster initial load
 const Login = lazy(() => import('./pages/Login'));
@@ -50,6 +51,9 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Privacy = lazy(() => import('./pages/Privacy'));
+const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
+const Dpa = lazy(() => import('./pages/Dpa'));
+const AcceptableUse = lazy(() => import('./pages/AcceptableUse'));
 const TeamSettings = lazy(() => import('./pages/TeamSettings'));
 const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
 const DataExport = lazy(() => import('./pages/DataExport'));
@@ -114,6 +118,8 @@ function AppRoutes() {
         <Route path="/developers" element={<DevPortal />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/cookies" element={<CookiePolicy />} />
+        <Route path="/acceptable-use" element={<AcceptableUse />} />
         <Route path="/changelog" element={<Changelog />} />
         <Route path="/compare/common-room" element={<CompareCommonRoom />} />
         <Route path="/compare/reo-dev" element={<CompareReodev />} />
@@ -210,6 +216,7 @@ function App() {
         <AuthProvider>
           <ToastProvider>
             <AppRoutes />
+            <CookieConsent />
           </ToastProvider>
         </AuthProvider>
       </BrowserRouter>
