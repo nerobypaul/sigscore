@@ -58,6 +58,33 @@ function formatCurrency(amount: number, currency = 'USD'): string {
   }).format(amount);
 }
 
+// ---------- Copyable ID field ----------
+
+function CopyableId({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+  return (
+    <div className="group">
+      <dt className="text-xs text-gray-500">{label}</dt>
+      <dd className="text-sm text-gray-700 font-mono truncate flex items-center gap-1.5">
+        <span className="truncate">{value}</span>
+        <button onClick={handleCopy} className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 flex-shrink-0" title="Copy">
+          {copied ? (
+            <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+          ) : (
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>
+          )}
+        </button>
+      </dd>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Extended types
 // ---------------------------------------------------------------------------
@@ -510,10 +537,7 @@ function OverviewTab({ companyId, company, score, signals, activities, contacts,
               <dt className="text-xs text-gray-500">Updated</dt>
               <dd className="text-sm text-gray-700">{new Date(company.updatedAt).toLocaleString()}</dd>
             </div>
-            <div>
-              <dt className="text-xs text-gray-500">ID</dt>
-              <dd className="text-sm text-gray-700 font-mono truncate">{company.id}</dd>
-            </div>
+            <CopyableId label="ID" value={company.id} />
           </dl>
         </div>
       </div>

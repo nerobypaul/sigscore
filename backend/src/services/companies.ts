@@ -1,16 +1,17 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, CompanySize } from '@prisma/client';
 import { prisma } from '../config/database';
 import { AppError } from '../utils/errors';
 
 export interface CompanyFilters {
   search?: string;
   industry?: string;
+  size?: string;
   page?: number;
   limit?: number;
 }
 
 export const getCompanies = async (organizationId: string, filters: CompanyFilters) => {
-  const { search, industry, page = 1, limit } = filters;
+  const { search, industry, size, page = 1, limit } = filters;
   const clampedLimit = Math.min(100, Math.max(1, limit ?? 20));
   const skip = (page - 1) * clampedLimit;
 
@@ -23,6 +24,7 @@ export const getCompanies = async (organizationId: string, filters: CompanyFilte
       ],
     }),
     ...(industry && { industry }),
+    ...(size && { size: size as CompanySize }),
   };
 
   const [companies, total] = await Promise.all([

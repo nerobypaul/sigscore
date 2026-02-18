@@ -277,14 +277,19 @@ function PipelineView({
   return (
     <div className="flex-1 overflow-hidden">
       {/* Closed deals summary */}
-      <div className="flex gap-4 mb-4 flex-shrink-0">
-        <div className="flex items-center gap-2 text-sm">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700 font-medium">
-            Closed Won: {closedWonCount}
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 text-red-700 font-medium">
-            Closed Lost: {closedLostCount}
-          </span>
+      <div className="flex gap-3 mb-4 flex-shrink-0">
+        <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+          <span className="text-xs font-medium text-green-700">Closed Won</span>
+          <span className="text-sm font-bold text-green-800">{closedWonCount}</span>
+          {dealsByStage['CLOSED_WON']?.length > 0 && (
+            <span className="text-xs text-green-600">
+              ${dealsByStage['CLOSED_WON'].reduce((s, d) => s + (d.amount || 0), 0).toLocaleString()}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          <span className="text-xs font-medium text-red-700">Closed Lost</span>
+          <span className="text-sm font-bold text-red-800">{closedLostCount}</span>
         </div>
       </div>
 
@@ -301,16 +306,18 @@ function PipelineView({
             >
               {/* Column header */}
               <div className="p-3 flex-shrink-0">
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between">
                   <span
                     className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STAGE_COLORS[stage]}`}
                   >
                     {STAGE_LABELS[stage]}
                   </span>
-                  <span className="text-xs text-gray-500">{stageDeals.length}</span>
+                  <span className="text-xs font-medium text-gray-500 bg-white px-1.5 py-0.5 rounded">
+                    {stageDeals.length} deal{stageDeals.length !== 1 ? 's' : ''}
+                  </span>
                 </div>
                 {stageValue > 0 && (
-                  <p className="text-xs text-gray-500">${stageValue.toLocaleString()}</p>
+                  <p className="text-base font-bold text-gray-800 mt-1">${stageValue.toLocaleString()}</p>
                 )}
               </div>
 

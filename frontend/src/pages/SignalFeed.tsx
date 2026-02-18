@@ -170,9 +170,18 @@ function FeedSignalCard({
   isExpanded: boolean;
   onToggle: () => void;
 }) {
+  const [copied, setCopied] = useState(false);
   const typeColor =
     SIGNAL_TYPE_COLORS[signal.type] || 'bg-gray-100 text-gray-700';
   const summary = metadataSummary(signal.metadata);
+
+  const handleCopyMetadata = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(JSON.stringify(signal.metadata, null, 2)).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
 
   return (
     <div className="px-5 py-4 hover:bg-gray-50/70 transition-colors group">
@@ -246,10 +255,55 @@ function FeedSignalCard({
           )}
         </div>
 
-        {/* Timestamp */}
-        <span className="text-xs text-gray-400 flex-shrink-0 mt-1 whitespace-nowrap">
-          {timeAgo(signal.timestamp || signal.createdAt)}
-        </span>
+        {/* Right: timestamp + hover actions */}
+        <div className="flex flex-col items-end gap-2 flex-shrink-0 mt-1">
+          <span className="text-xs text-gray-400 whitespace-nowrap">
+            {timeAgo(signal.timestamp || signal.createdAt)}
+          </span>
+
+          {/* Quick actions — visible on hover */}
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {signal.actor && (
+              <Link
+                to={`/contacts/${signal.actor.id}`}
+                className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-700 transition-colors"
+                title="View contact"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
+                </svg>
+              </Link>
+            )}
+            {signal.account && (
+              <Link
+                to={`/companies/${signal.account.id}`}
+                className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-700 transition-colors"
+                title="View company"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5M3.75 3v18h16.5V3H3.75zm3 3.75h3v3h-3v-3zm6.75 0h3v3h-3v-3zm-6.75 6h3v3h-3v-3zm6.75 0h3v3h-3v-3z" />
+                </svg>
+              </Link>
+            )}
+            <button
+              onClick={handleCopyMetadata}
+              className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-700 transition-colors"
+              title={copied ? 'Copied!' : 'Copy metadata'}
+            >
+              {copied ? (
+                <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              ) : (
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

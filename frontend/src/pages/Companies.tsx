@@ -35,6 +35,10 @@ export default function Companies() {
   const [bulkAction, setBulkAction] = useState<'delete' | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
 
+  // Filter state
+  const [sizeFilter, setSizeFilter] = useState('');
+  const [industryFilter, setIndustryFilter] = useState('');
+
   // Compare selection state (independent from bulk selection)
   const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
 
@@ -64,7 +68,13 @@ export default function Companies() {
     setLoading(true);
     try {
       const { data } = await api.get('/companies', {
-        params: { search: search || undefined, page, limit: 20 },
+        params: {
+          search: search || undefined,
+          size: sizeFilter || undefined,
+          industry: industryFilter || undefined,
+          page,
+          limit: 20,
+        },
       });
       setCompanies(data.companies || []);
       setPagination(data.pagination || null);
@@ -73,7 +83,7 @@ export default function Companies() {
     } finally {
       setLoading(false);
     }
-  }, [search, page]);
+  }, [search, sizeFilter, industryFilter, page]);
 
   useEffect(() => {
     fetchCompanies();
@@ -291,6 +301,41 @@ export default function Companies() {
         />
       </div>
 
+      {/* Active filter pills */}
+      {(sizeFilter || industryFilter) && (
+        <div className="mb-4 flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-gray-500">Filters:</span>
+          {sizeFilter && (
+            <button
+              onClick={() => { setSizeFilter(''); setPage(1); }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition-colors"
+            >
+              Size: {SIZE_LABELS[sizeFilter] || sizeFilter}
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+          {industryFilter && (
+            <button
+              onClick={() => { setIndustryFilter(''); setPage(1); }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors"
+            >
+              Industry: {industryFilter}
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+          <button
+            onClick={() => { setSizeFilter(''); setIndustryFilter(''); setPage(1); }}
+            className="text-xs text-gray-500 hover:text-gray-700 underline"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
       {/* Bulk action toolbar */}
       {selectMode && selectedIds.size > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-3 sm:px-4 py-3">
@@ -389,6 +434,8 @@ export default function Companies() {
               onToggleSelect={() => toggleSelect(company.id)}
               compareSelected={compareIds.has(company.id)}
               onToggleCompare={() => toggleCompare(company.id)}
+              onFilterSize={(s) => { setSizeFilter(s); setPage(1); }}
+              onFilterIndustry={(i) => { setIndustryFilter(i); setPage(1); }}
             />
           ))}
         </div>
@@ -543,6 +590,8 @@ function CompanyCard({
   onToggleSelect,
   compareSelected,
   onToggleCompare,
+  onFilterSize,
+  onFilterIndustry,
 }: {
   company: Company;
   selectMode: boolean;
@@ -550,6 +599,8 @@ function CompanyCard({
   onToggleSelect: () => void;
   compareSelected: boolean;
   onToggleCompare: () => void;
+  onFilterSize: (size: string) => void;
+  onFilterIndustry: (industry: string) => void;
 }) {
   const cardContent = (
     <>
@@ -598,15 +649,25 @@ function CompanyCard({
           {company.name[0]?.toUpperCase()}
         </div>
         {company.size && (
-          <span className={`text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600 ${!selectMode ? 'mr-8' : ''}`}>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onFilterSize(company.size!); }}
+            className={`text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-indigo-100 hover:text-indigo-700 transition-colors cursor-pointer ${!selectMode ? 'mr-8' : ''}`}
+            title={`Filter by ${SIZE_LABELS[company.size] || company.size}`}
+          >
             {SIZE_LABELS[company.size] || company.size}
-          </span>
+          </button>
         )}
       </div>
 
       <h3 className="text-base font-semibold text-gray-900">{company.name}</h3>
       {company.industry && (
-        <p className="text-sm text-gray-500 mt-0.5">{company.industry}</p>
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onFilterIndustry(company.industry!); }}
+          className="text-sm text-gray-500 mt-0.5 hover:text-emerald-700 transition-colors cursor-pointer text-left"
+          title={`Filter by ${company.industry}`}
+        >
+          {company.industry}
+        </button>
       )}
       {company.domain && (
         <p className="text-sm text-indigo-600 mt-1">{company.domain}</p>

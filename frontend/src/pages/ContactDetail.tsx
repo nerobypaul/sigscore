@@ -175,13 +175,24 @@ export default function ContactDetail() {
 
           {/* Recent Activities */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activities</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Recent Activities</h2>
+              <Link
+                to={`/activities?contactId=${id}`}
+                className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Add
+              </Link>
+            </div>
             {!contact.activities || contact.activities.length === 0 ? (
               <p className="text-sm text-gray-400">No activities yet</p>
             ) : (
               <div className="space-y-2">
                 {contact.activities.map((activity) => (
-                  <div key={activity.id} className="p-3 rounded-lg border border-gray-100">
+                  <div key={activity.id} className="p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
                     <p className="text-sm font-medium text-gray-900">{activity.title}</p>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {activity.type} - {activity.status}
@@ -204,10 +215,7 @@ export default function ContactDetail() {
                 <dt className="text-xs text-gray-500">Updated</dt>
                 <dd className="text-sm text-gray-700">{new Date(contact.updatedAt).toLocaleString()}</dd>
               </div>
-              <div>
-                <dt className="text-xs text-gray-500">ID</dt>
-                <dd className="text-sm text-gray-700 font-mono truncate">{contact.id}</dd>
-              </div>
+              <CopyableId value={contact.id} />
             </dl>
           </div>
         </div>
@@ -216,12 +224,75 @@ export default function ContactDetail() {
   );
 }
 
-function InfoField({ label, value }: { label: string; value?: string | null }) {
+function InfoField({ label, value, copyable = true }: { label: string; value?: string | null; copyable?: boolean }) {
+  const [copied, setCopied] = useState(false);
   if (!value) return null;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
   return (
-    <div>
+    <div className="group">
       <dt className="text-xs text-gray-500">{label}</dt>
-      <dd className="text-sm text-gray-900 mt-0.5">{value}</dd>
+      <dd className="text-sm text-gray-900 mt-0.5 flex items-center gap-1.5">
+        <span className="truncate">{value}</span>
+        {copyable && (
+          <button
+            onClick={handleCopy}
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 flex-shrink-0"
+            title="Copy to clipboard"
+          >
+            {copied ? (
+              <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            ) : (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+              </svg>
+            )}
+          </button>
+        )}
+      </dd>
+    </div>
+  );
+}
+
+function CopyableId({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  return (
+    <div className="group">
+      <dt className="text-xs text-gray-500">ID</dt>
+      <dd className="text-sm text-gray-700 font-mono truncate flex items-center gap-1.5">
+        <span className="truncate">{value}</span>
+        <button
+          onClick={handleCopy}
+          className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 flex-shrink-0"
+          title="Copy ID"
+        >
+          {copied ? (
+            <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+          ) : (
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+            </svg>
+          )}
+        </button>
+      </dd>
     </div>
   );
 }

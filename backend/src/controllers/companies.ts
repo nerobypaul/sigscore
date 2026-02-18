@@ -14,6 +14,7 @@ export const getCompanies = async (req: Request, res: Response, next: NextFuncti
     const filters = {
       search: req.query.search as string,
       industry: req.query.industry as string,
+      size: req.query.size as string,
       page: parsePageInt(req.query.page),
       limit: parsePageInt(req.query.limit),
     };
