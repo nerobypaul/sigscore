@@ -719,6 +719,8 @@ function FAQItemComponent({ item }: { item: FAQItem }) {
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
 
+  useEffect(() => { document.title = 'Pricing — DevSignal'; }, []);
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Navigation */}

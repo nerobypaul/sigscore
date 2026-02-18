@@ -1050,6 +1050,8 @@ export default function ApiDocs() {
   const mainRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => { document.title = 'API Documentation — DevSignal'; }, []);
+
   // Filter categories by search
   const filteredCategories = useMemo(() => {
     if (!searchQuery.trim()) return API_CATEGORIES;

@@ -430,6 +430,8 @@ const sections: Section[] = [
 export default function Privacy() {
   const [activeSection, setActiveSection] = useState(sections[0].id);
 
+  useEffect(() => { document.title = 'Privacy Policy — DevSignal'; }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY + 120;

@@ -224,6 +224,8 @@ export default function Changelog() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => { document.title = 'Changelog — DevSignal'; }, []);
+
   const fetchEntries = useCallback(async (offset: number, append: boolean) => {
     try {
       if (append) {

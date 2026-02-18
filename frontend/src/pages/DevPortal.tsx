@@ -1788,6 +1788,8 @@ export default function DevPortal() {
   const [searchQuery, setSearchQuery] = useState('');
   const mainRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => { document.title = 'Developer Portal — DevSignal'; }, []);
+
   // Scroll to top when changing tabs
   useEffect(() => {
     if (mainRef.current) {

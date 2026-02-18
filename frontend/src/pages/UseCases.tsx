@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
@@ -341,6 +341,8 @@ function UseCaseCard({ useCase }: { useCase: UseCase }) {
 // ---------------------------------------------------------------------------
 
 export default function UseCases() {
+  useEffect(() => { document.title = 'Use Cases — DevSignal'; }, []);
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Navigation */}

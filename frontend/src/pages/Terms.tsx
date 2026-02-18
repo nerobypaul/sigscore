@@ -385,6 +385,8 @@ const sections: Section[] = [
 export default function Terms() {
   const [activeSection, setActiveSection] = useState(sections[0].id);
 
+  useEffect(() => { document.title = 'Terms of Service — DevSignal'; }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY + 120;
