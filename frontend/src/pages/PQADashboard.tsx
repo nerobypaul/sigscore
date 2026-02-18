@@ -145,7 +145,10 @@ export default function PQADashboard() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">PQA Scores</h1>
-        <p className="mt-1 text-sm text-gray-500">Product-Qualified Account scoring</p>
+        <p className="mt-1 text-sm text-gray-500">
+          Product-Qualified Account scoring — accounts ranked 0-100 based on developer activity signals.
+          HOT (70+) = high engagement, WARM (40-69) = growing interest, COLD (20-39) = early signals, INACTIVE (&lt;20) = minimal activity.
+        </p>
       </div>
 
       {/* Summary cards */}

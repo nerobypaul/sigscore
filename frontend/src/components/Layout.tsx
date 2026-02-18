@@ -19,6 +19,8 @@ interface NavItem {
   icon: () => JSX.Element;
   /** data-tour attribute for product tour targeting */
   dataTour?: string;
+  /** Hide this item when viewing the demo org */
+  hideInDemo?: boolean;
 }
 
 interface NavSection {
@@ -36,7 +38,7 @@ const navSections: NavSection[] = [
     items: [
       { to: '/', label: 'Dashboard', icon: DashboardIcon },
       { to: '/contacts', label: 'Contacts', icon: ContactsIcon },
-      { to: '/enrichment', label: 'Enrichment', icon: EnrichmentIcon },
+      { to: '/enrichment', label: 'Enrichment', icon: EnrichmentIcon, hideInDemo: true },
       { to: '/companies', label: 'Companies', icon: CompaniesIcon },
       { to: '/signals', label: 'Signals', icon: SignalsIcon, dataTour: 'nav-signals' },
       { to: '/signals/feed', label: 'Signal Feed', icon: SignalFeedIcon },
@@ -49,8 +51,8 @@ const navSections: NavSection[] = [
     label: 'AUTOMATION',
     items: [
       { to: '/workflows', label: 'Workflows', icon: WorkflowsIcon, dataTour: 'nav-workflows' },
-      { to: '/playbooks', label: 'Playbooks', icon: PlaybooksIcon },
-      { to: '/sequences', label: 'Sequences', icon: SequencesIcon },
+      { to: '/playbooks', label: 'Playbooks', icon: PlaybooksIcon, hideInDemo: true },
+      { to: '/sequences', label: 'Sequences', icon: SequencesIcon, hideInDemo: true },
     ],
   },
   {
@@ -69,14 +71,14 @@ const navSections: NavSection[] = [
     defaultCollapsed: true,
     items: [
       { to: '/settings', label: 'Integrations', icon: IntegrationsIcon, dataTour: 'nav-integrations' },
-      { to: '/webhooks', label: 'Webhooks', icon: WebhooksIcon },
-      { to: '/api-usage', label: 'API Usage', icon: ApiUsageIcon },
+      { to: '/webhooks', label: 'Webhooks', icon: WebhooksIcon, hideInDemo: true },
+      { to: '/api-usage', label: 'API Usage', icon: ApiUsageIcon, hideInDemo: true },
       { to: '/scoring', label: 'Scoring Rules', icon: ScoringBuilderIcon },
-      { to: '/team', label: 'Team', icon: TeamIcon },
-      { to: '/billing', label: 'Billing', icon: BillingIcon },
-      { to: '/audit', label: 'Audit Log', icon: AuditLogIcon },
-      { to: '/sso-settings', label: 'SSO', icon: SsoIcon },
-      { to: '/settings/export', label: 'Data Export', icon: DataExportIcon },
+      { to: '/team', label: 'Team', icon: TeamIcon, hideInDemo: true },
+      { to: '/billing', label: 'Billing', icon: BillingIcon, hideInDemo: true },
+      { to: '/audit', label: 'Audit Log', icon: AuditLogIcon, hideInDemo: true },
+      { to: '/sso-settings', label: 'SSO', icon: SsoIcon, hideInDemo: true },
+      { to: '/settings/export', label: 'Data Export', icon: DataExportIcon, hideInDemo: true },
     ],
   },
 ];
@@ -90,6 +92,11 @@ export default function Layout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Demo mode detection — hide irrelevant nav items
+  const isDemo = user?.organizations?.some(
+    (uo: { organization?: { name?: string } }) => uo.organization?.name === 'DevSignal Demo',
+  ) ?? false;
 
   // UpgradeModal state — triggered by 402 responses from the API
   const [upgradeModal, setUpgradeModal] = useState<Omit<UpgradeModalProps, 'open' | 'onClose'> | null>(null);
@@ -197,6 +204,10 @@ export default function Layout() {
           {navSections.map((section) => {
             const isCollapsible = section.collapsible;
             const isExpanded = section.id === 'settings' ? settingsExpanded : true;
+            const visibleItems = isDemo
+              ? section.items.filter((item) => !item.hideInDemo)
+              : section.items;
+            if (visibleItems.length === 0) return null;
 
             return (
               <div key={section.id} className={section.id !== 'intelligence' ? 'mt-5' : 'mt-1'}>
@@ -222,7 +233,7 @@ export default function Layout() {
                 {/* Section items */}
                 {isExpanded && (
                   <div className="mt-0.5 space-y-0.5">
-                    {section.items.map((item) => (
+                    {visibleItems.map((item) => (
                       <NavLink
                         key={item.to}
                         to={item.to}

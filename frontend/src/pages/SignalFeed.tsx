@@ -27,6 +27,10 @@ const SOURCE_TYPES = [
   'STACKOVERFLOW',
   'REDDIT',
   'POSTHOG',
+  'LINKEDIN',
+  'INTERCOM',
+  'ZENDESK',
+  'CLEARBIT',
   'CUSTOM_WEBHOOK',
 ] as const;
 
@@ -43,6 +47,10 @@ const SOURCE_TYPE_LABELS: Record<string, string> = {
   STACKOVERFLOW: 'Stack Overflow',
   REDDIT: 'Reddit',
   POSTHOG: 'PostHog',
+  LINKEDIN: 'LinkedIn',
+  INTERCOM: 'Intercom',
+  ZENDESK: 'Zendesk',
+  CLEARBIT: 'Clearbit',
   CUSTOM_WEBHOOK: 'Custom Webhook',
 };
 
@@ -59,6 +67,10 @@ const SOURCE_TYPE_COLORS: Record<string, string> = {
   STACKOVERFLOW: 'bg-orange-100 text-orange-700',
   REDDIT: 'bg-orange-200 text-orange-800',
   POSTHOG: 'bg-blue-200 text-blue-800',
+  LINKEDIN: 'bg-blue-100 text-blue-700',
+  INTERCOM: 'bg-indigo-200 text-indigo-800',
+  ZENDESK: 'bg-green-200 text-green-800',
+  CLEARBIT: 'bg-purple-100 text-purple-700',
   CUSTOM_WEBHOOK: 'bg-gray-100 text-gray-600',
 };
 
