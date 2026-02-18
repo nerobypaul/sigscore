@@ -97,8 +97,8 @@ DevSignal is not a CRM. It is a signal intelligence layer. It ingests developer 
                     |                    |                     |
            +--------v--------+  +-------v--------+  +--------v--------+
            |   PostgreSQL    |  |     Redis       |  |     BullMQ      |
-           |   Prisma ORM   |  |  Cache + PubSub |  |   16 Queues     |
-           |   33 models     |  |                 |  |   Workers       |
+           |   Prisma ORM   |  |  Cache + PubSub |  |   20 Queues     |
+           |   40 models     |  |                 |  |   Workers       |
            +-----------------+  +-----------------+  +-----------------+
                                                               |
                               +-------------------------------v--------+
@@ -114,8 +114,8 @@ DevSignal is not a CRM. It is a signal intelligence layer. It ingests developer 
 |---|---|
 | Frontend | React 18, Vite, TailwindCSS, React Router v6 |
 | API | Express, Apollo Server (GraphQL), WebSocket |
-| Database | PostgreSQL 16, Prisma ORM (33 models) |
-| Queue | Redis 7, BullMQ (16 queues) |
+| Database | PostgreSQL 16, Prisma ORM (40 models) |
+| Queue | Redis 7, BullMQ (20 queues) |
 | Auth | JWT, API keys, SAML SSO, OIDC, GitHub/Google OAuth |
 | AI | Claude API (briefs, enrichment, next-best-actions) |
 | Email | Resend |
@@ -274,7 +274,7 @@ devsignal/
       graphql/          # Schema, resolvers, 11 DataLoaders
       jobs/             # BullMQ queues, workers, scheduler
       middleware/       # Auth, RBAC, rate limiting, validation
-    prisma/             # Schema (33 models) + migrations
+    prisma/             # Schema (40 models) + migrations
   frontend/
     src/
       pages/            # 50 route pages (code-split with React.lazy)

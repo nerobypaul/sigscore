@@ -63,15 +63,15 @@ export const webhookLimiter = rateLimit({
 });
 
 /**
- * Demo limiter -- very strict limit for the demo seed endpoint to
- * prevent abuse from seeding large volumes of test data.
+ * Demo limiter -- moderate limit for the demo seed endpoint to
+ * prevent abuse while allowing reasonable traffic during launches.
  *
- * 3 requests per 1-minute window per IP.
+ * 10 requests per 1-minute window per IP.
  * Applied to: /api/v1/demo/*
  */
 export const demoLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 3,
+  max: 10,
   message: {
     error: 'Demo seed rate limit exceeded. Please wait a minute before trying again.',
   },

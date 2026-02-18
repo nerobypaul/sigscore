@@ -91,7 +91,7 @@ const tiers: PricingTier[] = [
       '25,000 contacts',
       '100,000 signals/month',
       '10 users',
-      'All 13 signal sources',
+      'All 16 signal sources',
       'Custom scoring rules',
       'Email sequences',
       'Workflows & playbooks',
@@ -181,7 +181,7 @@ const comparisonData: ComparisonCategory[] = [
       { name: 'Discord', free: false, pro: true, growth: true, scale: true },
       { name: 'Product SDK events', free: false, pro: true, growth: true, scale: true },
       { name: 'Custom webhooks', free: false, pro: true, growth: true, scale: true },
-      { name: 'All 13 sources', free: false, pro: true, growth: true, scale: true },
+      { name: 'All 16 sources', free: false, pro: true, growth: true, scale: true },
     ],
   },
   {
@@ -269,7 +269,7 @@ const faqs: FAQItem[] = [
   {
     question: 'What signal sources are included?',
     answer:
-      'Free includes GitHub, npm, and PyPI. Pro and above include all 13 sources including Segment, Discord, product SDK events, custom webhooks, and more. Growth and Scale add Zapier/Make for additional sources.',
+      'Free includes GitHub, npm, and PyPI. Pro and above include all 16 sources including Segment, Discord, LinkedIn, Intercom, Zendesk, product SDK events, custom webhooks, and more. Growth and Scale add Zapier/Make for additional sources.',
   },
   {
     question: 'Is my data secure?',
