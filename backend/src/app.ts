@@ -1,4 +1,5 @@
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
@@ -86,6 +87,9 @@ app.set('trust proxy', 1);
 
 // Request ID tracing — assign early so every middleware and handler can access it
 app.use(requestIdMiddleware);
+
+// Response compression (gzip/deflate) — before all other middleware
+app.use(compression());
 
 // Security middleware
 app.use(helmet({
