@@ -6,7 +6,7 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-288%20passing-brightgreen)](https://github.com/nerobypaul/headless-crm)
+[![Tests](https://img.shields.io/badge/tests-288%20unit%20%2B%2056%20E2E-brightgreen)](https://github.com/nerobypaul/headless-crm)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/nerobypaul/headless-crm/pulls)
@@ -31,7 +31,7 @@ Self-host it for free or use the managed service starting at $0/month. Either wa
 
 Try DevSignal now -- no signup required:
 
-**[Launch Live Demo](https://devsignal.dev/landing)** -- Click "Try Live Demo" on the landing page to get a pre-seeded environment with realistic data.
+**[Launch Live Demo](https://devsignal.dev)** -- Click "Explore Live Demo" to get a pre-seeded environment with realistic data. No signup required.
 
 ## Why Not a CRM?
 
@@ -69,7 +69,7 @@ DevSignal is not a CRM. It is a signal intelligence layer. It ingests developer 
 
 ### Platform
 
-- **50 pages** across dashboard, contacts, companies, deals, signals, analytics, and settings
+- **53 pages** across dashboard, contacts, companies, deals, signals, analytics, and settings
 - **Custom dashboards** with drag-and-drop widget builder
 - **Command palette** (Cmd+K) with global search
 - **Account alerts** (6 trigger types) with email and in-app notifications
@@ -84,7 +84,7 @@ DevSignal is not a CRM. It is a signal intelligence layer. It ingests developer 
                               +---------------------+
                               |    React Frontend    |
                               |  Vite + TailwindCSS  |
-                              |  50 pages (250KB)    |
+                              |  53 pages (283KB)    |
                               +----------+----------+
                                          |
                               +----------v----------+
@@ -121,7 +121,7 @@ DevSignal is not a CRM. It is a signal intelligence layer. It ingests developer 
 | Email | Resend |
 | Search | PostgreSQL tsvector (weighted A/B/C/D relevance) |
 | Monitoring | Sentry (frontend + backend) |
-| Testing | Jest (288 tests) + Playwright (38 E2E specs) |
+| Testing | Jest (288 unit tests) + Playwright (56 E2E tests, 8 spec files) |
 | Deployment | Docker multi-stage (4 stages), docker-compose |
 
 ## Quick Start
@@ -138,7 +138,7 @@ cp .env.example .env
 docker compose -f docker-compose.prod.yml up -d --build
 
 # Or try the live demo instantly:
-# https://devsignal.dev/landing
+# https://devsignal.dev
 ```
 
 This starts four containers: PostgreSQL 16, Redis 7, the API server (serving the static frontend), and BullMQ workers. Migrations run automatically on first boot.
@@ -212,7 +212,7 @@ query TopAccounts {
 }
 ```
 
-The GraphQL playground is available at /api/v1/graphql in development mode. See the [live demo](https://devsignal.dev/landing) to explore.
+The GraphQL playground is available at /api/v1/graphql in development mode. See the [live demo](https://devsignal.dev) to explore.
 
 ## SDK
 
@@ -277,12 +277,12 @@ devsignal/
     prisma/             # Schema (40 models) + migrations
   frontend/
     src/
-      pages/            # 50 route pages (code-split with React.lazy)
+      pages/            # 53 route pages (code-split with React.lazy)
       components/       # Shared UI components
       lib/              # API client, hooks, utilities
   packages/
     sdk/                # @devsignal/node SDK (zero deps)
-  e2e/                  # Playwright E2E tests (38 specs)
+  e2e/                  # Playwright E2E tests (56 tests, 8 specs)
   Dockerfile            # Multi-stage production build (4 stages)
   docker-compose.prod.yml
 ```
