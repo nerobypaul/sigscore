@@ -58,10 +58,15 @@ router.delete('/:slug', deleteSchema);
 // Record Routes
 // ============================================================
 
+const recordDataSchema = z.record(z.unknown()).refine(
+  (obj) => Object.keys(obj).length > 0,
+  { message: 'Record data must have at least one field' },
+);
+
 router.get('/:slug/records', getRecords);
-router.post('/:slug/records', createRecord);
+router.post('/:slug/records', validate(recordDataSchema), createRecord);
 router.get('/:slug/records/:id', getRecord);
-router.put('/:slug/records/:id', updateRecord);
+router.put('/:slug/records/:id', validate(recordDataSchema), updateRecord);
 router.delete('/:slug/records/:id', deleteRecord);
 
 export default router;

@@ -50,6 +50,16 @@ const updateContactSchema = z.object({
   notes: z.string().optional(),
 });
 
+const bulkActionSchema = z.object({
+  contactIds: z.array(z.string()).min(1).max(500),
+  action: z.enum(['add_tag', 'remove_tag', 'update_stage', 'assign_owner', 'export']),
+  params: z.record(z.unknown()).optional(),
+});
+
+const mergeContactSchema = z.object({
+  duplicateIds: z.array(z.string()).min(1).max(50),
+});
+
 /**
  * @openapi
  * /contacts:
@@ -279,7 +289,7 @@ router.get('/export', exportContacts);
  *       404:
  *         description: No valid contacts found
  */
-router.post('/bulk-action', bulkAction);
+router.post('/bulk-action', validate(bulkActionSchema), bulkAction);
 
 /**
  * @openapi
@@ -505,7 +515,7 @@ router.put('/:id', validate(updateContactSchema), updateContact);
  *       500:
  *         description: Internal server error
  */
-router.post('/:id/merge', mergeContact);
+router.post('/:id/merge', validate(mergeContactSchema), mergeContact);
 
 /**
  * @openapi
