@@ -119,6 +119,7 @@ function AppRoutes() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/cookies" element={<CookiePolicy />} />
+        <Route path="/dpa" element={<Dpa />} />
         <Route path="/acceptable-use" element={<AcceptableUse />} />
         <Route path="/changelog" element={<Changelog />} />
         <Route path="/compare/common-room" element={<CompareCommonRoom />} />

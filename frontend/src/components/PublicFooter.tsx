@@ -25,6 +25,9 @@ export default function PublicFooter() {
             <Link to="/changelog" className="hover:text-gray-300 transition-colors">Changelog</Link>
             <Link to="/terms" className="hover:text-gray-300 transition-colors">Terms</Link>
             <Link to="/privacy" className="hover:text-gray-300 transition-colors">Privacy</Link>
+            <Link to="/dpa" className="hover:text-gray-300 transition-colors">DPA</Link>
+            <Link to="/cookies" className="hover:text-gray-300 transition-colors">Cookies</Link>
+            <Link to="/acceptable-use" className="hover:text-gray-300 transition-colors">Acceptable Use</Link>
             <Link to="/login" className="hover:text-gray-300 transition-colors">Sign in</Link>
           </div>
           <p className="text-xs text-gray-600">
