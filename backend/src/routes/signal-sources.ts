@@ -6,6 +6,7 @@ import {
   updateSignalSource,
   deleteSignalSource,
   testSignalSource,
+  syncSignalSource,
   getCatalog,
   getSyncHistory,
 } from '../controllers/signal-sources';
@@ -404,6 +405,31 @@ router.delete('/:id', deleteSignalSource);
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/:id/test', testSignalSource);
+
+/**
+ * @openapi
+ * /sources/{id}/sync:
+ *   post:
+ *     tags: [Signal Sources]
+ *     summary: Trigger a manual sync
+ *     description: Enqueues a sync job for the signal source and returns the sync tracking ID.
+ *     security:
+ *       - BearerAuth: []
+ *       - ApiKeyAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/OrganizationId'
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Sync job enqueued
+ *       404:
+ *         description: Signal source not found
+ */
+router.post('/:id/sync', syncSignalSource);
 
 /**
  * @openapi

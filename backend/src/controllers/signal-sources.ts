@@ -69,6 +69,17 @@ export const testSignalSource = async (req: Request, res: Response, next: NextFu
   }
 };
 
+export const syncSignalSource = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const organizationId = req.organizationId!;
+    const result = await signalSourceService.triggerSync(req.params.id, organizationId);
+    logger.info(`Sync triggered for source: ${req.params.id}`);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getCatalog = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const catalog = signalSourceService.getIntegrationCatalog();

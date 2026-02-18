@@ -1,6 +1,7 @@
 import { Prisma, SignalSourceStatus, SignalSourceType } from '@prisma/client';
 import { prisma } from '../config/database';
 import { AppError } from '../utils/errors';
+import { signalSyncQueue } from '../jobs/queue';
 
 export interface SignalSourceInput {
   type: SignalSourceType;
@@ -74,9 +75,15 @@ export const createSignalSource = async (organizationId: string, data: SignalSou
 
 export const updateSignalSource = async (
   id: string,
-  _organizationId: string,
+  organizationId: string,
   data: Partial<SignalSourceInput & { status: SignalSourceStatus }>
 ) => {
+  // Verify ownership before updating
+  const source = await prisma.signalSource.findFirst({
+    where: { id, organizationId },
+  });
+  if (!source) throw new AppError('Signal source not found', 404);
+
   return prisma.signalSource.update({
     where: { id },
     data: {
@@ -115,6 +122,25 @@ export const testSignalSource = async (id: string, organizationId: string) => {
     status: source.status,
     lastSyncAt: source.lastSyncAt,
   };
+};
+
+export const triggerSync = async (id: string, organizationId: string) => {
+  const source = await prisma.signalSource.findFirst({
+    where: { id, organizationId },
+  });
+  if (!source) throw new AppError('Signal source not found', 404);
+
+  const syncRecord = await prisma.syncHistory.create({
+    data: { sourceId: id },
+  });
+
+  await signalSyncQueue.add(`sync-${source.type}-${id}`, {
+    sourceId: id,
+    organizationId,
+    type: source.type.toLowerCase() as 'npm' | 'pypi',
+  });
+
+  return { syncId: syncRecord.id, sourceId: id, status: 'RUNNING' };
 };
 
 // ============================================================

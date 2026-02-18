@@ -293,8 +293,10 @@ export async function addStep(sequenceId: string, data: CreateStepData) {
   });
 }
 
-export async function updateStep(stepId: string, data: UpdateStepData) {
-  const existing = await prisma.emailSequenceStep.findUnique({ where: { id: stepId } });
+export async function updateStep(sequenceId: string, stepId: string, data: UpdateStepData) {
+  const existing = await prisma.emailSequenceStep.findFirst({
+    where: { id: stepId, sequenceId },
+  });
   if (!existing) {
     throw new AppError('Email sequence step not found', 404);
   }
@@ -310,10 +312,9 @@ export async function updateStep(stepId: string, data: UpdateStepData) {
   });
 }
 
-export async function deleteStep(stepId: string) {
-  const existing = await prisma.emailSequenceStep.findUnique({
-    where: { id: stepId },
-    include: { sequence: true },
+export async function deleteStep(sequenceId: string, stepId: string) {
+  const existing = await prisma.emailSequenceStep.findFirst({
+    where: { id: stepId, sequenceId },
   });
   if (!existing) {
     throw new AppError('Email sequence step not found', 404);
@@ -448,9 +449,9 @@ export async function enrollContacts(sequenceId: string, contactIds: string[]) {
   return results;
 }
 
-export async function pauseEnrollment(enrollmentId: string) {
-  const enrollment = await prisma.emailEnrollment.findUnique({
-    where: { id: enrollmentId },
+export async function pauseEnrollment(sequenceId: string, enrollmentId: string) {
+  const enrollment = await prisma.emailEnrollment.findFirst({
+    where: { id: enrollmentId, sequenceId },
   });
   if (!enrollment) {
     throw new AppError('Enrollment not found', 404);
@@ -465,9 +466,9 @@ export async function pauseEnrollment(enrollmentId: string) {
   });
 }
 
-export async function resumeEnrollment(enrollmentId: string) {
-  const enrollment = await prisma.emailEnrollment.findUnique({
-    where: { id: enrollmentId },
+export async function resumeEnrollment(sequenceId: string, enrollmentId: string) {
+  const enrollment = await prisma.emailEnrollment.findFirst({
+    where: { id: enrollmentId, sequenceId },
     include: {
       sequence: {
         include: { steps: { orderBy: { stepNumber: 'asc' } } },

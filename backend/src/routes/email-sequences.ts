@@ -217,7 +217,7 @@ router.put(
       const organizationId = req.organizationId!;
       await sequenceService.getSequence(organizationId, req.params.id);
 
-      const step = await sequenceService.updateStep(req.params.stepId, req.body);
+      const step = await sequenceService.updateStep(req.params.id, req.params.stepId, req.body);
       res.json({ step });
     } catch (error) {
       next(error);
@@ -237,7 +237,7 @@ router.delete(
       const organizationId = req.organizationId!;
       await sequenceService.getSequence(organizationId, req.params.id);
 
-      await sequenceService.deleteStep(req.params.stepId);
+      await sequenceService.deleteStep(req.params.id, req.params.stepId);
       res.status(204).send();
     } catch (error) {
       next(error);
@@ -335,6 +335,7 @@ router.put(
       await sequenceService.getSequence(organizationId, req.params.id);
 
       const enrollment = await sequenceService.pauseEnrollment(
+        req.params.id,
         req.params.enrollmentId,
       );
       res.json({ enrollment });
@@ -357,6 +358,7 @@ router.put(
       await sequenceService.getSequence(organizationId, req.params.id);
 
       const enrollment = await sequenceService.resumeEnrollment(
+        req.params.id,
         req.params.enrollmentId,
       );
       res.json({ enrollment });
@@ -381,8 +383,8 @@ router.delete(
       // unenrollContact expects (sequenceId, contactId), so we look up the
       // enrollment to extract the contactId.
       const { prisma } = await import('../config/database');
-      const enrollment = await prisma.emailEnrollment.findUnique({
-        where: { id: req.params.enrollmentId },
+      const enrollment = await prisma.emailEnrollment.findFirst({
+        where: { id: req.params.enrollmentId, sequenceId: req.params.id },
         select: { contactId: true },
       });
 
