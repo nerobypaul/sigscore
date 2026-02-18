@@ -27,7 +27,7 @@ one-click intelligence before sales conversations.
 
 Tech stack:
 - Backend: Express + TypeScript + Prisma + PostgreSQL + Redis + BullMQ (20 queues)
-- Frontend: React 18 + Vite + Tailwind (code-split, 250KB initial bundle)
+- Frontend: React 18 + Vite + Tailwind (code-split, 283KB initial bundle)
 - GraphQL: Apollo Server with DataLoader (11 loaders)
 - Auth: JWT + refresh tokens + API keys + SAML SSO + OIDC (PKCE) + GitHub/Google OAuth
 - Real-time: WebSocket with JWT auth, org-scoped broadcast
@@ -71,11 +71,10 @@ DevSignal is the tool I wished existed: connect GitHub, see results in 2 minutes
   Rule-based scoring is transparent and debuggable. Customers see exactly
   why an account scored 87.
 - All frontend charts are pure SVG/CSS. Zero charting library dependencies.
-  Bundle stayed at 250KB initial.
+  Bundle stayed at 283KB initial (89KB gzip).
 
 **What's not great yet**
 
-- No mobile responsive dashboard (landing page is responsive, app is not)
 - Identity resolution has ~70% accuracy on GitHub-to-company matching.
   Uses email domain + org membership + profile bio. False positives happen.
 - AI briefs (Claude API) add ~3s latency. Considering pre-generating them.
@@ -85,7 +84,6 @@ DevSignal is the tool I wished existed: connect GitHub, see results in 2 minutes
 - ML-based scoring model trained on conversion data (currently rule-based)
 - Enrichment pipeline v2 with waterfall providers (Clearbit → LinkedIn → custom)
 - Slack/Teams bot for real-time deal alerts in team channels
-- Historical score trend visualization (snapshots are captured, chart coming soon)
 
 Happy to answer questions about architecture, devtool GTM, or anything else.
 ```
@@ -96,16 +94,24 @@ Happy to answer questions about architecture, devtool GTM, or anything else.
 - Clear 4-6 hours after posting to respond to every comment
 
 ## Pre-launch Checklist
-- [ ] Make GitHub repo public (or remove open-source claims)
-- [ ] Rename repo from headless-crm to devsignal
-- [ ] Add LICENSE file (MIT) -- DONE
+- [ ] Make GitHub repo public (Paul)
+- [ ] Rename repo from headless-crm to devsignal (Paul)
+- [x] Add LICENSE file (MIT)
 - [x] Add README.md with architecture, quickstart, screenshots
 - [x] Remove fake social proof from landing page
 - [x] Fix pricing FAQ self-host answer
 - [x] Deploy to Railway and verify /health
 - [ ] Load test for ~2,000-5,000 visitors in 4 hours
-- [x] Build demo mode with pre-seeded data
+- [x] Build demo mode with pre-seeded data (8 companies, 395 signals, score trends)
 - [x] Prepare Reddit cross-posts (r/SaaS, r/devtools, r/selfhosted)
+- [x] SEO: robots.txt, sitemap.xml, per-page document.title (16 pages)
+- [x] Production hardening: gzip compression, Redis rate limiting, connection pooling
+- [x] Domain consistency: all URLs point to devsignal.dev
+- [x] Form validation: inline errors, password strength meter
+- [ ] Register devsignal.dev domain (Paul)
+- [ ] Set up Stripe products + webhook (Paul)
+- [ ] Create GitHub/Google OAuth apps (Paul)
+- [ ] Configure Resend for transactional email (Paul)
 
 ## Reddit Cross-Posts
 Full drafts in marketing/reddit-cross-posts.md. Key points:
