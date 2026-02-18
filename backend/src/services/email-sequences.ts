@@ -378,7 +378,7 @@ export async function reorderSteps(sequenceId: string, stepIds: string[]) {
 // Enrollment management
 // ---------------------------------------------------------------------------
 
-export async function enrollContact(sequenceId: string, contactId: string) {
+export async function enrollContact(sequenceId: string, contactId: string, organizationId: string) {
   // Check sequence exists and is active
   const sequence = await prisma.emailSequence.findUnique({
     where: { id: sequenceId },
@@ -391,8 +391,10 @@ export async function enrollContact(sequenceId: string, contactId: string) {
     throw new AppError('Cannot enroll contacts in an inactive sequence', 400);
   }
 
-  // Check contact exists
-  const contact = await prisma.contact.findUnique({ where: { id: contactId } });
+  // Check contact exists and belongs to the same organization
+  const contact = await prisma.contact.findFirst({
+    where: { id: contactId, organizationId },
+  });
   if (!contact) {
     throw new AppError('Contact not found', 404);
   }
@@ -435,11 +437,11 @@ export async function enrollContact(sequenceId: string, contactId: string) {
   return enrollment;
 }
 
-export async function enrollContacts(sequenceId: string, contactIds: string[]) {
+export async function enrollContacts(sequenceId: string, contactIds: string[], organizationId: string) {
   const results = [];
   for (const contactId of contactIds) {
     try {
-      const enrollment = await enrollContact(sequenceId, contactId);
+      const enrollment = await enrollContact(sequenceId, contactId, organizationId);
       results.push({ contactId, enrollment, success: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';

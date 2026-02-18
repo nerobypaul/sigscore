@@ -284,6 +284,7 @@ router.post(
       const results = await sequenceService.enrollContacts(
         req.params.id,
         contactIds,
+        organizationId,
       );
       res.json({ results });
     } catch (error) {
