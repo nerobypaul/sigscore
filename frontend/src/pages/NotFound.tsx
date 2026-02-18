@@ -1,6 +1,9 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 export default function NotFound() {
+  useEffect(() => { document.title = 'Page Not Found — DevSignal'; }, []);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4 relative overflow-hidden">
       {/* Background visual — pulsing gradient orbs */}

@@ -31,6 +31,8 @@ export default function Dashboard() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const tour = useProductTour();
 
+  useEffect(() => { document.title = 'Dashboard — DevSignal'; }, []);
+
   useEffect(() => {
     async function fetchStats() {
       try {

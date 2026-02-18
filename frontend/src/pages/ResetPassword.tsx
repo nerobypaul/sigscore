@@ -8,6 +8,8 @@ export default function ResetPassword() {
   const navigate = useNavigate();
   const token = searchParams.get('token');
 
+  useEffect(() => { document.title = 'New Password — DevSignal'; }, []);
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);

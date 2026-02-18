@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import PublicFooter from '../components/PublicFooter';
@@ -337,6 +337,8 @@ export default function Landing() {
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => { document.title = 'DevSignal — Developer Signal Intelligence'; }, []);
 
   const handleStartDemo = async () => {
     setDemoLoading(true);

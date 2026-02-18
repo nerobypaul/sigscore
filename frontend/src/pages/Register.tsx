@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 
@@ -44,6 +44,8 @@ export default function Register() {
   const [error, setError] = useState(humanizeOAuthError(searchParams.get('oauth_error')));
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  useEffect(() => { document.title = 'Create Account — DevSignal'; }, []);
 
   const markTouched = (field: string) => setTouched((t) => ({ ...t, [field]: true }));
 
