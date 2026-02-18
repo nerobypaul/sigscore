@@ -8,6 +8,7 @@ import { useToast } from '../components/Toast';
 import CSVImport from '../components/CSVImport';
 import SavedViewSelector from '../components/SavedViewSelector';
 import BulkActionBar from '../components/BulkActionBar';
+import { CompanyHoverCard } from '../components/HoverCard';
 
 export default function Contacts() {
   useEffect(() => { document.title = 'Contacts — DevSignal'; }, []);
@@ -406,13 +407,15 @@ export default function Contacts() {
                       <td className="py-3 px-4 text-gray-600" onClick={() => navigate(`/contacts/${contact.id}`)}>{contact.title || '--'}</td>
                       <td className="py-3 px-4">
                         {contact.company ? (
-                          <Link
-                            to={`/companies/${contact.company.id}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-indigo-600 hover:text-indigo-500"
-                          >
-                            {contact.company.name}
-                          </Link>
+                          <CompanyHoverCard companyId={contact.company.id}>
+                            <Link
+                              to={`/companies/${contact.company.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-indigo-600 hover:text-indigo-500"
+                            >
+                              {contact.company.name}
+                            </Link>
+                          </CompanyHoverCard>
                         ) : (
                           <span className="text-gray-400">--</span>
                         )}

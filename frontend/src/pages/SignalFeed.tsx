@@ -6,6 +6,7 @@ import type { WebSocketMessage } from '../lib/useWebSocket';
 import type { Signal, Pagination } from '../types';
 import Spinner from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
+import { CompanyHoverCard, ContactHoverCard } from '../components/HoverCard';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -103,6 +104,33 @@ function timeAgo(date: string): string {
   return new Date(date).toLocaleDateString();
 }
 
+function getDateGroup(date: string): string {
+  const now = new Date();
+  const d = new Date(date);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today.getTime() - 86_400_000);
+  const weekAgo = new Date(today.getTime() - 7 * 86_400_000);
+
+  if (d >= today) return 'Today';
+  if (d >= yesterday) return 'Yesterday';
+  if (d >= weekAgo) return 'This Week';
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function groupSignalsByDate(signals: Signal[]): { label: string; signals: Signal[] }[] {
+  const groups: { label: string; signals: Signal[] }[] = [];
+  let currentLabel = '';
+  for (const signal of signals) {
+    const label = getDateGroup(signal.timestamp || signal.createdAt);
+    if (label !== currentLabel) {
+      currentLabel = label;
+      groups.push({ label, signals: [] });
+    }
+    groups[groups.length - 1].signals.push(signal);
+  }
+  return groups;
+}
+
 function getDateRange(preset: DateRangePreset): { from?: string; to?: string } {
   if (preset === 'all') return {};
   const now = new Date();
@@ -198,13 +226,19 @@ function FeedSignalCard({
             >
               {signal.type.replace(/_/g, ' ')}
             </span>
-            <span className="text-sm font-medium text-gray-900">
-              {signal.actor
-                ? `${signal.actor.firstName} ${signal.actor.lastName}`
-                : signal.anonymousId
-                ? `Anonymous (${signal.anonymousId.slice(0, 8)}...)`
-                : 'Unknown'}
-            </span>
+            {signal.actor ? (
+              <ContactHoverCard contactId={signal.actor.id}>
+                <Link to={`/contacts/${signal.actor.id}`} className="text-sm font-medium text-gray-900 hover:text-indigo-600 transition-colors">
+                  {signal.actor.firstName} {signal.actor.lastName}
+                </Link>
+              </ContactHoverCard>
+            ) : (
+              <span className="text-sm font-medium text-gray-900">
+                {signal.anonymousId
+                  ? `Anonymous (${signal.anonymousId.slice(0, 8)}...)`
+                  : 'Unknown'}
+              </span>
+            )}
             {signal.actor?.email && (
               <span className="text-xs text-gray-400 truncate max-w-[180px]">
                 {signal.actor.email}
@@ -215,12 +249,14 @@ function FeedSignalCard({
           {/* Company + source name */}
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             {signal.account && (
-              <Link
-                to={`/companies/${signal.account.id}`}
-                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-              >
-                {signal.account.name}
-              </Link>
+              <CompanyHoverCard companyId={signal.account.id}>
+                <Link
+                  to={`/companies/${signal.account.id}`}
+                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+                >
+                  {signal.account.name}
+                </Link>
+              </CompanyHoverCard>
             )}
             {signal.source && (
               <span className="text-xs text-gray-400">
@@ -704,20 +740,28 @@ export default function SignalFeed() {
             )
           ) : (
             <>
-              <div className="divide-y divide-gray-100">
-                {signals.map((signal) => (
-                  <FeedSignalCard
-                    key={signal.id}
-                    signal={signal}
-                    isExpanded={expandedId === signal.id}
-                    onToggle={() =>
-                      setExpandedId(
-                        expandedId === signal.id ? null : signal.id,
-                      )
-                    }
-                  />
-                ))}
-              </div>
+              {groupSignalsByDate(signals).map((group) => (
+                <div key={group.label}>
+                  <div className="sticky top-0 z-10 px-5 py-2 bg-gray-50 border-b border-gray-200">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{group.label}</span>
+                    <span className="ml-2 text-xs text-gray-400">{group.signals.length}</span>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {group.signals.map((signal) => (
+                      <FeedSignalCard
+                        key={signal.id}
+                        signal={signal}
+                        isExpanded={expandedId === signal.id}
+                        onToggle={() =>
+                          setExpandedId(
+                            expandedId === signal.id ? null : signal.id,
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
 
               {/* Loading more indicator */}
               {loadingMore && (

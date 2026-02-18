@@ -6,6 +6,7 @@ import Spinner from '../components/Spinner';
 import { useToast } from '../components/Toast';
 import ActivityTimeline from '../components/ActivityTimeline';
 import CustomFieldsDisplay from '../components/CustomFieldsDisplay';
+import { CompanyHoverCard } from '../components/HoverCard';
 
 export default function ContactDetail() {
   useEffect(() => { document.title = 'Contact Detail — DevSignal'; }, []);
@@ -85,9 +86,11 @@ export default function ContactDetail() {
             </h1>
             {contact.title && <p className="text-gray-500">{contact.title}</p>}
             {contact.company && (
-              <Link to={`/companies/${contact.company.id}`} className="text-sm text-indigo-600 hover:text-indigo-500 transition-colors">
-                {contact.company.name}
-              </Link>
+              <CompanyHoverCard companyId={contact.company.id}>
+                <Link to={`/companies/${contact.company.id}`} className="text-sm text-indigo-600 hover:text-indigo-500 transition-colors">
+                  {contact.company.name}
+                </Link>
+              </CompanyHoverCard>
             )}
           </div>
         </div>
