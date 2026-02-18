@@ -349,6 +349,76 @@ async function seedFullDemoData(
     ),
   );
 
+  // ── Score Snapshots (14-day history) ──
+
+  const snapshotData: Prisma.ScoreSnapshotCreateManyInput[] = [];
+
+  companyDefs.forEach((def, companyIdx) => {
+    const currentScore = def.score;
+
+    // Determine starting score 14 days ago based on trend behaviour
+    let startOffset: number;
+    switch (def.trend) {
+      case 'RISING':
+        // HOT rising gets a steeper climb, WARM rising a moderate one
+        startOffset = currentScore >= 80 ? -18 : -12;
+        break;
+      case 'FALLING':
+        startOffset = 10; // was higher 14 days ago
+        break;
+      case 'STABLE':
+      default:
+        startOffset = 0; // flat with minor variance only
+        break;
+    }
+
+    const startScore = Math.max(0, Math.min(100, currentScore + startOffset));
+
+    for (let day = 14; day >= 1; day--) {
+      // Linear interpolation from startScore toward currentScore
+      const progress = (14 - day) / 13; // 0 at day 14, 1 at day 1
+      const interpolated = startScore + (currentScore - startScore) * progress;
+
+      // Add realistic daily variance: smaller for stable, larger for moving
+      const varianceRange = def.trend === 'STABLE' ? 2 : 4;
+      const variance = (Math.random() * 2 - 1) * varianceRange;
+
+      const dayScore = Math.round(
+        Math.max(0, Math.min(100, interpolated + variance)),
+      );
+
+      // Build breakdown proportional to the day's score
+      const ratio = dayScore / 100;
+      const breakdown = {
+        userCount: Math.round(ratio * def.userCount * 12),
+        velocity: Math.round(ratio * 85 + (Math.random() * 10 - 5)),
+        featureBreadth: Math.round(ratio * 70 + (Math.random() * 8 - 4)),
+        engagement: Math.round(ratio * 90 + (Math.random() * 6 - 3)),
+        seniority: Math.round(ratio * 60 + (Math.random() * 4 - 2)),
+        firmographic: Math.round(ratio * 75 + (Math.random() * 6 - 3)),
+      };
+
+      // Clamp breakdown values to 0-100
+      for (const key of Object.keys(breakdown) as Array<keyof typeof breakdown>) {
+        breakdown[key] = Math.max(0, Math.min(100, breakdown[key]));
+      }
+
+      const capturedAt = new Date(now);
+      capturedAt.setDate(capturedAt.getDate() - day);
+      capturedAt.setHours(2, 0, 0, 0); // Mimic the 2 AM daily cron
+
+      snapshotData.push({
+        organizationId,
+        companyId: companies[companyIdx].id,
+        score: dayScore,
+        breakdown: breakdown as unknown as Prisma.InputJsonValue,
+        capturedAt,
+      });
+    }
+  });
+
+  await prisma.scoreSnapshot.createMany({ data: snapshotData });
+
   // ── Contacts ────────────────────────────────────────────────────────────
 
   const contactDefs = [

@@ -26,7 +26,7 @@ The scoring is fully customizable with a no-code rule builder, so you define wha
 one-click intelligence before sales conversations.
 
 Tech stack:
-- Backend: Express + TypeScript + Prisma + PostgreSQL + Redis + BullMQ (16 queues)
+- Backend: Express + TypeScript + Prisma + PostgreSQL + Redis + BullMQ (20 queues)
 - Frontend: React 18 + Vite + Tailwind (code-split, 250KB initial bundle)
 - GraphQL: Apollo Server with DataLoader (11 loaders)
 - Auth: JWT + refresh tokens + API keys + SAML SSO + OIDC (PKCE) + GitHub/Google OAuth
@@ -105,10 +105,10 @@ Happy to answer questions about architecture, devtool GTM, or anything else.
 - [x] Deploy to Railway and verify /health
 - [ ] Load test for ~2,000-5,000 visitors in 4 hours
 - [x] Build demo mode with pre-seeded data
-- [ ] Prepare Reddit cross-posts (r/SaaS, r/devtools, r/selfhosted)
+- [x] Prepare Reddit cross-posts (r/SaaS, r/devtools, r/selfhosted)
 
 ## Reddit Cross-Posts
-See full drafts in the agent output. Key points:
+Full drafts in marketing/reddit-cross-posts.md. Key points:
 - r/SaaS: Post 2-4 hours after HN, lead with competitive angle
 - r/devtools: Same day, lead with technical pain point
 - r/selfhosted: Focus on Docker Compose self-hosting angle

@@ -4,6 +4,7 @@ import type { AccountScore, ScoreTier, ScoreTrend } from '../types';
 import { TIER_COLORS } from '../types';
 import Spinner from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
+import OrgScoreTrendChart from '../components/OrgScoreTrendChart';
 
 function timeAgo(date: string): string {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -173,6 +174,11 @@ export default function PQADashboard() {
           value={risingCount}
           accent="text-green-600"
         />
+      </div>
+
+      {/* Org-level score trend chart */}
+      <div className="mb-6">
+        <OrgScoreTrendChart days={30} height={200} />
       </div>
 
       {/* Main content: two columns */}
