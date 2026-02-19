@@ -68,7 +68,7 @@ const navSections: NavSection[] = [
     id: 'settings',
     label: 'SETTINGS',
     collapsible: true,
-    defaultCollapsed: true,
+    defaultCollapsed: false,
     items: [
       { to: '/settings', label: 'General', icon: SettingsIcon, hideInDemo: true },
       { to: '/integrations', label: 'Integrations', icon: IntegrationsIcon, dataTour: 'nav-integrations' },

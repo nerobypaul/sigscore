@@ -4448,8 +4448,17 @@ function ToggleSwitch({
 
 export default function Settings() {
   useEffect(() => { document.title = 'Settings — DevSignal'; }, []);
-  const [activeTab, setActiveTab] = useState<TabId>('api-keys');
-  const loadedTabsRef = useRef<Set<TabId>>(new Set(['api-keys']));
+
+  // Support deep-linking via ?tab=hubspot (used by IntegrationDetail "Configure" CTA)
+  const initialTab = (() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab') as TabId | null;
+    const allTabs = TAB_GROUPS.flatMap((g) => g.tabs.map((t) => t.id));
+    return tab && allTabs.includes(tab) ? tab : 'api-keys';
+  })();
+
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+  const loadedTabsRef = useRef<Set<TabId>>(new Set([initialTab]));
 
   function handleTabChange(tabId: TabId) {
     loadedTabsRef.current.add(tabId);

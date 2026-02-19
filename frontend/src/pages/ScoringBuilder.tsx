@@ -966,7 +966,11 @@ function RuleCard({
           {/* Delete rule */}
           <div className="flex justify-end">
             <button
-              onClick={onRemove}
+              onClick={() => {
+                if (window.confirm(`Delete rule "${rule.name}"? This cannot be undone.`)) {
+                  onRemove();
+                }
+              }}
               className="text-xs text-red-600 hover:text-red-700 font-medium px-3 py-1.5 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
             >
               Delete Rule

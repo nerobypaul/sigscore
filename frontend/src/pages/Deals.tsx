@@ -541,7 +541,7 @@ function CreateDealModal({
   const [form, setForm] = useState({
     title: '',
     amount: '',
-    stage: 'ANONYMOUS_USAGE' as DealStage,
+    stage: 'IDENTIFIED' as DealStage,
     description: '',
     expectedCloseDate: '',
   });
