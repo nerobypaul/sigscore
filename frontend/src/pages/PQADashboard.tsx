@@ -64,11 +64,11 @@ export default function PQADashboard() {
   const fetchScores = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/signals/top-accounts', {
+      const { data } = await api.get('/signals/accounts/top', {
         params: { limit: 200 },
       });
-      // The API may return an array directly or a wrapped response
-      const list: AccountScore[] = Array.isArray(data) ? data : data.data || [];
+      // The API returns { accounts: [...] } — handle both wrapped and direct responses
+      const list: AccountScore[] = Array.isArray(data) ? data : data.accounts || data.data || [];
       setScores(list);
     } catch {
       setScores([]);

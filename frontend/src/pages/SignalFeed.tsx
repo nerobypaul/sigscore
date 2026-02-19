@@ -379,12 +379,13 @@ export default function SignalFeed() {
   const pollTimerRef = useRef<ReturnType<typeof setInterval>>();
   const latestTimestampRef = useRef<string>('');
 
-  // Debounce search
+  // Debounce search — only update the debounced value; fetchSignals handles
+  // replacing signals when buildParams (which depends on debouncedSearch) changes.
+  // Do NOT call setSignals([]) here — it races with the initial fetch on mount
+  // and wipes already-loaded data 400ms after render.
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-      setPage(1);
-      setSignals([]);
     }, 400);
     return () => clearTimeout(timer);
   }, [searchQuery]);

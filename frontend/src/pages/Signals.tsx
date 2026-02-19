@@ -102,7 +102,7 @@ export default function Signals() {
           account: accountFilter || undefined,
         },
       });
-      setSignals(data.data || []);
+      setSignals(data.signals || data.data || []);
       setPagination(data.pagination || null);
     } catch {
       setSignals([]);
