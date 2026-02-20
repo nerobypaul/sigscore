@@ -90,6 +90,24 @@ export const demoLimiter = rateLimit({
 });
 
 /**
+ * GraphQL limiter -- stricter than general API to prevent batch
+ * query abuse (a single HTTP request can contain multiple queries).
+ *
+ * 30 requests per 1-minute window per IP.
+ * Applied to: /api/v1/graphql
+ */
+export const graphqlLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 30,
+  message: {
+    error: 'GraphQL rate limit exceeded. Please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: getStore(),
+});
+
+/**
  * Signal ingest limiter -- high throughput for the signal ingestion
  * pipeline which must handle bursts from SDK clients.
  *

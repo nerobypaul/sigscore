@@ -12,6 +12,7 @@ import {
   webhookLimiter,
   demoLimiter,
   signalLimiter,
+  graphqlLimiter,
 } from './middleware/rate-limit';
 import authRoutes from './routes/auth';
 import organizationRoutes from './routes/organizations';
@@ -120,8 +121,11 @@ app.use('/api/v1/auth/forgot-password', authLimiter);
 // Webhook limiter (200 req/min) — applied before individual webhook routes
 app.use('/api/v1/webhooks', webhookLimiter);
 
-// Demo seed limiter (3 req/min) — prevent abuse
+// Demo seed limiter (10 req/min) — prevent abuse while allowing Show HN traffic
 app.use('/api/v1/demo', demoLimiter);
+
+// GraphQL limiter (30 req/min) — stricter than API to prevent batch query abuse
+app.use('/api/v1/graphql', graphqlLimiter);
 
 // Higher rate limit for signal ingest (500 req/min)
 app.use('/api/v1/signals', signalLimiter);

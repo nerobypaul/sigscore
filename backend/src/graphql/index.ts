@@ -1,11 +1,61 @@
 import { ApolloServer, HeaderMap } from '@apollo/server';
 import type { Application, Request, Response } from 'express';
+import { GraphQLError, Kind } from 'graphql';
+import type { ASTVisitor, SelectionSetNode, ValidationContext } from 'graphql';
 import { prisma } from '../config/database';
+import { config } from '../config';
 import { verifyAccessToken } from '../utils/jwt';
 import { logger } from '../utils/logger';
 import typeDefs from './typeDefs';
 import resolvers, { type GraphQLContext } from './resolvers';
 import { createLoaders } from './dataloader';
+
+// ============================================================
+// Query depth limiting — prevents deeply nested queries that
+// cause exponential DB load (e.g. accounts→contacts→company→…)
+// ============================================================
+
+function createDepthLimitRule(maxDepth: number) {
+  return (context: ValidationContext): ASTVisitor => {
+    const measureDepth = (
+      selectionSet: SelectionSetNode | undefined,
+      depth: number
+    ): number => {
+      if (!selectionSet) return depth;
+      let max = depth;
+      for (const sel of selectionSet.selections) {
+        if (sel.kind === Kind.FIELD) {
+          const d = measureDepth(sel.selectionSet, depth + 1);
+          if (d > max) max = d;
+        } else if (sel.kind === Kind.INLINE_FRAGMENT && sel.selectionSet) {
+          const d = measureDepth(sel.selectionSet, depth);
+          if (d > max) max = d;
+        } else if (sel.kind === Kind.FRAGMENT_SPREAD) {
+          const frag = context.getFragment(sel.name.value);
+          if (frag) {
+            const d = measureDepth(frag.selectionSet, depth);
+            if (d > max) max = d;
+          }
+        }
+      }
+      return max;
+    };
+
+    return {
+      OperationDefinition(node) {
+        const depth = measureDepth(node.selectionSet, 0);
+        if (depth > maxDepth) {
+          context.reportError(
+            new GraphQLError(
+              `Query depth of ${depth} exceeds maximum allowed depth of ${maxDepth}.`,
+              { nodes: [node] }
+            )
+          );
+        }
+      },
+    };
+  };
+}
 
 // ============================================================
 // Apollo Server instance
@@ -14,6 +64,8 @@ import { createLoaders } from './dataloader';
 const server = new ApolloServer<GraphQLContext>({
   typeDefs,
   resolvers,
+  introspection: config.nodeEnv !== 'production',
+  validationRules: [createDepthLimitRule(5)],
 });
 
 // ============================================================
