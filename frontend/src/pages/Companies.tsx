@@ -80,6 +80,7 @@ export default function Companies() {
       setPagination(data.pagination || null);
     } catch {
       setCompanies([]);
+      toast.error('Failed to load companies.');
     } finally {
       setLoading(false);
     }

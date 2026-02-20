@@ -9,6 +9,7 @@ import DemoDataBanner from '../components/DemoDataBanner';
 import ConnectorHealthCard from '../components/ConnectorHealthCard';
 import ProductTour from '../components/ProductTour';
 import { useProductTour } from '../lib/useProductTour';
+import { useToast } from '../components/Toast';
 
 interface DashboardStats {
   contacts: { total: number; recent: Contact[] };
@@ -30,6 +31,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const tour = useProductTour();
+  const toast = useToast();
 
   useEffect(() => { document.title = 'Dashboard — DevSignal'; }, []);
 
@@ -84,6 +86,7 @@ export default function Dashboard() {
           signals: { recent: [] },
           hotAccounts: [],
         });
+        toast.error('Failed to load dashboard data.');
       } finally {
         setLoading(false);
       }

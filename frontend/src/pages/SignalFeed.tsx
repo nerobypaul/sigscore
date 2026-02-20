@@ -7,6 +7,7 @@ import type { Signal, Pagination } from '../types';
 import Spinner from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
 import { CompanyHoverCard, ContactHoverCard } from '../components/HoverCard';
+import { useToast } from '../components/Toast';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -351,6 +352,7 @@ function FeedSignalCard({
 
 export default function SignalFeed() {
   useEffect(() => { document.title = 'Signal Feed — DevSignal'; }, []);
+  const toast = useToast();
 
   // Data state
   const [signals, setSignals] = useState<Signal[]>([]);
@@ -447,6 +449,7 @@ export default function SignalFeed() {
       }
     } catch {
       setSignals([]);
+      toast.error('Failed to load signals.');
     } finally {
       setLoading(false);
     }

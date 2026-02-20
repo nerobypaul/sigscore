@@ -5,6 +5,7 @@ import type { WebSocketMessage } from '../lib/useWebSocket';
 import type { Signal, Pagination } from '../types';
 import Spinner from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
+import { useToast } from '../components/Toast';
 
 const SIGNAL_TYPE_COLORS: Record<string, string> = {
   repo_clone: 'bg-purple-100 text-purple-700',
@@ -55,6 +56,7 @@ function timeAgo(date: string): string {
 
 export default function Signals() {
   useEffect(() => { document.title = 'Signals — DevSignal'; }, []);
+  const toast = useToast();
 
   const [signals, setSignals] = useState<Signal[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -106,6 +108,7 @@ export default function Signals() {
       setPagination(data.pagination || null);
     } catch {
       setSignals([]);
+      toast.error('Failed to load signals.');
     } finally {
       setLoading(false);
     }

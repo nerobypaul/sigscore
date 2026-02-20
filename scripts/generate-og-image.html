@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    background: linear-gradient(135deg, #312e81 0%, #4f46e5 40%, #6366f1 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 90px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  /* Subtle grid pattern */
+  body::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  /* Signal wave decoration */
+  .wave {
+    position: absolute;
+    right: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0.15;
+  }
+  .wave .bar {
+    width: 16px;
+    border-radius: 8px;
+    background: white;
+  }
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .logo-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo-icon svg { width: 28px; height: 28px; }
+  .logo-text {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  h1 {
+    font-size: 64px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 24px;
+    max-width: 750px;
+  }
+  .subtitle {
+    font-size: 24px;
+    font-weight: 400;
+    opacity: 0.85;
+    line-height: 1.5;
+    max-width: 650px;
+    margin-bottom: 40px;
+  }
+  .pills {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .pill {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 100px;
+    padding: 10px 22px;
+    font-size: 18px;
+    font-weight: 500;
+    backdrop-filter: blur(8px);
+  }
+</style>
+</head>
+<body>
+  <div class="wave">
+    <div class="bar" style="height:80px"></div>
+    <div class="bar" style="height:180px"></div>
+    <div class="bar" style="height:300px"></div>
+    <div class="bar" style="height:220px"></div>
+    <div class="bar" style="height:120px"></div>
+    <div class="bar" style="height:60px"></div>
+  </div>
+
+  <div class="logo-row">
+    <div class="logo-icon">
+      <svg viewBox="0 0 32 32" fill="none">
+        <path d="M16 6 L16 26" stroke="white" stroke-width="3" stroke-linecap="round"/>
+        <path d="M10 10 L10 22" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+        <path d="M22 10 L22 22" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+        <path d="M4 14 L4 18" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+        <path d="M28 14 L28 18" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+      </svg>
+    </div>
+    <span class="logo-text">DevSignal</span>
+  </div>
+
+  <h1>Developer Signal Intelligence</h1>
+
+  <p class="subtitle">Know which companies are adopting your tool before they fill out a form.</p>
+
+  <div class="pills">
+    <span class="pill">16 Signal Sources</span>
+    <span class="pill">AI-Powered Scoring</span>
+    <span class="pill">$0 Free Tier</span>
+  </div>
+</body>
+</html>

@@ -67,6 +67,7 @@ export default function Contacts() {
       setPagination(data.pagination || null);
     } catch {
       setContacts([]);
+      toast.error('Failed to load contacts.');
     } finally {
       setLoading(false);
     }

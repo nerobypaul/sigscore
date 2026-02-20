@@ -5,6 +5,7 @@ import { TIER_COLORS } from '../types';
 import Spinner from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
 import OrgScoreTrendChart from '../components/OrgScoreTrendChart';
+import { useToast } from '../components/Toast';
 
 function timeAgo(date: string): string {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -55,6 +56,7 @@ function TierBadge({ tier }: { tier: ScoreTier }) {
 
 export default function PQADashboard() {
   useEffect(() => { document.title = 'PQA Scores — DevSignal'; }, []);
+  const toast = useToast();
   const [scores, setScores] = useState<AccountScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -72,6 +74,7 @@ export default function PQADashboard() {
       setScores(list);
     } catch {
       setScores([]);
+      toast.error('Failed to load PQA scores.');
     } finally {
       setLoading(false);
     }

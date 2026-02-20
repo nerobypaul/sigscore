@@ -42,6 +42,7 @@ export default function Deals() {
       setDeals(data.deals || []);
     } catch {
       setDeals([]);
+      toast.error('Failed to load deals.');
     } finally {
       setLoading(false);
     }
