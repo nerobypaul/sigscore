@@ -375,7 +375,7 @@ function IdentitySection({ contactId }: { contactId: string }) {
     api
       .get(`/identity/graph/${contactId}`)
       .then(({ data }) => setGraph(data))
-      .catch(() => {})
+      .catch(() => { setGraph(null); })
       .finally(() => setLoadingGraph(false));
   }, [contactId]);
 

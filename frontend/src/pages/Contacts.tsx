@@ -44,7 +44,7 @@ export default function Contacts() {
   useEffect(() => {
     api.get('/companies', { params: { limit: 200 } })
       .then(({ data }) => setCompaniesList(data.companies || []))
-      .catch(() => {});
+      .catch(() => setCompaniesList([]));
   }, []);
 
   // Bulk selection state
