@@ -39,8 +39,9 @@ export interface DemoSeedResult {
  * Check whether a demo org already exists and return its tokens if so.
  */
 export async function getDemoStatus(): Promise<{ exists: boolean; organizationId?: string }> {
-  const org = await prisma.organization.findUnique({
-    where: { slug: DEMO_ORG_SLUG },
+  const org = await prisma.organization.findFirst({
+    where: { slug: { startsWith: DEMO_ORG_SLUG } },
+    orderBy: { createdAt: 'desc' },
   });
   return org ? { exists: true, organizationId: org.id } : { exists: false };
 }
@@ -50,20 +51,17 @@ export async function getDemoStatus(): Promise<{ exists: boolean; organizationId
  * If the demo org already exists, cleans it up and re-seeds fresh data.
  */
 export async function createDemoEnvironment(): Promise<DemoSeedResult> {
-  // Clean up existing demo org if present
-  const existingOrg = await prisma.organization.findUnique({
-    where: { slug: DEMO_ORG_SLUG },
-  });
-
-  if (existingOrg) {
-    await cleanupDemoOrg(existingOrg.id);
-  }
+  // Each demo session gets a unique slug so concurrent visitors don't interfere.
+  // The cleanup cron (daily at 4 AM) finds all orgs with slug starting with
+  // 'devsignal-demo' and deletes those older than 24 hours.
+  const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const slug = `${DEMO_ORG_SLUG}-${uniqueSuffix}`;
 
   // Create demo user
   const passwordHash = await bcrypt.hash('demo-password-not-real', 10);
   const demoUser = await prisma.user.create({
     data: {
-      email: `demo-${Date.now()}@devsignal.dev`,
+      email: `demo-${uniqueSuffix}@devsignal.dev`,
       password: passwordHash,
       firstName: 'Demo',
       lastName: 'User',
@@ -75,7 +73,7 @@ export async function createDemoEnvironment(): Promise<DemoSeedResult> {
   const demoOrg = await prisma.organization.create({
     data: {
       name: DEMO_ORG_NAME,
-      slug: DEMO_ORG_SLUG,
+      slug,
       domain: 'devsignal.dev',
       settings: { plan: 'pro', demo: true } as unknown as Prisma.InputJsonValue,
     },
@@ -126,8 +124,19 @@ export async function cleanupDemoOrg(orgId: string): Promise<void> {
   });
   const userIds = userOrgs.map((uo) => uo.userId);
 
-  // Delete org (cascades to most child records)
-  await prisma.organization.delete({ where: { id: orgId } });
+  // Delete org (cascades to most child records).
+  // Wrap in try/catch to handle concurrent cleanup attempts — if another
+  // process already deleted this org, P2025 is safe to ignore.
+  try {
+    await prisma.organization.delete({ where: { id: orgId } });
+  } catch (err: unknown) {
+    const code = (err as { code?: string }).code;
+    if (code === 'P2025') {
+      logger.info('Demo org already deleted by another process', { orgId });
+      return;
+    }
+    throw err;
+  }
 
   // Delete orphaned demo users (only those with demo emails)
   if (userIds.length > 0) {
