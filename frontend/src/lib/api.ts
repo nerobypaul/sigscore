@@ -67,6 +67,7 @@ api.interceptors.response.use(
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('organizationId');
         window.location.href = '/login';
+        return Promise.reject(error);
       }
     }
 

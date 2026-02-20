@@ -58,10 +58,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setOrgId(orgId);
         }
       })
-      .catch(() => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('organizationId');
+      .catch((err: unknown) => {
+        // Only clear tokens on 401 (unauthorized) — transient 5xx/network
+        // errors during high traffic should not silently log the user out
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        if (status === 401 || status === 403) {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('organizationId');
+        }
       })
       .finally(() => setIsLoading(false));
   }, []);

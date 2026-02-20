@@ -56,6 +56,12 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       refreshToken,
     });
   } catch (error) {
+    // Handle Prisma unique constraint violation (concurrent registration race)
+    const prismaError = error as { code?: string };
+    if (prismaError.code === 'P2002') {
+      res.status(400).json({ error: 'Unable to create account with the provided information' });
+      return;
+    }
     next(error);
   }
 };

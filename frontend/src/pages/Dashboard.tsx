@@ -107,6 +107,10 @@ export default function Dashboard() {
       api.get('/analytics/pqa-distribution'),
       api.get('/analytics/top-signals', { params: { limit: 8 } }),
     ]).then(([trendsRes, distRes, topRes]) => {
+      const failedCount = [trendsRes, distRes, topRes].filter((r) => r.status === 'rejected').length;
+      if (failedCount === 3) {
+        toast.error('Failed to load analytics charts.');
+      }
       setAnalytics({
         trends: trendsRes.status === 'fulfilled' ? trendsRes.value.data.trends || [] : [],
         distribution: distRes.status === 'fulfilled' ? distRes.value.data.distribution || {} : {},
