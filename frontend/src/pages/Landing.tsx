@@ -370,8 +370,12 @@ export default function Landing() {
       localStorage.setItem('organizationId', data.organizationId);
       // Navigate to dashboard — replace ensures clean history entry
       window.location.replace('/');
-    } catch (_err) {
-      setDemoError('Failed to load demo. Please try again.');
+    } catch (err) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      const msg = status === 429
+        ? 'Too many demo requests. Please wait a minute and try again.'
+        : 'Failed to load demo. Please try again.';
+      setDemoError(msg);
       setDemoLoading(false);
       setDemoStep(0);
     }
@@ -504,6 +508,12 @@ export default function Landing() {
               </Link>
             </div>
 
+            {!demoLoading && (
+              <p className="mt-4 text-sm text-gray-500">
+                No signup needed — instant sandbox with real sample data
+              </p>
+            )}
+
             {/* Demo loading progress overlay */}
             {demoLoading && (
               <div className="mt-6 max-w-md mx-auto">
@@ -549,7 +559,15 @@ export default function Landing() {
             )}
 
             {demoError && (
-              <p className="mt-4 text-sm text-red-400">{demoError}</p>
+              <div className="mt-4 flex items-center justify-center gap-3">
+                <p className="text-sm text-red-400">{demoError}</p>
+                <button
+                  onClick={handleStartDemo}
+                  className="text-sm text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
+                >
+                  Retry
+                </button>
+              </div>
             )}
 
             {/* Hero stats */}
