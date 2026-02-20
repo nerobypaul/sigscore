@@ -527,9 +527,11 @@ export async function handleOidcCallback(
     token_type?: string;
   };
 
-  // Parse ID token (JWT) to extract claims
-  // We do a basic JWT decode (not full verification — the token was received
-  // directly from the IdP over HTTPS in a server-to-server call).
+  // Parse ID token (JWT) to extract claims.
+  // The token was received directly from the IdP over HTTPS in a server-to-server
+  // PKCE-protected exchange, so the transport is trusted. We still validate
+  // issuer, audience, and expiry claims as defense-in-depth.
+  // TODO: Add full JWKS signature verification post-launch for compliance.
   let claims: Record<string, unknown> = {};
 
   if (tokenData.id_token) {
@@ -542,6 +544,22 @@ export async function handleOidcCallback(
         logger.warn('Failed to parse OIDC ID token', { error: e });
       }
     }
+  }
+
+  // Validate standard JWT claims
+  if (connection.issuer && claims.iss && claims.iss !== connection.issuer) {
+    throw new AppError('ID token issuer does not match configured issuer', 401);
+  }
+
+  if (connection.clientId && claims.aud) {
+    const audiences = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+    if (!audiences.includes(connection.clientId)) {
+      throw new AppError('ID token audience does not match client ID', 401);
+    }
+  }
+
+  if (typeof claims.exp === 'number' && claims.exp < Date.now() / 1000) {
+    throw new AppError('ID token has expired', 401);
   }
 
   const email = (claims.email as string) || '';
