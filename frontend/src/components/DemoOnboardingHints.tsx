@@ -30,8 +30,8 @@ const STEPS: TourStep[] = [
   },
   {
     title: 'Ready to try it with your data?',
-    body: 'Connect GitHub in 2 minutes and see your real accounts.',
-    cta: { label: 'Create Free Account', to: '/register?from=demo' },
+    body: 'Connect GitHub in 2 minutes and see your real accounts scored and ranked.',
+    cta: { label: 'Start Free — No Credit Card', to: '/register?from=demo' },
   },
 ];
 
@@ -41,7 +41,7 @@ export default function DemoOnboardingHints() {
   const [visible, setVisible] = useState(false);
 
   const isDemo = user?.organizations?.some(
-    (uo) => uo.organization?.name === 'DevSignal Demo',
+    (uo) => uo.organization?.name?.startsWith('DevSignal Demo'),
   );
 
   useEffect(() => {
@@ -134,10 +134,10 @@ export default function DemoOnboardingHints() {
                   localStorage.removeItem('refreshToken');
                   localStorage.removeItem('organizationId');
                 }}
-                className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
               >
                 {current.cta.label}
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
               </Link>

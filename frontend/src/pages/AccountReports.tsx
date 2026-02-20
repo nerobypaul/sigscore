@@ -86,7 +86,7 @@ export default function AccountReports() {
     try {
       setCompaniesLoading(true);
       const { data } = await api.get('/companies?limit=200');
-      const list = data.companies ?? data.data ?? [];
+      const list = data.companies ?? [];
       setCompanies(
         list.map((c: { id: string; name: string; domain?: string | null }) => ({
           id: c.id,

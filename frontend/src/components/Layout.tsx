@@ -99,7 +99,7 @@ export default function Layout() {
 
   // Demo mode detection — hide irrelevant nav items
   const isDemo = user?.organizations?.some(
-    (uo: { organization?: { name?: string } }) => uo.organization?.name === 'DevSignal Demo',
+    (uo: { organization?: { name?: string } }) => uo.organization?.name?.startsWith('DevSignal Demo'),
   ) ?? false;
 
   // UpgradeModal state — triggered by 402 responses from the API

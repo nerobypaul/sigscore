@@ -556,7 +556,7 @@ function ContactsTab({ contacts }: { contacts: Contact[] }) {
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
 
   const isDemo = user?.organizations?.some(
-    (uo: { organization?: { name?: string } }) => uo.organization?.name === 'DevSignal Demo',
+    (uo: { organization?: { name?: string } }) => uo.organization?.name?.startsWith('DevSignal Demo'),
   );
 
   const handleEnrich = async (contactId: string) => {
@@ -753,7 +753,7 @@ function NextBestActions({ accountId }: { accountId: string }) {
   const [error, setError] = useState('');
 
   const isDemo = user?.organizations?.some(
-    (uo: { organization?: { name?: string } }) => uo.organization?.name === 'DevSignal Demo',
+    (uo: { organization?: { name?: string } }) => uo.organization?.name?.startsWith('DevSignal Demo'),
   );
 
   const fetchActions = useCallback(async () => {

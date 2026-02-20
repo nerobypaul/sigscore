@@ -397,7 +397,7 @@ export default function SignalFeed() {
     api
       .get('/companies', { params: { limit: 200 } })
       .then(({ data }) => {
-        const list = (data.data || data.companies || []) as CompanyOption[];
+        const list = (data.companies || []) as CompanyOption[];
         setCompanies(list);
       })
       .catch(() => {
@@ -439,7 +439,7 @@ export default function SignalFeed() {
     setLoading(true);
     try {
       const { data } = await api.get('/signals', { params: buildParams(1) });
-      const list = data.signals || data.data || [];
+      const list = data.signals || [];
       setSignals(list);
       setPagination(data.pagination || null);
       setPage(1);
@@ -466,7 +466,7 @@ export default function SignalFeed() {
       const { data } = await api.get('/signals', {
         params: buildParams(nextPage),
       });
-      const list = data.signals || data.data || [];
+      const list = data.signals || [];
       setSignals((prev) => [...prev, ...list]);
       setPagination(data.pagination || null);
       setPage(nextPage);

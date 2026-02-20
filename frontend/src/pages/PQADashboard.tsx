@@ -69,8 +69,8 @@ export default function PQADashboard() {
       const { data } = await api.get('/signals/accounts/top', {
         params: { limit: 200 },
       });
-      // The API returns { accounts: [...] } — handle both wrapped and direct responses
-      const list: AccountScore[] = Array.isArray(data) ? data : data.accounts || data.data || [];
+      // The API returns { accounts: [...] }
+      const list: AccountScore[] = Array.isArray(data) ? data : data.accounts || [];
       setScores(list);
     } catch {
       setScores([]);

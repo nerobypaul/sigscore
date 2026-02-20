@@ -104,7 +104,7 @@ export default function Signals() {
           accountId: accountFilter || undefined,
         },
       });
-      setSignals(data.signals || data.data || []);
+      setSignals(data.signals || []);
       setPagination(data.pagination || null);
     } catch {
       setSignals([]);
