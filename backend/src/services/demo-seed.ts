@@ -179,7 +179,7 @@ async function seedFullDemoData(
       score: 92,
       tier: 'HOT' as const,
       trend: 'RISING' as const,
-      signalCount: 147,
+      signalCount: 210,
       userCount: 8,
       tags: [hotTag.id, enterpriseTag.id, expansionTag.id],
     },
@@ -194,7 +194,7 @@ async function seedFullDemoData(
       score: 84,
       tier: 'HOT' as const,
       trend: 'RISING' as const,
-      signalCount: 89,
+      signalCount: 130,
       userCount: 5,
       tags: [hotTag.id],
     },
@@ -209,7 +209,7 @@ async function seedFullDemoData(
       score: 71,
       tier: 'WARM' as const,
       trend: 'RISING' as const,
-      signalCount: 62,
+      signalCount: 95,
       userCount: 4,
       tags: [warmTag.id, enterpriseTag.id],
     },
@@ -224,7 +224,7 @@ async function seedFullDemoData(
       score: 67,
       tier: 'WARM' as const,
       trend: 'STABLE' as const,
-      signalCount: 41,
+      signalCount: 65,
       userCount: 3,
       tags: [warmTag.id, expansionTag.id],
     },
@@ -239,7 +239,7 @@ async function seedFullDemoData(
       score: 55,
       tier: 'WARM' as const,
       trend: 'RISING' as const,
-      signalCount: 28,
+      signalCount: 45,
       userCount: 2,
       tags: [warmTag.id],
     },
@@ -254,7 +254,7 @@ async function seedFullDemoData(
       score: 42,
       tier: 'COLD' as const,
       trend: 'STABLE' as const,
-      signalCount: 15,
+      signalCount: 25,
       userCount: 1,
       tags: [coldTag.id],
     },
@@ -269,7 +269,7 @@ async function seedFullDemoData(
       score: 31,
       tier: 'COLD' as const,
       trend: 'FALLING' as const,
-      signalCount: 9,
+      signalCount: 18,
       userCount: 1,
       tags: [coldTag.id],
     },
@@ -284,7 +284,7 @@ async function seedFullDemoData(
       score: 18,
       tier: 'COLD' as const,
       trend: 'STABLE' as const,
-      signalCount: 4,
+      signalCount: 12,
       userCount: 1,
       tags: [coldTag.id],
     },
@@ -537,7 +537,7 @@ async function seedFullDemoData(
 
   // ── Signal Source ────────────────────────────────────────────────────────
 
-  const [githubSource, npmSource, productSource, communitySource] = await Promise.all([
+  const [githubSource, npmSource, productSource, communitySource, segmentSource, discordSource] = await Promise.all([
     prisma.signalSource.create({
       data: {
         organizationId,
@@ -573,6 +573,26 @@ async function seedFullDemoData(
         organizationId,
         type: 'CUSTOM_WEBHOOK',
         name: 'Community Signals',
+        config: { demo: true } as unknown as Prisma.InputJsonValue,
+        status: 'ACTIVE',
+        lastSyncAt: now,
+      },
+    }),
+    prisma.signalSource.create({
+      data: {
+        organizationId,
+        type: 'SEGMENT',
+        name: 'Segment',
+        config: { demo: true } as unknown as Prisma.InputJsonValue,
+        status: 'ACTIVE',
+        lastSyncAt: now,
+      },
+    }),
+    prisma.signalSource.create({
+      data: {
+        organizationId,
+        type: 'DISCORD',
+        name: 'Discord',
         config: { demo: true } as unknown as Prisma.InputJsonValue,
         status: 'ACTIVE',
         lastSyncAt: now,
@@ -614,6 +634,12 @@ async function seedFullDemoData(
     { type: 'signup', sourceId: productSource.id, metadata: () => ({ plan: 'free', source: 'organic', referrer: 'https://github.com' }) },
     { type: 'feature_usage', sourceId: productSource.id, metadata: () => ({ feature: 'api-dashboard', action: 'viewed', duration: rand(30, 300) }) },
     { type: 'api_call', sourceId: productSource.id, metadata: () => ({ endpoint: '/api/v1/signals', method: 'POST', statusCode: 200, latencyMs: rand(20, 200) }) },
+    { type: 'segment_identify', sourceId: segmentSource.id, metadata: (n) => ({ userId: `user-${rand(1000,9999)}`, traits: { company: n, plan: 'pro' }, source: 'web' }) },
+    { type: 'segment_track', sourceId: segmentSource.id, metadata: () => ({ event: 'Feature Activated', properties: { feature: 'webhooks', plan: 'pro' }, source: 'server' }) },
+    { type: 'discord_join', sourceId: discordSource.id, metadata: (n) => ({ guildName: `${n} Community`, memberCount: rand(50, 500), channel: 'introductions' }) },
+    { type: 'discord_thread', sourceId: discordSource.id, metadata: (n) => ({ guildName: `${n} Community`, channel: 'help', title: 'Best practices for SDK integration?', replies: rand(3, 15) }) },
+    { type: 'docs_read', sourceId: productSource.id, metadata: () => ({ page: '/docs/api-reference', timeOnPage: rand(60, 600), scrollDepth: rand(40, 100) }) },
+    { type: 'github_commit', sourceId: githubSource.id, metadata: (n) => ({ repo: `${slugify(n)}/sdk`, message: 'feat: add custom config support', additions: rand(20, 200), deletions: rand(5, 50) }) },
   ];
 
   // Distribute signals across companies proportional to their scores
@@ -733,6 +759,7 @@ async function seedFullDemoData(
 
   // ── Account Brief for Acme ───────────────────────────────────────────────
 
+  // AI briefs for top 3 companies (shows the feature works across accounts)
   await prisma.accountBrief.create({
     data: {
       organizationId,
@@ -768,6 +795,82 @@ async function seedFullDemoData(
       validUntil: daysFromNow(6),
       promptTokens: 2400,
       outputTokens: 850,
+    },
+  });
+
+  await prisma.accountBrief.create({
+    data: {
+      organizationId,
+      accountId: companies[1].id, // NovaCLI
+      content: `## NovaCLI - Account Intelligence Brief
+
+**Company Overview:** NovaCLI builds a next-generation command-line framework with built-in AI assistance. Seed stage, 12 employees, founded 2024. Backed by Y Combinator (W24 batch).
+
+**Product Usage Signals (Last 30 Days):**
+- 5 active developers using the SDK (CTO Alex Rivera is a daily user)
+- 130 total signals across GitHub, npm, and Segment
+- Rapid adoption curve: went from first API call to 5 active users in 18 days
+- Heavy focus on API endpoints and webhook integrations
+
+**Key Expansion Indicators:**
+- Alex Rivera (CTO) personally building integrations - strong technical champion
+- Jamie Lee (Staff Engineer) opened 2 feature requests on GitHub (advanced config, batch API)
+- npm download volume growing 40% week-over-week
+- Devi Rao onboarded independently without docs - strong product-market fit signal
+
+**Competitive Intelligence:**
+- Not currently evaluating alternatives (early stage, moving fast)
+- Mentioned us positively in their Discord community
+
+**Recommended Next Steps:**
+1. Invite Alex Rivera to beta program for upcoming batch API feature
+2. Offer founder-friendly pricing: lock in annual deal before Series A
+3. Feature NovaCLI as a case study (fast adoption story resonates with other seed-stage teams)
+
+**Risk Factors:** Low. Fast-growing seed stage with technical champion. Main risk is budget constraints pre-Series A.`,
+      generatedAt: daysAgo(2),
+      validUntil: daysFromNow(5),
+      promptTokens: 2100,
+      outputTokens: 720,
+    },
+  });
+
+  await prisma.accountBrief.create({
+    data: {
+      organizationId,
+      accountId: companies[2].id, // CloudForge
+      content: `## CloudForge - Account Intelligence Brief
+
+**Company Overview:** CloudForge is an infrastructure-as-code platform for multi-cloud deployments. Series B ($45M raised), 120 employees, HQ in Austin TX. Known for enterprise-grade reliability.
+
+**Product Usage Signals (Last 30 Days):**
+- 4 active users, led by Jordan Park (Engineering Manager) and Logan Fischer (SRE Lead)
+- 95 signals detected, predominantly GitHub and product analytics
+- Usage pattern suggests evaluation phase: heavy docs reading, API exploration, limited production usage
+- Sam Torres (Frontend Lead) integrated our dashboard widget last week
+
+**Key Expansion Indicators:**
+- Jordan Park requested a security questionnaire - procurement signal
+- Logan Fischer tested our webhook reliability with 1000+ test events
+- Company blog mentioned "evaluating developer signal tools" in their Q1 planning post
+- 3 separate team members browsing enterprise pricing page
+
+**Competitive Intelligence:**
+- Currently using Common Room ($18K/year) - unhappy with pricing
+- Mentioned "looking for something 10x cheaper" in an internal Slack leak on Reddit
+- Decision timeline: Q1 2026 (within next 6 weeks)
+
+**Recommended Next Steps:**
+1. Send Jordan Park a tailored ROI comparison: DevSignal vs Common Room
+2. Offer a migration path: free data import from Common Room
+3. Schedule a joint call with Jordan + Logan to address SRE-specific requirements
+4. Fast-track their security questionnaire to accelerate procurement
+
+**Risk Factors:** Medium. Active evaluation of multiple tools. Price is the primary driver - we have a strong advantage here. Timeline pressure from Q1 budget cycle works in our favor.`,
+      generatedAt: daysAgo(1),
+      validUntil: daysFromNow(6),
+      promptTokens: 2600,
+      outputTokens: 880,
     },
   });
 

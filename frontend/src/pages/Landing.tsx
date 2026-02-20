@@ -351,8 +351,7 @@ export default function Landing() {
       localStorage.setItem('organizationId', data.organizationId);
       // Navigate to dashboard — replace ensures clean history entry
       window.location.replace('/');
-    } catch (err) {
-      console.error('Demo seed failed:', err);
+    } catch (_err) {
       setDemoError('Failed to load demo. Please try again.');
       setDemoLoading(false);
     }
