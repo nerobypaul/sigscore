@@ -70,6 +70,18 @@ api.interceptors.response.use(
       }
     }
 
+    // Handle 429 Too Many Requests — dispatch a custom event for rate limit toast
+    if (error.response?.status === 429) {
+      const detail = error.response.data as Record<string, unknown> | undefined;
+      window.dispatchEvent(
+        new CustomEvent('devsignal:rate-limited', {
+          detail: {
+            message: detail?.error ?? 'Too many requests. Please wait a moment and try again.',
+          },
+        }),
+      );
+    }
+
     // Handle 402 Payment Required — dispatch a custom event for the UpgradeModal
     if (error.response?.status === 402) {
       const detail = error.response.data as Record<string, unknown> | undefined;

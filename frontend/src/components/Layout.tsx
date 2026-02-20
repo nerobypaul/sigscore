@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import { useToast } from './Toast';
 import CommandPaletteTrigger from './CommandPaletteTrigger';
 import NotificationBell from './NotificationBell';
 import KeyboardShortcuts from './KeyboardShortcuts';
@@ -122,6 +123,22 @@ export default function Layout() {
     window.addEventListener('devsignal:plan-limit', handler);
     return () => window.removeEventListener('devsignal:plan-limit', handler);
   }, []);
+
+  // Rate limit toast — debounced to avoid flooding with toasts
+  const toast = useToast();
+  const rateLimitShownRef = useRef(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      if (rateLimitShownRef.current) return;
+      rateLimitShownRef.current = true;
+      const detail = (e as CustomEvent).detail as { message?: string } | undefined;
+      toast.info(detail?.message ?? 'Too many requests. Please wait a moment.');
+      setTimeout(() => { rateLimitShownRef.current = false; }, 10_000);
+    };
+    window.addEventListener('devsignal:rate-limited', handler);
+    return () => window.removeEventListener('devsignal:rate-limited', handler);
+  }, [toast]);
 
   // Auto-expand settings if the user is on a settings page
   const isOnSettingsPage = SETTINGS_PATHS.some(
