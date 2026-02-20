@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import type { Contact, Deal, Activity, Signal, AccountScore } from '../types';
 import { STAGE_LABELS, STAGE_COLORS, TIER_COLORS } from '../types';
-import Spinner from '../components/Spinner';
+import { DashboardSkeleton } from '../components/Spinner';
 import OnboardingChecklist from '../components/OnboardingChecklist';
 import DemoDataBanner from '../components/DemoDataBanner';
 import ConnectorHealthCard from '../components/ConnectorHealthCard';
@@ -117,8 +117,8 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Spinner size="lg" />
+      <div className="px-4 py-6 md:px-6 lg:px-8 max-w-7xl mx-auto">
+        <DashboardSkeleton />
       </div>
     );
   }

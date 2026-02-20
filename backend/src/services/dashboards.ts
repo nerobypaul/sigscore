@@ -350,16 +350,18 @@ async function fetchHotAccounts(organizationId: string) {
   });
 
   return {
-    data: scores.map((s) => ({
-      id: s.id,
-      accountId: s.accountId,
-      name: s.account.name,
-      domain: s.account.domain,
-      score: s.score,
-      trend: s.trend,
-      signalCount: s.signalCount,
-      userCount: s.userCount,
-    })),
+    data: scores
+      .filter((s) => s.account != null)
+      .map((s) => ({
+        id: s.id,
+        accountId: s.accountId,
+        name: s.account!.name,
+        domain: s.account!.domain,
+        score: s.score,
+        trend: s.trend,
+        signalCount: s.signalCount,
+        userCount: s.userCount,
+      })),
   };
 }
 

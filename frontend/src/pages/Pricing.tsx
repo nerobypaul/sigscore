@@ -889,14 +889,14 @@ export default function Pricing() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link
                   to="/register"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-indigo-700 font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-indigo-50 transition-colors"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-indigo-700 font-semibold px-5 py-3 sm:px-8 sm:py-3.5 rounded-xl text-base hover:bg-indigo-50 transition-colors"
                 >
                   Start Free
                   <ArrowRightIcon />
                 </Link>
                 <a
                   href="mailto:sales@devsignal.dev?subject=Demo%20request"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/30 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-white/10 transition-colors"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/30 text-white font-semibold px-5 py-3 sm:px-8 sm:py-3.5 rounded-xl text-base hover:bg-white/10 transition-colors"
                 >
                   Schedule a Demo
                 </a>

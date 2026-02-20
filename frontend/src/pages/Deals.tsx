@@ -5,7 +5,7 @@ import { useWebSocket } from '../lib/useWebSocket';
 import type { WebSocketMessage } from '../lib/useWebSocket';
 import type { Deal, DealStage } from '../types';
 import { DEAL_STAGES, STAGE_LABELS, STAGE_COLORS } from '../types';
-import Spinner from '../components/Spinner';
+import { DealsPipelineSkeleton } from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
 import SavedViewSelector from '../components/SavedViewSelector';
@@ -137,8 +137,14 @@ export default function Deals() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Spinner size="lg" />
+      <div className="p-6 lg:p-8 h-full flex flex-col">
+        <div className="flex items-center justify-between mb-6 flex-shrink-0">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Deals</h1>
+            <p className="mt-1 text-sm text-gray-500">Loading...</p>
+          </div>
+        </div>
+        <DealsPipelineSkeleton />
       </div>
     );
   }
@@ -295,7 +301,7 @@ function PipelineView({
       </div>
 
       {/* Pipeline columns */}
-      <div className="flex gap-3 overflow-x-auto pb-4 h-full">
+      <div className="flex gap-3 overflow-x-auto pb-4 h-full snap-x snap-mandatory sm:snap-none">
         {activeStages.map((stage) => {
           const stageDeals = dealsByStage[stage] || [];
           const stageValue = stageDeals.reduce((sum, d) => sum + (d.amount || 0), 0);

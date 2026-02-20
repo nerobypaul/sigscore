@@ -83,6 +83,159 @@ export function TableSkeleton({ rows = 8, columns = 6 }: { rows?: number; column
   );
 }
 
+/** Skeleton loading for dashboard stat cards + content areas */
+export function DashboardSkeleton() {
+  return (
+    <div className="animate-pulse">
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <SkeletonBlock className="h-3 w-20 mb-3" />
+            <SkeletonBlock className="h-7 w-16 mb-2" />
+            <SkeletonBlock className="h-3 w-24" />
+          </div>
+        ))}
+      </div>
+      {/* Chart + table area */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+          <SkeletonBlock className="h-5 w-32 mb-4" />
+          <div className="flex items-end gap-1 h-40">
+            {[60, 80, 45, 70, 55, 90, 40, 75, 65, 85, 50, 95, 60, 70].map((h, i) => (
+              <div key={i} className={`flex-1 animate-pulse bg-gray-200 rounded-t`} style={{ height: `${h}%` }} />
+            ))}
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+          <SkeletonBlock className="h-5 w-28 mb-4" />
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <SkeletonBlock className="h-8 w-8 rounded-full" />
+                <div className="flex-1">
+                  <SkeletonBlock className="h-4 w-32 mb-1" />
+                  <SkeletonBlock className="h-3 w-48" />
+                </div>
+                <SkeletonBlock className="h-4 w-12" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Skeleton loading for deals pipeline view */
+export function DealsPipelineSkeleton() {
+  return (
+    <div className="flex gap-3 overflow-hidden pb-4 animate-pulse">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="flex-shrink-0 w-72 bg-gray-100 rounded-xl p-3">
+          <div className="flex items-center justify-between mb-3">
+            <SkeletonBlock className="h-4 w-24" />
+            <SkeletonBlock className="h-5 w-8 rounded-full" />
+          </div>
+          <div className="space-y-2">
+            {Array.from({ length: 2 + i % 2 }).map((_, j) => (
+              <div key={j} className="bg-white rounded-lg p-3 shadow-sm">
+                <SkeletonBlock className="h-4 w-28 mb-2" />
+                <SkeletonBlock className="h-3 w-20 mb-2" />
+                <SkeletonBlock className="h-3 w-16" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Skeleton for PQA dashboard — score cards + chart + table */
+export function PQASkeleton() {
+  return (
+    <div className="animate-pulse">
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <SkeletonBlock className="h-3 w-16 mb-3" />
+            <SkeletonBlock className="h-7 w-12 mb-2" />
+            <SkeletonBlock className="h-3 w-20" />
+          </div>
+        ))}
+      </div>
+      {/* Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-4 border-b border-gray-200">
+          <SkeletonBlock className="h-5 w-32" />
+        </div>
+        <div className="divide-y divide-gray-100">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 p-4">
+              <SkeletonBlock className="h-8 w-8 rounded-full" />
+              <SkeletonBlock className="h-4 w-32" />
+              <SkeletonBlock className="h-5 w-12 rounded-full ml-auto" />
+              <SkeletonBlock className="h-4 w-16" />
+              <SkeletonBlock className="h-4 w-12" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Skeleton for detail pages (company/contact) — header + tabs + content */
+export function DetailSkeleton() {
+  return (
+    <div className="animate-pulse">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 mb-4">
+        <SkeletonBlock className="h-4 w-20" />
+        <SkeletonBlock className="h-4 w-4" />
+        <SkeletonBlock className="h-4 w-32" />
+      </div>
+      {/* Header */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="flex items-start gap-4">
+          <SkeletonBlock className="h-14 w-14 rounded-xl" />
+          <div className="flex-1">
+            <SkeletonBlock className="h-6 w-48 mb-2" />
+            <SkeletonBlock className="h-4 w-32 mb-2" />
+            <div className="flex gap-2">
+              <SkeletonBlock className="h-5 w-16 rounded-full" />
+              <SkeletonBlock className="h-5 w-20 rounded-full" />
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Tab bar */}
+      <div className="flex gap-4 border-b border-gray-200 mb-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonBlock key={i} className="h-4 w-20 mb-3" />
+        ))}
+      </div>
+      {/* Content */}
+      <div className="space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center gap-3">
+              <SkeletonBlock className="h-8 w-8 rounded-full" />
+              <div className="flex-1">
+                <SkeletonBlock className="h-4 w-40 mb-1" />
+                <SkeletonBlock className="h-3 w-56" />
+              </div>
+              <SkeletonBlock className="h-3 w-16" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Skeleton loading for card grid — matches Companies card layout */
 export function CardGridSkeleton({ count = 6 }: { count?: number }) {
   return (

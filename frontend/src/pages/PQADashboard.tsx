@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import api from '../lib/api';
 import type { AccountScore, ScoreTier, ScoreTrend } from '../types';
 import { TIER_COLORS } from '../types';
-import Spinner from '../components/Spinner';
+import { PQASkeleton } from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
 import OrgScoreTrendChart from '../components/OrgScoreTrendChart';
 import { useToast } from '../components/Toast';
@@ -116,9 +116,7 @@ export default function PQADashboard() {
           <h1 className="text-2xl font-bold text-gray-900">PQA Scores</h1>
           <p className="mt-1 text-sm text-gray-500">Product-Qualified Account scoring</p>
         </div>
-        <div className="flex items-center justify-center py-20">
-          <Spinner />
-        </div>
+        <PQASkeleton />
       </div>
     );
   }

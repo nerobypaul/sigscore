@@ -141,7 +141,7 @@ export default function Signals() {
       </div>
 
       {/* Filter bar */}
-      <div className="mb-4 flex flex-wrap items-end gap-3">
+      <div className="mb-4 grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Signal Type</label>
           <select

@@ -4,7 +4,7 @@ import api from '../lib/api';
 import { useAuth } from '../lib/auth';
 import type { Company, Contact, Deal, Signal, AccountScore, Activity } from '../types';
 import { STAGE_LABELS, STAGE_COLORS } from '../types';
-import Spinner from '../components/Spinner';
+import Spinner, { DetailSkeleton } from '../components/Spinner';
 import { useToast } from '../components/Toast';
 import AccountScoreCard, { AccountScoreBadge } from '../components/AccountScoreCard';
 import AccountTimeline from '../components/AccountTimeline';
@@ -180,8 +180,8 @@ export default function CompanyDetail() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Spinner size="lg" />
+      <div className="px-4 py-6 md:px-6 lg:px-8 max-w-5xl mx-auto">
+        <DetailSkeleton />
       </div>
     );
   }

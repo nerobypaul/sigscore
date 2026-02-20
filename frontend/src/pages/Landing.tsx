@@ -700,11 +700,11 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-4 max-w-4xl mx-auto">
             {integrations.map((name) => (
               <div
                 key={name}
-                className="flex items-center justify-center px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-medium text-gray-700 hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
+                className="flex items-center justify-center px-2 py-2 sm:px-4 sm:py-3 rounded-xl bg-gray-50 border border-gray-200 text-xs sm:text-sm font-medium text-gray-700 hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
               >
                 {name}
               </div>
@@ -913,8 +913,8 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="max-w-4xl mx-auto overflow-x-auto">
-            <table className="w-full text-left">
+          <div className="max-w-4xl mx-auto overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full text-left min-w-[600px]">
               <thead>
                 <tr className="border-b-2 border-gray-200">
                   <th className="py-4 pr-6 text-sm font-semibold text-gray-500 w-1/4" />

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import type { Contact } from '../types';
-import Spinner from '../components/Spinner';
+import Spinner, { DetailSkeleton } from '../components/Spinner';
 import { useToast } from '../components/Toast';
 import ActivityTimeline from '../components/ActivityTimeline';
 import CustomFieldsDisplay from '../components/CustomFieldsDisplay';
@@ -41,8 +41,8 @@ export default function ContactDetail() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Spinner size="lg" />
+      <div className="p-6 lg:p-8 max-w-5xl mx-auto">
+        <DetailSkeleton />
       </div>
     );
   }
