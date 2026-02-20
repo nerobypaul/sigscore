@@ -36,6 +36,8 @@ export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const plan = searchParams.get('plan');
+  const fromDemo = searchParams.get('from') === 'demo';
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -95,6 +97,21 @@ export default function Register() {
         </div>
 
         <div className="bg-white shadow-sm rounded-xl p-8 space-y-5">
+          {fromDemo && (
+            <div className="bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-lg px-4 py-3 text-sm">
+              Love what you saw? Create an account to get your own workspace.
+            </div>
+          )}
+
+          {plan && !fromDemo && (
+            <div className="bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-lg px-4 py-3 text-sm flex items-center justify-between">
+              <span>
+                Signing up for <strong className="capitalize">{plan}</strong>
+                {plan !== 'free' && ' — 14-day free trial, no credit card required'}
+              </span>
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
               {error}

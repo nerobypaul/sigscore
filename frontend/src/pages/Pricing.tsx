@@ -79,7 +79,7 @@ const tiers: PricingTier[] = [
       'Community support',
     ],
     cta: 'Start Free',
-    ctaLink: '/register',
+    ctaLink: '/register?plan=free',
     highlighted: false,
   },
   {
@@ -98,7 +98,7 @@ const tiers: PricingTier[] = [
       'API access',
     ],
     cta: 'Start 14-day Trial',
-    ctaLink: '/register',
+    ctaLink: '/register?plan=pro',
     highlighted: true,
     badge: 'MOST POPULAR',
   },
@@ -119,7 +119,7 @@ const tiers: PricingTier[] = [
       'Priority support',
     ],
     cta: 'Start 14-day Trial',
-    ctaLink: '/register',
+    ctaLink: '/register?plan=growth',
     highlighted: false,
   },
   {
@@ -138,7 +138,7 @@ const tiers: PricingTier[] = [
       'Audit log',
     ],
     cta: 'Talk to Sales',
-    ctaLink: '/register',
+    ctaLink: '/register?plan=scale',
     highlighted: false,
   },
 ];
@@ -667,7 +667,7 @@ function UsageEstimator() {
             {recommended}
           </span>
           <Link
-            to="/register"
+            to={`/register?plan=${recommended.toLowerCase()}`}
             className="mt-6 inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-6 py-3 rounded-xl transition-colors"
           >
             Get started with {recommended}

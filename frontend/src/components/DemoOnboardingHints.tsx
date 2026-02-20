@@ -31,7 +31,7 @@ const STEPS: TourStep[] = [
   {
     title: 'Ready to try it with your data?',
     body: 'Connect GitHub in 2 minutes and see your real accounts.',
-    cta: { label: 'Create free account', to: '/register' },
+    cta: { label: 'Create Free Account', to: '/register?from=demo' },
   },
 ];
 
