@@ -557,6 +557,10 @@ function CreateDealModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.title.trim()) {
+      setError('Deal title is required');
+      return;
+    }
     setSaving(true);
     setError('');
 
@@ -669,7 +673,7 @@ function CreateDealModal({
             </button>
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || !form.title.trim()}
               className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
             >
               {saving ? 'Creating...' : 'Create Deal'}
