@@ -10,6 +10,7 @@ import ConnectorHealthCard from '../components/ConnectorHealthCard';
 import ProductTour from '../components/ProductTour';
 import { useProductTour } from '../lib/useProductTour';
 import { useToast } from '../components/Toast';
+import { useAuth } from '../lib/auth';
 
 interface DashboardStats {
   contacts: { total: number; recent: Contact[] };
@@ -32,6 +33,10 @@ export default function Dashboard() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const tour = useProductTour();
   const toast = useToast();
+  const { user } = useAuth();
+  const isDemo = user?.organizations?.some(
+    (uo: { organization?: { name?: string } }) => uo.organization?.name?.startsWith('DevSignal Demo'),
+  );
 
   useEffect(() => { document.title = 'Dashboard — DevSignal'; }, []);
 
@@ -231,6 +236,54 @@ export default function Dashboard() {
         topAccount={topRisingAccount}
         totalSignals={stats.signals.recent.length}
       />
+
+      {/* Hot Accounts Spotlight — demo users see this immediately for "wow" moment */}
+      {isDemo && stats.hotAccounts.length > 0 && (() => {
+        const hot = stats.hotAccounts.filter((a) => (a.score ?? 0) >= 70).slice(0, 3);
+        if (hot.length === 0) return null;
+        return (
+          <Link
+            to="/scores"
+            className="block mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-white">Your Hottest Accounts</h2>
+                <p className="text-sm text-indigo-200 mt-0.5">
+                  {stats.hotAccounts.length} accounts scored — {hot.length} ready to convert
+                </p>
+              </div>
+              <span className="text-sm font-medium text-white bg-white/20 px-3 py-1 rounded-full">
+                View All Scores &rarr;
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {hot.map((account) => (
+                <div key={account.accountId} className="bg-white/10 backdrop-blur rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-white truncate">{account.account?.name || 'Unknown'}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      (account.score ?? 0) >= 80
+                        ? 'bg-red-500/30 text-red-100'
+                        : 'bg-amber-500/30 text-amber-100'
+                    }`}>
+                      {account.score ?? 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-indigo-200">
+                    <span className={`uppercase font-semibold ${
+                      account.tier === 'HOT' ? 'text-red-300' : 'text-amber-300'
+                    }`}>{account.tier}</span>
+                    {account.trend && (
+                      <span>{account.trend === 'RISING' ? '↑ Rising' : account.trend === 'FALLING' ? '↓ Falling' : '→ Stable'}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Link>
+        );
+      })()}
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" data-tour="stat-cards">
