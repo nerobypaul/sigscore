@@ -265,7 +265,7 @@ export default function Register() {
         </div>
 
         <p className="mt-6 text-center text-xs text-gray-400">
-          Join 50+ devtool companies using DevSignal
+          Built for devtool companies. Free to start.
         </p>
       </div>
     </div>

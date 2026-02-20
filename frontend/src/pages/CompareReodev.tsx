@@ -64,7 +64,7 @@ const comparisonRows: ComparisonRow[] = [
   { feature: 'Signal sources', devSignal: '16 built-in', competitor: 'Website + GitHub + limited', devSignalWins: true },
   { feature: 'Focus', devSignal: 'Multi-source signal intelligence', competitor: 'Developer identity from web traffic', devSignalWins: true },
   { feature: 'AI features', devSignal: 'BYOK account briefs + enrichment', competitor: 'Basic enrichment', devSignalWins: true },
-  { feature: 'Workflow automation', devSignal: '10 playbooks + custom workflows', competitor: 'Limited', devSignalWins: true },
+  { feature: 'Workflow automation', devSignal: 'Custom workflows + playbooks', competitor: 'Limited', devSignalWins: true },
   { feature: 'Email sequences', devSignal: 'Built-in multi-step', competitor: 'No', devSignalWins: true },
   { feature: 'CRM sync', devSignal: 'HubSpot + Salesforce bidirectional', competitor: 'HubSpot + Salesforce', devSignalWins: true },
   { feature: 'Open source', devSignal: 'Yes (MIT)', competitor: 'No', devSignalWins: true },
@@ -80,7 +80,7 @@ const whyChoose = [
   {
     title: 'Full workflow automation built-in',
     description:
-      'DevSignal includes 10 pre-built playbooks, custom workflow automation, email sequences, Slack notifications, and Zapier/Make integration. Reo.dev offers limited automation capabilities.',
+      'DevSignal includes custom workflow automation, playbooks, email sequences, Slack notifications, and Zapier/Make integration. Reo.dev offers limited automation capabilities.',
   },
   {
     title: 'Open source with MIT license',
