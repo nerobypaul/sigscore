@@ -143,18 +143,18 @@ const integrations = [
 
 const valueProps = [
   {
-    text: '5 engineers at one company star your repo, open issues, and download your package — all in one week. That is a buying signal. DevSignal surfaces it automatically.',
-    label: 'Signal Detection',
+    text: '5 engineers at one company star your repo, open issues, and download your package — all in one week. DevSignal surfaces that pattern automatically and scores the account.',
+    label: 'Instant Discovery',
     icon: 'signal',
   },
   {
-    text: 'Common Room charges $1,000+/mo and requires a sales call to start. DevSignal starts at $0, onboards via GitHub in 90 seconds, and gives you scored accounts immediately.',
-    label: 'Price & Speed',
+    text: 'Connect GitHub and see scored accounts in 2 minutes. No sales calls, no 4-week onboarding, no SDK required. Starts at $0/month with 1,000 contacts and 5,000 signals.',
+    label: 'Zero Friction',
     icon: 'price',
   },
   {
-    text: 'Every PLG CRM startup died — Calixa, Koala, Toplyne, Endgame, Pocus. DevSignal is not a CRM. It is developer signal intelligence built for how devtools actually sell.',
-    label: 'Why We Exist',
+    text: 'Not a CRM. DevSignal is a signal intelligence layer — it scores accounts, resolves identities, and pushes results to HubSpot, Salesforce, Slack, or your own systems via API.',
+    label: 'Fits Your Stack',
     icon: 'why',
   },
 ];
@@ -469,9 +469,9 @@ export default function Landing() {
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-              DevSignal tracks npm downloads, GitHub stars, API usage, and 10+
-              developer signals to show you which companies are evaluating your
-              tool — before they ever fill out a form.
+              Aggregate signals from GitHub, npm, PyPI, Discord, and 12 more sources.
+              See which companies have 3+ engineers using your tool — before they
+              ever fill out a form.
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -585,8 +585,8 @@ export default function Landing() {
                   </svg>
                 </div>
                 <div className="text-left">
-                  <div className="text-sm font-bold text-white">12x</div>
-                  <div className="text-xs text-gray-500">Cheaper</div>
+                  <div className="text-sm font-bold text-white">$0</div>
+                  <div className="text-xs text-gray-500">Free Tier</div>
                 </div>
               </div>
             </div>
