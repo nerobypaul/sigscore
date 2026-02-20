@@ -511,8 +511,8 @@ export default function Landing() {
                   {/* Progress bar */}
                   <div className="w-full h-1.5 bg-gray-700 rounded-full mb-4 overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-1000 ease-linear"
-                      style={{ width: `${((demoStep + 1) / DEMO_STEPS.length) * 100}%` }}
+                      className="h-full w-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-transform duration-1000 ease-linear origin-left"
+                      style={{ transform: `scaleX(${(demoStep + 1) / DEMO_STEPS.length})` }}
                     />
                   </div>
                   {/* Step list */}
