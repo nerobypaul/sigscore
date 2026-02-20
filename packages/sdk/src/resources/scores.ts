@@ -30,7 +30,7 @@ export class ScoresResource {
    */
   async topAccounts(params?: TopAccountsParams): Promise<AccountScore[]> {
     return this.client.get<AccountScore[]>(
-      '/api/v1/signals/top-accounts',
+      '/api/v1/signals/accounts/top',
       params as Record<string, unknown> | undefined,
     );
   }

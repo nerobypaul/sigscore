@@ -197,9 +197,9 @@ const faqItems = [
 // Comparison table data
 const comparisonRows: { label: string; ds: string; cr: string; reo: string }[] = [
   { label: 'Price', ds: 'From $0/mo', cr: '$1,000+/mo', reo: '$500+/mo' },
-  { label: 'Signal Sources', ds: '16 built-in', cr: '8-10', reo: '5-6' },
-  { label: 'CRM Sync', ds: 'HubSpot + Salesforce', cr: 'Salesforce only', reo: 'HubSpot only' },
-  { label: 'Setup Time', ds: '2 minutes', cr: '2-4 weeks', reo: '1-2 weeks' },
+  { label: 'Signal Sources', ds: '16 built-in', cr: '10+ (varies by plan)', reo: 'Website + GitHub + limited' },
+  { label: 'CRM Sync', ds: 'HubSpot + Salesforce', cr: 'HubSpot + Salesforce + more', reo: 'HubSpot + Salesforce' },
+  { label: 'Setup Time', ds: '2 minutes', cr: '6+ weeks', reo: '1-2 weeks' },
   { label: 'Self-serve', ds: 'Yes', cr: 'No (sales-led)', reo: 'No (demo required)' },
   { label: 'PQA Scoring', ds: 'Customizable, no-code', cr: 'Basic', reo: 'Limited' },
 ];

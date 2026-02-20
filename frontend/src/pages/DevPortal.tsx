@@ -1414,17 +1414,13 @@ function WebhooksTab() {
             <tbody>
               {[
                 ['signal.created', 'A new signal has been ingested'],
-                ['signal.batch_completed', 'A batch signal ingest has completed'],
                 ['contact.created', 'A new contact has been created'],
                 ['contact.updated', 'A contact has been updated'],
-                ['contact.deleted', 'A contact has been deleted'],
                 ['company.created', 'A new company has been created'],
                 ['deal.created', 'A new deal has been created'],
                 ['deal.stage_changed', 'A deal has moved to a different pipeline stage'],
-                ['deal.closed', 'A deal has been closed (won or lost)'],
-                ['score.changed', 'An account PQA score has changed tier'],
-                ['score.computed', 'A fresh PQA score has been computed'],
-                ['workflow.triggered', 'A workflow automation has been triggered'],
+                ['score.changed', 'An account PQA score has changed'],
+                ['tier.changed', 'An account has moved to a different tier (HOT/WARM/COLD)'],
               ].map(([event, desc]) => (
                 <tr key={event} className="border-t border-gray-700/30">
                   <td className="px-4 py-2.5">

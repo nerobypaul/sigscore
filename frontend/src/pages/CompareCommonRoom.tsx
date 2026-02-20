@@ -61,7 +61,7 @@ interface ComparisonRow {
 const comparisonRows: ComparisonRow[] = [
   { feature: 'Starting Price', devSignal: '$0/mo (free tier)', competitor: '$1,000+/mo', devSignalWins: true },
   { feature: 'Self-hostable', devSignal: 'Yes (MIT license)', competitor: 'No', devSignalWins: true },
-  { feature: 'Setup time', devSignal: '5 minutes', competitor: '6+ weeks', devSignalWins: true },
+  { feature: 'Setup time', devSignal: '2 minutes', competitor: '6+ weeks', devSignalWins: true },
   { feature: 'Signal sources', devSignal: '16 built-in', competitor: '10+ (varies by plan)', devSignalWins: true },
   { feature: 'AI account briefs', devSignal: 'BYOK (your API key)', competitor: 'Included (opaque pricing)', devSignalWins: true },
   { feature: 'Identity resolution', devSignal: 'Built-in', competitor: 'Built-in', devSignalWins: false },
@@ -79,7 +79,7 @@ const whyChoose = [
       'Common Room starts at $1,000+/mo and requires a sales call. DevSignal starts at $0/mo with self-serve onboarding. Even our Scale plan at $299/mo is a fraction of the cost.',
   },
   {
-    title: 'Self-serve in 5 minutes, not 6 weeks',
+    title: 'Self-serve in 2 minutes, not 6 weeks',
     description:
       'Connect your GitHub, see scored accounts immediately. No implementation team, no onboarding calls, no waiting. Your growth team is up and running before lunch.',
   },
@@ -271,7 +271,7 @@ export default function CompareCommonRoom() {
               <div className="text-sm text-gray-500">cheaper than Common Room</div>
             </div>
             <div className="bg-white rounded-2xl p-8 border border-gray-200 text-center">
-              <div className="text-4xl font-extrabold text-indigo-600 mb-2">5 min</div>
+              <div className="text-4xl font-extrabold text-indigo-600 mb-2">2 min</div>
               <div className="text-sm text-gray-500">setup vs 6+ weeks</div>
             </div>
             <div className="bg-white rounded-2xl p-8 border border-gray-200 text-center">
@@ -302,7 +302,7 @@ export default function CompareCommonRoom() {
                 Ready to switch from Common Room?
               </h2>
               <p className="text-lg text-indigo-100 max-w-xl mx-auto mb-3">
-                Start free. See scored accounts in 5 minutes. No sales call required.
+                Start free. See scored accounts in 2 minutes. No sales call required.
               </p>
               <p className="text-sm text-indigo-200 mb-10">
                 Free tier forever. No credit card. MIT licensed.
