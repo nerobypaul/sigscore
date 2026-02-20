@@ -61,45 +61,45 @@ export async function createDemoEnvironment(): Promise<DemoSeedResult> {
   const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const slug = `${DEMO_ORG_SLUG}-${uniqueSuffix}`;
 
-  // Create demo user (using pre-computed hash to avoid CPU burn under load)
-  const demoUser = await prisma.user.create({
-    data: {
-      email: `demo-${uniqueSuffix}@devsignal.dev`,
-      password: DEMO_PASSWORD_HASH,
-      firstName: 'Demo',
-      lastName: 'User',
-      role: 'ADMIN',
-    },
-  });
+  // Create user + org in parallel (they don't depend on each other)
+  const [demoUser, demoOrg] = await Promise.all([
+    prisma.user.create({
+      data: {
+        email: `demo-${uniqueSuffix}@devsignal.dev`,
+        password: DEMO_PASSWORD_HASH,
+        firstName: 'Demo',
+        lastName: 'User',
+        role: 'ADMIN',
+      },
+    }),
+    prisma.organization.create({
+      data: {
+        name: DEMO_ORG_NAME,
+        slug,
+        domain: 'devsignal.dev',
+        settings: { plan: 'pro', demo: true } as unknown as Prisma.InputJsonValue,
+      },
+    }),
+  ]);
 
-  // Create demo organization
-  const demoOrg = await prisma.organization.create({
-    data: {
-      name: DEMO_ORG_NAME,
-      slug,
-      domain: 'devsignal.dev',
-      settings: { plan: 'pro', demo: true } as unknown as Prisma.InputJsonValue,
-    },
-  });
-
-  // Link user to org as OWNER
-  await prisma.userOrganization.create({
-    data: {
-      userId: demoUser.id,
-      organizationId: demoOrg.id,
-      role: 'OWNER',
-    },
-  });
-
-  // Generate tokens
+  // Generate tokens (CPU-only, no DB)
   const accessToken = generateAccessToken(demoUser.id, demoUser.email, demoUser.role);
   const refreshToken = generateRefreshToken(demoUser.id);
 
-  // Store refresh token
-  await prisma.user.update({
-    where: { id: demoUser.id },
-    data: { refreshToken },
-  });
+  // Link user to org + store refresh token in parallel
+  await Promise.all([
+    prisma.userOrganization.create({
+      data: {
+        userId: demoUser.id,
+        organizationId: demoOrg.id,
+        role: 'OWNER',
+      },
+    }),
+    prisma.user.update({
+      where: { id: demoUser.id },
+      data: { refreshToken },
+    }),
+  ]);
 
   // Seed all demo data
   const counts = await seedFullDemoData(demoOrg.id, demoUser.id);
@@ -164,12 +164,9 @@ async function seedFullDemoData(
 ): Promise<DemoSeedResult['counts']> {
   const now = new Date();
 
-  // Create sentinel tag + visible tags
-  const demoTag = await prisma.tag.create({
-    data: { organizationId, name: DEMO_TAG_NAME, color: DEMO_TAG_COLOR },
-  });
-
-  const [hotTag, warmTag, coldTag, enterpriseTag, expansionTag] = await Promise.all([
+  // Create all 6 tags in parallel (sentinel + 5 visible)
+  const [demoTag, hotTag, warmTag, coldTag, enterpriseTag, expansionTag] = await Promise.all([
+    prisma.tag.create({ data: { organizationId, name: DEMO_TAG_NAME, color: DEMO_TAG_COLOR } }),
     prisma.tag.create({ data: { organizationId, name: 'hot-account', color: '#ef4444' } }),
     prisma.tag.create({ data: { organizationId, name: 'warm-account', color: '#f59e0b' } }),
     prisma.tag.create({ data: { organizationId, name: 'cold-account', color: '#3b82f6' } }),
@@ -324,7 +321,10 @@ async function seedFullDemoData(
     ),
   );
 
-  // Tag companies
+  // ── Phase 2: companyTags + scores + snapshots + contacts + sources in parallel ──
+  // All of these only depend on companies (created above) and organizationId.
+
+  // Prepare company tags data (CPU-only)
   const companyTagData: { companyId: string; tagId: string }[] = [];
   companyDefs.forEach((def, i) => {
     companyTagData.push({ companyId: companies[i].id, tagId: demoTag.id });
@@ -332,74 +332,31 @@ async function seedFullDemoData(
       companyTagData.push({ companyId: companies[i].id, tagId });
     });
   });
-  await prisma.companyTag.createMany({ data: companyTagData, skipDuplicates: true });
 
-  // ── Account Scores ──────────────────────────────────────────────────────
-
-  await Promise.all(
-    companyDefs.map((def, i) =>
-      prisma.accountScore.create({
-        data: {
-          organizationId,
-          accountId: companies[i].id,
-          score: def.score,
-          tier: def.tier,
-          trend: def.trend,
-          signalCount: def.signalCount,
-          userCount: def.userCount,
-          lastSignalAt: daysAgo(def.tier === 'HOT' ? 0 : def.tier === 'WARM' ? 2 : 10),
-          computedAt: now,
-          factors: [
-            { name: 'Signal Volume', weight: 0.3, value: Math.min(100, def.score + 10), description: `${def.signalCount} signals in last 30d` },
-            { name: 'User Growth', weight: 0.25, value: Math.min(100, def.score + 5), description: `${def.userCount} active users` },
-            { name: 'Feature Breadth', weight: 0.2, value: Math.max(0, def.score - 5), description: 'Distinct features used' },
-            { name: 'Recency', weight: 0.15, value: Math.min(100, def.score + 15), description: 'Time since last signal' },
-            { name: 'Team Size', weight: 0.1, value: Math.max(0, def.score - 10), description: 'Estimated team members' },
-          ] as unknown as Prisma.InputJsonValue,
-        },
-      }),
-    ),
-  );
-
-  // ── Score Snapshots (14-day history) ──
-
+  // Prepare score snapshot data (CPU-only)
   const snapshotData: Prisma.ScoreSnapshotCreateManyInput[] = [];
-
   companyDefs.forEach((def, companyIdx) => {
     const currentScore = def.score;
-
-    // Determine starting score 14 days ago based on trend behaviour
     let startOffset: number;
     switch (def.trend) {
       case 'RISING':
-        // HOT rising gets a steeper climb, WARM rising a moderate one
         startOffset = currentScore >= 80 ? -18 : -12;
         break;
       case 'FALLING':
-        startOffset = 10; // was higher 14 days ago
+        startOffset = 10;
         break;
       case 'STABLE':
       default:
-        startOffset = 0; // flat with minor variance only
+        startOffset = 0;
         break;
     }
-
     const startScore = Math.max(0, Math.min(100, currentScore + startOffset));
-
     for (let day = 14; day >= 1; day--) {
-      // Linear interpolation from startScore toward currentScore
-      const progress = (14 - day) / 13; // 0 at day 14, 1 at day 1
+      const progress = (14 - day) / 13;
       const interpolated = startScore + (currentScore - startScore) * progress;
-
-      // Add realistic daily variance: smaller for stable, larger for moving
       const varianceRange = def.trend === 'STABLE' ? 2 : 4;
       const variance = (Math.random() * 2 - 1) * varianceRange;
-
-      const dayScore = Math.round(
-        Math.max(0, Math.min(100, interpolated + variance)),
-      );
-
-      // Build breakdown proportional to the day's score
+      const dayScore = Math.round(Math.max(0, Math.min(100, interpolated + variance)));
       const ratio = dayScore / 100;
       const breakdown = {
         userCount: Math.round(ratio * def.userCount * 12),
@@ -409,16 +366,12 @@ async function seedFullDemoData(
         seniority: Math.round(ratio * 60 + (Math.random() * 4 - 2)),
         firmographic: Math.round(ratio * 75 + (Math.random() * 6 - 3)),
       };
-
-      // Clamp breakdown values to 0-100
       for (const key of Object.keys(breakdown) as Array<keyof typeof breakdown>) {
         breakdown[key] = Math.max(0, Math.min(100, breakdown[key]));
       }
-
       const capturedAt = new Date(now);
       capturedAt.setDate(capturedAt.getDate() - day);
-      capturedAt.setHours(2, 0, 0, 0); // Mimic the 2 AM daily cron
-
+      capturedAt.setHours(2, 0, 0, 0);
       snapshotData.push({
         organizationId,
         companyId: companies[companyIdx].id,
@@ -429,10 +382,7 @@ async function seedFullDemoData(
     }
   });
 
-  await prisma.scoreSnapshot.createMany({ data: snapshotData });
-
-  // ── Contacts ────────────────────────────────────────────────────────────
-
+  // Prepare contact definitions (CPU-only)
   const contactDefs = [
     // Acme DevTools (3 contacts)
     { firstName: 'Sarah', lastName: 'Chen', email: 'sarah@acmedev.io', title: 'VP Engineering', companyIdx: 0, github: 'sarahchen-dev', linkedIn: 'https://linkedin.com/in/sarahchen', customFields: { seniority: 'VP', department: 'Engineering' } },
@@ -466,7 +416,10 @@ async function seedFullDemoData(
     { firstName: 'Zara', lastName: 'Ahmed', email: 'zara@datapipe.io', title: 'Data Engineer', companyIdx: 3, github: 'zaraahmed', linkedIn: 'https://linkedin.com/in/zaraahmed', customFields: { seniority: 'Mid', department: 'Data' } },
   ];
 
-  const contacts = await Promise.all(
+  // ── Run companyTags + scores + snapshots + contacts + sources in parallel ──
+  // These all depend only on companies + organizationId (already created above)
+
+  const contactCreatePromise = Promise.all(
     contactDefs.map((c) =>
       prisma.contact.create({
         data: {
@@ -484,42 +437,53 @@ async function seedFullDemoData(
     ),
   );
 
-  // Tag contacts with sentinel
-  await prisma.contactTag.createMany({
-    data: contacts.map((c) => ({ contactId: c.id, tagId: demoTag.id })),
-    skipDuplicates: true,
-  });
+  const sourceCreatePromise = Promise.all([
+    prisma.signalSource.create({ data: { organizationId, type: 'GITHUB', name: 'GitHub', config: { demo: true } as unknown as Prisma.InputJsonValue, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'NPM', name: 'npm Registry', config: { demo: true } as unknown as Prisma.InputJsonValue, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'PRODUCT_API', name: 'Product Analytics', config: { demo: true } as unknown as Prisma.InputJsonValue, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'CUSTOM_WEBHOOK', name: 'Community Signals', config: { demo: true } as unknown as Prisma.InputJsonValue, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'SEGMENT', name: 'Segment', config: { demo: true } as unknown as Prisma.InputJsonValue, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'DISCORD', name: 'Discord', config: { demo: true } as unknown as Prisma.InputJsonValue, status: 'ACTIVE', lastSyncAt: now } }),
+  ]);
 
-  // ── Deals ────────────────────────────────────────────────────────────────
+  // Fire all parallel: tags, scores, snapshots, contacts, sources
+  const [contacts, [githubSource, npmSource, productSource, communitySource, segmentSource, discordSource]] = await Promise.all([
+    contactCreatePromise,
+    sourceCreatePromise,
+    prisma.companyTag.createMany({ data: companyTagData, skipDuplicates: true }),
+    Promise.all(
+      companyDefs.map((def, i) =>
+        prisma.accountScore.create({
+          data: {
+            organizationId,
+            accountId: companies[i].id,
+            score: def.score,
+            tier: def.tier,
+            trend: def.trend,
+            signalCount: def.signalCount,
+            userCount: def.userCount,
+            lastSignalAt: daysAgo(def.tier === 'HOT' ? 0 : def.tier === 'WARM' ? 2 : 10),
+            computedAt: now,
+            factors: [
+              { name: 'Signal Volume', weight: 0.3, value: Math.min(100, def.score + 10), description: `${def.signalCount} signals in last 30d` },
+              { name: 'User Growth', weight: 0.25, value: Math.min(100, def.score + 5), description: `${def.userCount} active users` },
+              { name: 'Feature Breadth', weight: 0.2, value: Math.max(0, def.score - 5), description: 'Distinct features used' },
+              { name: 'Recency', weight: 0.15, value: Math.min(100, def.score + 15), description: 'Time since last signal' },
+              { name: 'Team Size', weight: 0.1, value: Math.max(0, def.score - 10), description: 'Estimated team members' },
+            ] as unknown as Prisma.InputJsonValue,
+          },
+        }),
+      ),
+    ),
+    prisma.scoreSnapshot.createMany({ data: snapshotData }),
+  ]);
+
+  // ── Deals (needs contacts) ────────────────────────────────────────────────
 
   const dealDefs = [
-    {
-      title: 'Acme DevTools - Enterprise Expansion',
-      amount: 50000,
-      stage: 'NEGOTIATION' as const,
-      companyIdx: 0,
-      contactIdx: 0, // Sarah Chen
-      probability: 75,
-      daysCreated: 21,
-    },
-    {
-      title: 'NovaCLI - Pro Plan Upgrade',
-      amount: 25000,
-      stage: 'ACTIVATED' as const,
-      companyIdx: 1,
-      contactIdx: 3, // Alex Rivera
-      probability: 45,
-      daysCreated: 14,
-    },
-    {
-      title: 'CloudForge - Team License',
-      amount: 15000,
-      stage: 'SALES_QUALIFIED' as const,
-      companyIdx: 2,
-      contactIdx: 5, // Jordan Park
-      probability: 60,
-      daysCreated: 10,
-    },
+    { title: 'Acme DevTools - Enterprise Expansion', amount: 50000, stage: 'NEGOTIATION' as const, companyIdx: 0, contactIdx: 0, probability: 75, daysCreated: 21 },
+    { title: 'NovaCLI - Pro Plan Upgrade', amount: 25000, stage: 'ACTIVATED' as const, companyIdx: 1, contactIdx: 3, probability: 45, daysCreated: 14 },
+    { title: 'CloudForge - Team License', amount: 15000, stage: 'SALES_QUALIFIED' as const, companyIdx: 2, contactIdx: 5, probability: 60, daysCreated: 10 },
   ];
 
   const deals = await Promise.all(
@@ -540,77 +504,6 @@ async function seedFullDemoData(
       }),
     ),
   );
-
-  // Tag deals with sentinel
-  await prisma.dealTag.createMany({
-    data: deals.map((d) => ({ dealId: d.id, tagId: demoTag.id })),
-    skipDuplicates: true,
-  });
-
-  // ── Signal Source ────────────────────────────────────────────────────────
-
-  const [githubSource, npmSource, productSource, communitySource, segmentSource, discordSource] = await Promise.all([
-    prisma.signalSource.create({
-      data: {
-        organizationId,
-        type: 'GITHUB',
-        name: 'GitHub',
-        config: { demo: true } as unknown as Prisma.InputJsonValue,
-        status: 'ACTIVE',
-        lastSyncAt: now,
-      },
-    }),
-    prisma.signalSource.create({
-      data: {
-        organizationId,
-        type: 'NPM',
-        name: 'npm Registry',
-        config: { demo: true } as unknown as Prisma.InputJsonValue,
-        status: 'ACTIVE',
-        lastSyncAt: now,
-      },
-    }),
-    prisma.signalSource.create({
-      data: {
-        organizationId,
-        type: 'PRODUCT_API',
-        name: 'Product Analytics',
-        config: { demo: true } as unknown as Prisma.InputJsonValue,
-        status: 'ACTIVE',
-        lastSyncAt: now,
-      },
-    }),
-    prisma.signalSource.create({
-      data: {
-        organizationId,
-        type: 'CUSTOM_WEBHOOK',
-        name: 'Community Signals',
-        config: { demo: true } as unknown as Prisma.InputJsonValue,
-        status: 'ACTIVE',
-        lastSyncAt: now,
-      },
-    }),
-    prisma.signalSource.create({
-      data: {
-        organizationId,
-        type: 'SEGMENT',
-        name: 'Segment',
-        config: { demo: true } as unknown as Prisma.InputJsonValue,
-        status: 'ACTIVE',
-        lastSyncAt: now,
-      },
-    }),
-    prisma.signalSource.create({
-      data: {
-        organizationId,
-        type: 'DISCORD',
-        name: 'Discord',
-        config: { demo: true } as unknown as Prisma.InputJsonValue,
-        status: 'ACTIVE',
-        lastSyncAt: now,
-      },
-    }),
-  ]);
 
   // ── Signals ──────────────────────────────────────────────────────────────
 
@@ -687,14 +580,8 @@ async function seedFullDemoData(
     }
   });
 
-  // Create signals in batches to avoid hitting DB limits
-  const BATCH_SIZE = 100;
-  for (let i = 0; i < signalData.length; i += BATCH_SIZE) {
-    const batch = signalData.slice(i, i + BATCH_SIZE);
-    await prisma.signal.createMany({ data: batch });
-  }
-
-  // ── Activities ───────────────────────────────────────────────────────────
+  // ── Final phase: signals + contactTags + dealTags + activities + workflows + briefs in parallel ──
+  // All dependencies (contacts, deals, sources) are resolved above.
 
   const activityDefs = [
     { type: 'MEETING' as const, title: 'Intro call with Sarah Chen (Acme DevTools)', contactIdx: 0, companyIdx: 0, dealIdx: 0, daysAgo: 18, status: 'COMPLETED' as const },
@@ -707,8 +594,15 @@ async function seedFullDemoData(
     { type: 'CALL' as const, title: 'Follow up with Jordan Park on team license', contactIdx: 5, companyIdx: 2, dealIdx: 2, daysAgo: 0, status: 'PENDING' as const },
   ];
 
-  await Promise.all(
-    activityDefs.map((a) =>
+  await Promise.all([
+    // Signals (single batch, ~600 rows)
+    prisma.signal.createMany({ data: signalData }),
+    // Contact tags
+    prisma.contactTag.createMany({ data: contacts.map((c) => ({ contactId: c.id, tagId: demoTag.id })), skipDuplicates: true }),
+    // Deal tags
+    prisma.dealTag.createMany({ data: deals.map((d) => ({ dealId: d.id, tagId: demoTag.id })), skipDuplicates: true }),
+    // Activities
+    ...activityDefs.map((a) =>
       prisma.activity.create({
         data: {
           organizationId,
@@ -725,54 +619,33 @@ async function seedFullDemoData(
         },
       }),
     ),
-  );
-
-  // ── Workflows ────────────────────────────────────────────────────────────
-
-  await Promise.all([
+    // Workflows
     prisma.workflow.create({
       data: {
-        organizationId,
-        name: 'Slack alert on HOT account',
+        organizationId, name: 'Slack alert on HOT account',
         description: 'Sends a Slack notification when any account score crosses above 80.',
-        trigger: {
-          event: 'score_changed',
-          filters: {},
-        } as unknown as Prisma.InputJsonValue,
-        conditions: [
-          { field: 'score', operator: 'gte', value: 80 },
-        ] as unknown as Prisma.InputJsonValue,
-        actions: [
-          { type: 'slack_notify', params: { channel: '#sales-alerts', message: 'Account {{account.name}} just became HOT (score: {{score}})' } },
-        ] as unknown as Prisma.InputJsonValue,
-        enabled: true,
-        runCount: 14,
-        lastTriggeredAt: daysAgo(1),
+        trigger: { event: 'score_changed', filters: {} } as unknown as Prisma.InputJsonValue,
+        conditions: [{ field: 'score', operator: 'gte', value: 80 }] as unknown as Prisma.InputJsonValue,
+        actions: [{ type: 'slack_notify', params: { channel: '#sales-alerts', message: 'Account {{account.name}} just became HOT (score: {{score}})' } }] as unknown as Prisma.InputJsonValue,
+        enabled: true, runCount: 14, lastTriggeredAt: daysAgo(1),
       },
     }),
     prisma.workflow.create({
       data: {
-        organizationId,
-        name: 'Auto-sync to HubSpot',
+        organizationId, name: 'Auto-sync to HubSpot',
         description: 'Automatically syncs new contacts to HubSpot CRM when they are created.',
-        trigger: {
-          event: 'contact_created',
-          filters: {},
-        } as unknown as Prisma.InputJsonValue,
-        actions: [
-          { type: 'hubspot_sync', params: { objectType: 'contact', mappings: { email: '{{contact.email}}', firstname: '{{contact.firstName}}', lastname: '{{contact.lastName}}' } } },
-        ] as unknown as Prisma.InputJsonValue,
-        enabled: true,
-        runCount: 23,
-        lastTriggeredAt: daysAgo(0),
+        trigger: { event: 'contact_created', filters: {} } as unknown as Prisma.InputJsonValue,
+        actions: [{ type: 'hubspot_sync', params: { objectType: 'contact', mappings: { email: '{{contact.email}}', firstname: '{{contact.firstName}}', lastname: '{{contact.lastName}}' } } }] as unknown as Prisma.InputJsonValue,
+        enabled: true, runCount: 23, lastTriggeredAt: daysAgo(0),
       },
     }),
   ]);
 
-  // ── Account Brief for Acme ───────────────────────────────────────────────
+  // ── Account Briefs (parallel) ────────────────────────────────────────────
 
   // AI briefs for top 3 companies (shows the feature works across accounts)
-  await prisma.accountBrief.create({
+  await Promise.all([
+  prisma.accountBrief.create({
     data: {
       organizationId,
       accountId: companies[0].id, // Acme DevTools
@@ -808,9 +681,8 @@ async function seedFullDemoData(
       promptTokens: 2400,
       outputTokens: 850,
     },
-  });
-
-  await prisma.accountBrief.create({
+  }),
+  prisma.accountBrief.create({
     data: {
       organizationId,
       accountId: companies[1].id, // NovaCLI
@@ -845,9 +717,8 @@ async function seedFullDemoData(
       promptTokens: 2100,
       outputTokens: 720,
     },
-  });
-
-  await prisma.accountBrief.create({
+  }),
+  prisma.accountBrief.create({
     data: {
       organizationId,
       accountId: companies[2].id, // CloudForge
@@ -884,7 +755,8 @@ async function seedFullDemoData(
       promptTokens: 2600,
       outputTokens: 880,
     },
-  });
+  }),
+  ]);
 
   return {
     companies: companies.length,
