@@ -45,27 +45,52 @@ export async function globalSearch(
   }
 
   const results: SearchResult[] = [];
+  const likePattern = `%${query.trim()}%`;
+
+  // Helper: run a tsvector search with ILIKE fallback when the search_vector
+  // column hasn't been created yet (migration not applied).
+  async function searchEntity<T>(
+    fn: () => Promise<T[]>,
+    fallbackFn: () => Promise<T[]>,
+  ): Promise<T[]> {
+    try {
+      return await fn();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('search_vector') || msg.includes('42703')) {
+        return fallbackFn();
+      }
+      throw err;
+    }
+  }
 
   // --- Contacts ---
   if (types.includes('contact')) {
-    const contacts = await prisma.$queryRaw<
-      Array<{
-        id: string;
-        firstName: string;
-        lastName: string;
-        email: string | null;
-        title: string | null;
-        rank: number;
-      }>
-    >`
-      SELECT id, "firstName", "lastName", email, title,
-             ts_rank(search_vector, to_tsquery('english', ${tsQuery})) as rank
-      FROM contacts
-      WHERE "organizationId" = ${organizationId}
-        AND search_vector @@ to_tsquery('english', ${tsQuery})
-      ORDER BY rank DESC
-      LIMIT ${limit}
-    `;
+    const contacts = await searchEntity(
+      () =>
+        prisma.$queryRaw<
+          Array<{ id: string; firstName: string; lastName: string; email: string | null; title: string | null; rank: number }>
+        >`
+          SELECT id, "firstName", "lastName", email, title,
+                 ts_rank(search_vector, to_tsquery('english', ${tsQuery})) as rank
+          FROM contacts
+          WHERE "organizationId" = ${organizationId}
+            AND search_vector @@ to_tsquery('english', ${tsQuery})
+          ORDER BY rank DESC
+          LIMIT ${limit}
+        `,
+      () =>
+        prisma.$queryRaw<
+          Array<{ id: string; firstName: string; lastName: string; email: string | null; title: string | null; rank: number }>
+        >`
+          SELECT id, "firstName", "lastName", email, title, 1.0 as rank
+          FROM contacts
+          WHERE "organizationId" = ${organizationId}
+            AND (CONCAT("firstName", ' ', "lastName", ' ', COALESCE(email, '')) ILIKE ${likePattern})
+          ORDER BY "updatedAt" DESC
+          LIMIT ${limit}
+        `,
+    );
 
     contacts.forEach((c) =>
       results.push({
@@ -80,23 +105,31 @@ export async function globalSearch(
 
   // --- Companies ---
   if (types.includes('company')) {
-    const companies = await prisma.$queryRaw<
-      Array<{
-        id: string;
-        name: string;
-        domain: string | null;
-        industry: string | null;
-        rank: number;
-      }>
-    >`
-      SELECT id, name, domain, industry,
-             ts_rank(search_vector, to_tsquery('english', ${tsQuery})) as rank
-      FROM companies
-      WHERE "organizationId" = ${organizationId}
-        AND search_vector @@ to_tsquery('english', ${tsQuery})
-      ORDER BY rank DESC
-      LIMIT ${limit}
-    `;
+    const companies = await searchEntity(
+      () =>
+        prisma.$queryRaw<
+          Array<{ id: string; name: string; domain: string | null; industry: string | null; rank: number }>
+        >`
+          SELECT id, name, domain, industry,
+                 ts_rank(search_vector, to_tsquery('english', ${tsQuery})) as rank
+          FROM companies
+          WHERE "organizationId" = ${organizationId}
+            AND search_vector @@ to_tsquery('english', ${tsQuery})
+          ORDER BY rank DESC
+          LIMIT ${limit}
+        `,
+      () =>
+        prisma.$queryRaw<
+          Array<{ id: string; name: string; domain: string | null; industry: string | null; rank: number }>
+        >`
+          SELECT id, name, domain, industry, 1.0 as rank
+          FROM companies
+          WHERE "organizationId" = ${organizationId}
+            AND (CONCAT(name, ' ', COALESCE(domain, '')) ILIKE ${likePattern})
+          ORDER BY "updatedAt" DESC
+          LIMIT ${limit}
+        `,
+    );
 
     companies.forEach((c) =>
       results.push({
@@ -111,23 +144,31 @@ export async function globalSearch(
 
   // --- Deals ---
   if (types.includes('deal')) {
-    const deals = await prisma.$queryRaw<
-      Array<{
-        id: string;
-        title: string;
-        stage: string;
-        amount: number | null;
-        rank: number;
-      }>
-    >`
-      SELECT id, title, stage, amount,
-             ts_rank(search_vector, to_tsquery('english', ${tsQuery})) as rank
-      FROM deals
-      WHERE "organizationId" = ${organizationId}
-        AND search_vector @@ to_tsquery('english', ${tsQuery})
-      ORDER BY rank DESC
-      LIMIT ${limit}
-    `;
+    const deals = await searchEntity(
+      () =>
+        prisma.$queryRaw<
+          Array<{ id: string; title: string; stage: string; amount: number | null; rank: number }>
+        >`
+          SELECT id, title, stage, amount,
+                 ts_rank(search_vector, to_tsquery('english', ${tsQuery})) as rank
+          FROM deals
+          WHERE "organizationId" = ${organizationId}
+            AND search_vector @@ to_tsquery('english', ${tsQuery})
+          ORDER BY rank DESC
+          LIMIT ${limit}
+        `,
+      () =>
+        prisma.$queryRaw<
+          Array<{ id: string; title: string; stage: string; amount: number | null; rank: number }>
+        >`
+          SELECT id, title, stage, amount, 1.0 as rank
+          FROM deals
+          WHERE "organizationId" = ${organizationId}
+            AND title ILIKE ${likePattern}
+          ORDER BY "updatedAt" DESC
+          LIMIT ${limit}
+        `,
+    );
 
     deals.forEach((d) =>
       results.push({
@@ -142,22 +183,31 @@ export async function globalSearch(
 
   // --- Signals ---
   if (types.includes('signal')) {
-    const signals = await prisma.$queryRaw<
-      Array<{
-        id: string;
-        type: string;
-        timestamp: Date;
-        rank: number;
-      }>
-    >`
-      SELECT id, type, timestamp,
-             ts_rank(search_vector, to_tsquery('english', ${tsQuery})) as rank
-      FROM signals
-      WHERE "organizationId" = ${organizationId}
-        AND search_vector @@ to_tsquery('english', ${tsQuery})
-      ORDER BY rank DESC
-      LIMIT ${limit}
-    `;
+    const signals = await searchEntity(
+      () =>
+        prisma.$queryRaw<
+          Array<{ id: string; type: string; timestamp: Date; rank: number }>
+        >`
+          SELECT id, type, timestamp,
+                 ts_rank(search_vector, to_tsquery('english', ${tsQuery})) as rank
+          FROM signals
+          WHERE "organizationId" = ${organizationId}
+            AND search_vector @@ to_tsquery('english', ${tsQuery})
+          ORDER BY rank DESC
+          LIMIT ${limit}
+        `,
+      () =>
+        prisma.$queryRaw<
+          Array<{ id: string; type: string; timestamp: Date; rank: number }>
+        >`
+          SELECT id, type, timestamp, 1.0 as rank
+          FROM signals
+          WHERE "organizationId" = ${organizationId}
+            AND type ILIKE ${likePattern}
+          ORDER BY timestamp DESC
+          LIMIT ${limit}
+        `,
+    );
 
     signals.forEach((s) =>
       results.push({
@@ -225,6 +275,7 @@ export async function groupedSearch(
   limit = 5,
 ): Promise<GroupedSearchResults> {
   const cap = Math.min(limit, 10);
+  const likePattern = `%${query.trim()}%`;
 
   const tsQuery = query
     .trim()
@@ -237,63 +288,97 @@ export async function groupedSearch(
     return { contacts: [], companies: [], signals: [], query };
   }
 
+  // Helper: tsvector search with ILIKE fallback
+  async function trySearch<T>(fn: () => Promise<T[]>, fallbackFn: () => Promise<T[]>): Promise<T[]> {
+    try {
+      return await fn();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('search_vector') || msg.includes('42703')) {
+        return fallbackFn();
+      }
+      throw err;
+    }
+  }
+
   // --- Contacts (join company for name) ---
-  const contacts = await prisma.$queryRaw<
-    Array<{
-      id: string;
-      firstName: string;
-      lastName: string;
-      email: string | null;
-      title: string | null;
-      companyName: string | null;
-    }>
-  >`
-    SELECT c.id, c."firstName", c."lastName", c.email, c.title,
-           co.name as "companyName"
-    FROM contacts c
-    LEFT JOIN companies co ON c."companyId" = co.id
-    WHERE c."organizationId" = ${organizationId}
-      AND c.search_vector @@ to_tsquery('english', ${tsQuery})
-    ORDER BY ts_rank(c.search_vector, to_tsquery('english', ${tsQuery})) DESC
-    LIMIT ${cap}
-  `;
+  type ContactRow = { id: string; firstName: string; lastName: string; email: string | null; title: string | null; companyName: string | null };
+  const contacts = await trySearch<ContactRow>(
+    () =>
+      prisma.$queryRaw`
+        SELECT c.id, c."firstName", c."lastName", c.email, c.title,
+               co.name as "companyName"
+        FROM contacts c
+        LEFT JOIN companies co ON c."companyId" = co.id
+        WHERE c."organizationId" = ${organizationId}
+          AND c.search_vector @@ to_tsquery('english', ${tsQuery})
+        ORDER BY ts_rank(c.search_vector, to_tsquery('english', ${tsQuery})) DESC
+        LIMIT ${cap}
+      `,
+    () =>
+      prisma.$queryRaw`
+        SELECT c.id, c."firstName", c."lastName", c.email, c.title,
+               co.name as "companyName"
+        FROM contacts c
+        LEFT JOIN companies co ON c."companyId" = co.id
+        WHERE c."organizationId" = ${organizationId}
+          AND CONCAT(c."firstName", ' ', c."lastName", ' ', COALESCE(c.email, '')) ILIKE ${likePattern}
+        ORDER BY c."updatedAt" DESC
+        LIMIT ${cap}
+      `,
+  );
 
   // --- Companies (join account_scores for PQA) ---
-  const companies = await prisma.$queryRaw<
-    Array<{
-      id: string;
-      name: string;
-      domain: string | null;
-      pqaScore: number | null;
-    }>
-  >`
-    SELECT co.id, co.name, co.domain,
-           a.score as "pqaScore"
-    FROM companies co
-    LEFT JOIN account_scores a ON a."accountId" = co.id
-    WHERE co."organizationId" = ${organizationId}
-      AND co.search_vector @@ to_tsquery('english', ${tsQuery})
-    ORDER BY ts_rank(co.search_vector, to_tsquery('english', ${tsQuery})) DESC
-    LIMIT ${cap}
-  `;
+  type CompanyRow = { id: string; name: string; domain: string | null; pqaScore: number | null };
+  const companies = await trySearch<CompanyRow>(
+    () =>
+      prisma.$queryRaw`
+        SELECT co.id, co.name, co.domain,
+               a.score as "pqaScore"
+        FROM companies co
+        LEFT JOIN account_scores a ON a."accountId" = co.id
+        WHERE co."organizationId" = ${organizationId}
+          AND co.search_vector @@ to_tsquery('english', ${tsQuery})
+        ORDER BY ts_rank(co.search_vector, to_tsquery('english', ${tsQuery})) DESC
+        LIMIT ${cap}
+      `,
+    () =>
+      prisma.$queryRaw`
+        SELECT co.id, co.name, co.domain,
+               a.score as "pqaScore"
+        FROM companies co
+        LEFT JOIN account_scores a ON a."accountId" = co.id
+        WHERE co."organizationId" = ${organizationId}
+          AND co.name ILIKE ${likePattern}
+        ORDER BY co."updatedAt" DESC
+        LIMIT ${cap}
+      `,
+  );
 
   // --- Signals (join signal_sources for name) ---
-  const signals = await prisma.$queryRaw<
-    Array<{
-      id: string;
-      type: string;
-      source: string | null;
-      timestamp: Date;
-    }>
-  >`
-    SELECT s.id, s.type, ss.name as source, s.timestamp
-    FROM signals s
-    LEFT JOIN signal_sources ss ON s."sourceId" = ss.id
-    WHERE s."organizationId" = ${organizationId}
-      AND s.search_vector @@ to_tsquery('english', ${tsQuery})
-    ORDER BY ts_rank(s.search_vector, to_tsquery('english', ${tsQuery})) DESC
-    LIMIT ${cap}
-  `;
+  type SignalRow = { id: string; type: string; source: string | null; timestamp: Date };
+  const signals = await trySearch<SignalRow>(
+    () =>
+      prisma.$queryRaw`
+        SELECT s.id, s.type, ss.name as source, s.timestamp
+        FROM signals s
+        LEFT JOIN signal_sources ss ON s."sourceId" = ss.id
+        WHERE s."organizationId" = ${organizationId}
+          AND s.search_vector @@ to_tsquery('english', ${tsQuery})
+        ORDER BY ts_rank(s.search_vector, to_tsquery('english', ${tsQuery})) DESC
+        LIMIT ${cap}
+      `,
+    () =>
+      prisma.$queryRaw`
+        SELECT s.id, s.type, ss.name as source, s.timestamp
+        FROM signals s
+        LEFT JOIN signal_sources ss ON s."sourceId" = ss.id
+        WHERE s."organizationId" = ${organizationId}
+          AND s.type ILIKE ${likePattern}
+        ORDER BY s.timestamp DESC
+        LIMIT ${cap}
+      `,
+  );
 
   return {
     contacts: contacts.map((c) => ({
