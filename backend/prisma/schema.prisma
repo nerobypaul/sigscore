@@ -913,7 +913,7 @@ model EmailSequence {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  organization    Organization @relation(fields: [organizationId], references: [id])
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   steps           EmailSequenceStep[]
   enrollments     EmailEnrollment[]
 
@@ -950,8 +950,8 @@ model EmailEnrollment {
   enrolledAt  DateTime @default(now())
   completedAt DateTime?
 
-  sequence    EmailSequence @relation(fields: [sequenceId], references: [id])
-  contact     Contact       @relation(fields: [contactId], references: [id])
+  sequence    EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  contact     Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
   sends       EmailSend[]
 
   @@unique([sequenceId, contactId])
@@ -974,8 +974,8 @@ model EmailSend {
   errorMessage String?
   createdAt    DateTime @default(now())
 
-  enrollment   EmailEnrollment   @relation(fields: [enrollmentId], references: [id])
-  step         EmailSequenceStep @relation(fields: [stepId], references: [id])
+  enrollment   EmailEnrollment   @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  step         EmailSequenceStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
 
   @@index([enrollmentId])
   @@index([stepId])
