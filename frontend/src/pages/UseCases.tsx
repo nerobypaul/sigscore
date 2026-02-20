@@ -432,7 +432,7 @@ export default function UseCases() {
                 Ready to see your own signals?
               </h2>
               <p className="text-lg text-indigo-100 max-w-xl mx-auto mb-10">
-                Start free. Connect your first signal source in under 5 minutes.
+                Start free. Connect your first signal source in under 2 minutes.
                 No credit card required.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

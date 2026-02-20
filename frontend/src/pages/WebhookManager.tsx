@@ -425,13 +425,13 @@ export default function WebhookManager() {
             </p>
             <pre className="mt-2 p-3 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto">
 {`# Subscribe
-curl -X POST https://api.devsignal.com/api/v1/webhooks/subscribe \\
+curl -X POST https://api.devsignal.dev/api/v1/webhooks/subscribe \\
   -H "x-api-key: ds_live_YOUR_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"targetUrl": "https://your-endpoint.com/hook", "event": "signal.created"}'
 
 # Unsubscribe
-curl -X DELETE https://api.devsignal.com/api/v1/webhooks/subscribe/SUB_ID \\
+curl -X DELETE https://api.devsignal.dev/api/v1/webhooks/subscribe/SUB_ID \\
   -H "x-api-key: ds_live_YOUR_KEY"`}
             </pre>
           </div>

@@ -333,7 +333,7 @@ export default function Onboarding() {
                     Slug
                   </label>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">devsignal.com/</span>
+                    <span className="text-sm text-gray-400">devsignal.dev/</span>
                     <input
                       id="orgSlug"
                       type="text"

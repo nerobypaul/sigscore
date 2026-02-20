@@ -17,18 +17,6 @@ npm run dev
 - TanStack Query
 - React Router
 
-## TODO
-
-The frontend is scaffolded but not fully implemented. Key components to build:
-
-- Authentication pages (login, register)
-- Dashboard with metrics
-- Contact management pages
-- Company management pages
-- Deal pipeline view
-- Activity tracking
-- User settings
-
 ## Development
 
-The Vite dev server proxies `/api` requests to the backend at `http://localhost:3000`.
+The Vite dev server proxies `/api` requests to the backend at `http://localhost:3001`.

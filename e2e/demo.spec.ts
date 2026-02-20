@@ -88,10 +88,13 @@ test.describe('Demo Flow', () => {
     await page.waitForURL('/', { timeout: 20000 });
     await expect(page.locator('aside')).toBeVisible({ timeout: 5000 });
 
-    // These nav items should be hidden for demo users
-    const hiddenItems = ['Enrichment', 'Playbooks', 'Sequences', 'Webhooks', 'API Usage'];
-    for (const item of hiddenItems) {
-      await expect(page.locator('aside').getByText(item, { exact: true })).not.toBeVisible();
+    // These nav items should be visible but disabled (shown with "Pro" badge) for demo users
+    const disabledItems = ['Enrichment', 'Playbooks', 'Sequences', 'Webhooks', 'API Usage'];
+    for (const item of disabledItems) {
+      const el = page.locator('aside').getByText(item, { exact: true });
+      await expect(el).toBeVisible();
+      // Should not be a clickable link — rendered as a div with cursor-default
+      await expect(el.locator('xpath=ancestor::a')).not.toBeAttached();
     }
 
     // These nav items should still be visible

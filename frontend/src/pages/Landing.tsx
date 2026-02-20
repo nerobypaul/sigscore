@@ -977,7 +977,7 @@ export default function Landing() {
               Why DevSignal?
             </h2>
             <p className="mt-4 text-lg text-gray-500">
-              You have three choices. Only one gets you live in 5 minutes.
+              You have three choices. Only one gets you live in 2 minutes.
             </p>
           </div>
 
@@ -1068,7 +1068,7 @@ export default function Landing() {
               <ul className="space-y-3">
                 <li className="flex items-start gap-2.5 text-sm text-gray-700 font-medium">
                   <CheckIcon className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                  Launch in 5 minutes flat
+                  Launch in 2 minutes flat
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700 font-medium">
                   <CheckIcon className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
