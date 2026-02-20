@@ -2,8 +2,8 @@ import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
 
 // Connection pool size: Railway containers default to shared vCPUs.
-// 10 connections per instance keeps total pool reasonable for multi-instance
-// scaling (3 instances × 10 = 30 total, well under PostgreSQL's default 100).
+// 15 connections per instance keeps total pool reasonable for multi-instance
+// scaling (2 instances × 15 = 30 total, well under PostgreSQL's default 100).
 const prisma = new PrismaClient({
   log: [
     { level: 'warn', emit: 'event' },
@@ -22,7 +22,7 @@ function appendPoolParams(url: string): string {
   // connection_limit and pool_timeout are Prisma-specific query params
   // that work regardless of whether the URL already has params
   if (url.includes('connection_limit')) return url;
-  return `${url}${sep}connection_limit=10&pool_timeout=30`;
+  return `${url}${sep}connection_limit=15&pool_timeout=30`;
 }
 
 prisma.$on('warn', (e) => {

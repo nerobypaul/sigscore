@@ -333,18 +333,37 @@ function ProductMockup() {
 // Landing Page
 // ---------------------------------------------------------------------------
 
+// Demo loading progress steps — timed to roughly match the ~20s seed
+const DEMO_STEPS = [
+  { label: 'Creating your sandbox', duration: 2000 },
+  { label: 'Seeding 8 companies', duration: 3000 },
+  { label: 'Adding 18 contacts', duration: 3000 },
+  { label: 'Generating 600 signals', duration: 5000 },
+  { label: 'Computing PQA scores', duration: 3000 },
+  { label: 'Building AI briefs', duration: 4000 },
+];
+
 export default function Landing() {
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
+  const [demoStep, setDemoStep] = useState(0);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => { document.title = 'DevSignal — Developer Signal Intelligence'; }, []);
 
+  // Animate through demo steps while loading
+  useEffect(() => {
+    if (!demoLoading || demoStep >= DEMO_STEPS.length - 1) return;
+    const timer = setTimeout(() => setDemoStep((s) => s + 1), DEMO_STEPS[demoStep].duration);
+    return () => clearTimeout(timer);
+  }, [demoLoading, demoStep]);
+
   const handleStartDemo = async () => {
     setDemoLoading(true);
     setDemoError(null);
+    setDemoStep(0);
     try {
-      const { data } = await api.post('/demo/seed');
+      const { data } = await api.post('/demo/seed', undefined, { timeout: 45000 });
       // Store auth tokens so the app recognizes the session
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
@@ -354,6 +373,7 @@ export default function Landing() {
     } catch (_err) {
       setDemoError('Failed to load demo. Please try again.');
       setDemoLoading(false);
+      setDemoStep(0);
     }
   };
 
@@ -483,6 +503,50 @@ export default function Landing() {
                 )}
               </button>
             </div>
+
+            {/* Demo loading progress overlay */}
+            {demoLoading && (
+              <div className="mt-6 max-w-md mx-auto">
+                <div className="bg-gray-800/80 backdrop-blur border border-gray-700 rounded-xl px-6 py-5">
+                  {/* Progress bar */}
+                  <div className="w-full h-1.5 bg-gray-700 rounded-full mb-4 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-1000 ease-linear"
+                      style={{ width: `${((demoStep + 1) / DEMO_STEPS.length) * 100}%` }}
+                    />
+                  </div>
+                  {/* Step list */}
+                  <div className="space-y-2">
+                    {DEMO_STEPS.map((step, i) => (
+                      <div
+                        key={step.label}
+                        className={`flex items-center gap-2.5 text-sm transition-all duration-300 ${
+                          i < demoStep
+                            ? 'text-emerald-400'
+                            : i === demoStep
+                            ? 'text-white'
+                            : 'text-gray-600'
+                        }`}
+                      >
+                        {i < demoStep ? (
+                          <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        ) : i === demoStep ? (
+                          <svg className="animate-spin w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                        ) : (
+                          <div className="w-4 h-4 flex-shrink-0 rounded-full border border-gray-600" />
+                        )}
+                        <span>{step.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {demoError && (
               <p className="mt-4 text-sm text-red-400">{demoError}</p>

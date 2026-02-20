@@ -168,6 +168,8 @@ model Contact {
   @@index([email])
   @@index([organizationId, lastName])
   @@index([organizationId, createdAt(sort: Desc)])
+  @@index([organizationId, email])
+  @@index([organizationId, firstName])
   @@map("contacts")
 }
 
@@ -507,6 +509,7 @@ model Signal {
   @@index([organizationId, type, timestamp(sort: Desc)])
   @@index([organizationId, sourceId, timestamp(sort: Desc)])
   @@index([organizationId, deduplicationKey, timestamp(sort: Desc)])
+  @@index([organizationId, accountId, timestamp(sort: Desc)])
   @@map("signals")
 }
 
