@@ -29,9 +29,10 @@ export class ScoresResource {
    * Get the top-scoring accounts, optionally filtered by tier.
    */
   async topAccounts(params?: TopAccountsParams): Promise<AccountScore[]> {
-    return this.client.get<AccountScore[]>(
+    const data = await this.client.get<{ accounts: AccountScore[] }>(
       '/api/v1/signals/accounts/top',
       params as Record<string, unknown> | undefined,
     );
+    return data.accounts;
   }
 }

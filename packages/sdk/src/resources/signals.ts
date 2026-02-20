@@ -45,19 +45,21 @@ export class SignalsResource {
   async getAccountSignals(
     accountId: string,
     params?: ListParams,
-  ): Promise<PaginatedResponse<Signal>> {
-    return this.client.get<PaginatedResponse<Signal>>(
+  ): Promise<Signal[]> {
+    const data = await this.client.get<{ signals: Signal[] }>(
       `/api/v1/signals/accounts/${encodeURIComponent(accountId)}/signals`,
       params as Record<string, unknown> | undefined,
     );
+    return data.signals;
   }
 
   /**
    * Get the merged timeline (signals + activities) for an account.
    */
   async getTimeline(accountId: string): Promise<Array<Signal | Activity>> {
-    return this.client.get<Array<Signal | Activity>>(
+    const data = await this.client.get<{ timeline: Array<Signal | Activity> }>(
       `/api/v1/signals/accounts/${encodeURIComponent(accountId)}/timeline`,
     );
+    return data.timeline;
   }
 }
