@@ -16,7 +16,7 @@ interface TourStep {
 const STEPS: TourStep[] = [
   {
     title: 'Welcome to DevSignal',
-    body: "You're exploring with real demo data. 8 companies, 395+ signals, AI briefs \u2014 all interactive.",
+    body: "You're exploring with realistic demo data. 8 companies, 600 signals, AI briefs \u2014 all interactive.",
   },
   {
     title: 'Signal Feed',
