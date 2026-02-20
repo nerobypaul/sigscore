@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { logger } from '../utils/logger';
-import bcrypt from 'bcrypt';
+// bcrypt no longer imported — using pre-computed hash for demo user
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -12,6 +12,10 @@ const DEMO_ORG_NAME = 'DevSignal Demo';
 const DEMO_ORG_SLUG = 'devsignal-demo';
 const DEMO_TAG_NAME = '__demo_data';
 const DEMO_TAG_COLOR = '#6366f1';
+
+// Pre-computed bcrypt hash of 'demo-password-not-real' with 10 rounds.
+// Avoids ~150ms CPU burn per demo seed request under concurrent load.
+const DEMO_PASSWORD_HASH = '$2b$10$s5Wq5oPjzCyvPRXPlQWVdOg9CuLOQeHUZQoxvoai08CLTOMYyDraO';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,12 +61,11 @@ export async function createDemoEnvironment(): Promise<DemoSeedResult> {
   const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const slug = `${DEMO_ORG_SLUG}-${uniqueSuffix}`;
 
-  // Create demo user
-  const passwordHash = await bcrypt.hash('demo-password-not-real', 10);
+  // Create demo user (using pre-computed hash to avoid CPU burn under load)
   const demoUser = await prisma.user.create({
     data: {
       email: `demo-${uniqueSuffix}@devsignal.dev`,
-      password: passwordHash,
+      password: DEMO_PASSWORD_HASH,
       firstName: 'Demo',
       lastName: 'User',
       role: 'ADMIN',
