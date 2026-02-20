@@ -3,6 +3,7 @@ import { Server } from 'http';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { logger } from '../utils/logger';
+import { prisma } from '../config/database';
 
 interface AuthenticatedSocket extends WebSocket {
   userId: string;
@@ -18,7 +19,7 @@ let wss: WebSocketServer;
 export function initWebSocket(server: Server): void {
   wss = new WebSocketServer({ server, path: '/ws' });
 
-  wss.on('connection', (ws: WebSocket, req) => {
+  wss.on('connection', async (ws: WebSocket, req) => {
     // Extract token from query string: ws://host/ws?token=xxx&orgId=xxx
     const url = new URL(req.url!, `http://${req.headers.host}`);
     const token = url.searchParams.get('token');
@@ -31,6 +32,21 @@ export function initWebSocket(server: Server): void {
 
     try {
       const decoded = jwt.verify(token, config.jwt.secret) as { userId: string };
+
+      // Verify user actually belongs to the requested organization
+      const membership = await prisma.userOrganization.findUnique({
+        where: {
+          userId_organizationId: {
+            userId: decoded.userId,
+            organizationId: orgId,
+          },
+        },
+      });
+      if (!membership) {
+        ws.close(4002, 'Not a member of this organization');
+        return;
+      }
+
       const socket = ws as AuthenticatedSocket;
       socket.userId = decoded.userId;
       socket.organizationId = orgId;
