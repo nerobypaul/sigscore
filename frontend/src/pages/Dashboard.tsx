@@ -49,7 +49,7 @@ export default function Dashboard() {
           api.get('/deals', { params: { limit: 100 } }),
           api.get('/activities', { params: { limit: 5 } }),
           api.get('/signals', { params: { limit: 10 } }).catch(() => ({ data: { signals: [] } })),
-          api.get('/signals/scores', { params: { tier: 'HOT', limit: 5 } }).catch(() => ({ data: { scores: [] } })),
+          api.get('/signals/accounts/top', { params: { tier: 'HOT', limit: 5 } }).catch(() => ({ data: { accounts: [] } })),
         ]);
 
         const deals: Deal[] = dealsRes.data.deals || [];
@@ -79,7 +79,7 @@ export default function Dashboard() {
           signals: {
             recent: signalsRes.data.signals || [],
           },
-          hotAccounts: scoresRes.data.scores || [],
+          hotAccounts: scoresRes.data.accounts || [],
         });
       } catch {
         // If API fails (e.g. no org), show empty state
@@ -114,7 +114,7 @@ export default function Dashboard() {
       setAnalytics({
         trends: trendsRes.status === 'fulfilled' ? trendsRes.value.data.trends || [] : [],
         distribution: distRes.status === 'fulfilled' ? distRes.value.data.distribution || {} : {},
-        topSignals: topRes.status === 'fulfilled' ? topRes.value.data.types || [] : [],
+        topSignals: topRes.status === 'fulfilled' ? topRes.value.data.signals || [] : [],
       });
     });
   }, []);

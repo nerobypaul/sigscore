@@ -138,7 +138,7 @@ const features = [
 
 const integrations = [
   'GitHub', 'npm', 'PyPI', 'Slack', 'HubSpot', 'Salesforce', 'Discord',
-  'Stack Overflow', 'Twitter/X', 'Reddit', 'PostHog', 'Clearbit', 'Segment', 'LinkedIn', 'Intercom', 'Zapier',
+  'Stack Overflow', 'Twitter/X', 'Reddit', 'PostHog', 'Clearbit', 'Segment', 'LinkedIn', 'Intercom', 'Zendesk',
 ];
 
 const valueProps = [
@@ -899,8 +899,8 @@ export default function Landing() {
           <div className="mt-14 max-w-3xl mx-auto">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 text-center">
               <div>
-                <div className="text-2xl font-extrabold text-gray-900">47</div>
-                <div className="text-sm text-gray-500">companies discovered on avg during onboarding</div>
+                <div className="text-2xl font-extrabold text-gray-900">12x</div>
+                <div className="text-sm text-gray-500">cheaper than Common Room</div>
               </div>
               <div className="hidden sm:block w-px h-10 bg-gray-200" />
               <div>
