@@ -26,6 +26,28 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
+// Token refresh queue — prevents concurrent refresh races where the second
+// request tries to use a refresh token that was already consumed by the first.
+let refreshPromise: Promise<string> | null = null;
+
+function doRefresh(): Promise<string> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) throw new Error('No refresh token');
+
+    const { data } = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, { refreshToken });
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    return data.accessToken as string;
+  })().finally(() => {
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
+}
+
 // Response interceptor: handle token refresh on 401
 api.interceptors.response.use(
   (response) => response,
@@ -35,23 +57,15 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken) {
-        try {
-          const { data } = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, { refreshToken });
-          localStorage.setItem('accessToken', data.accessToken);
-          localStorage.setItem('refreshToken', data.refreshToken);
-
-          originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
-          return api(originalRequest);
-        } catch {
-          // Refresh failed, clear tokens and redirect to login
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('organizationId');
-          window.location.href = '/login';
-        }
-      } else {
+      try {
+        const newToken = await doRefresh();
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return api(originalRequest);
+      } catch {
+        // Refresh failed, clear tokens and redirect to login
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('organizationId');
         window.location.href = '/login';
       }
     }

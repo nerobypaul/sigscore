@@ -99,7 +99,7 @@ export default function Signals() {
           type: typeFilter || undefined,
           from: fromDate || undefined,
           to: toDate || undefined,
-          account: accountFilter || undefined,
+          accountId: accountFilter || undefined,
         },
       });
       setSignals(data.signals || data.data || []);
