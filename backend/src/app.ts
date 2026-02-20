@@ -272,7 +272,7 @@ app.use('/api/v1/enrichment-queue', enrichmentQueueRoutes);
 app.use('/api/v1/sso', ssoRoutes);
 
 // API routes — OAuth Social Login (GitHub / Google)
-app.use('/api/v1', oauthRoutes);
+app.use('/api/v1/oauth', oauthRoutes);
 
 // API routes — AI Engine
 app.use('/api/v1/ai', aiRoutes);

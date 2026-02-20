@@ -836,7 +836,7 @@ export default function Landing() {
                   <span className="text-3xl font-extrabold text-gray-900">{tier.price}</span>
                   <span className="text-sm text-gray-400">{tier.period}</span>
                 </div>
-                <ul className="space-y-2">
+                <ul className="space-y-2 mb-5">
                   {tier.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 text-sm text-gray-600">
                       <CheckIcon className="w-4 h-4 text-emerald-500 flex-shrink-0" />
@@ -844,6 +844,16 @@ export default function Landing() {
                     </li>
                   ))}
                 </ul>
+                <Link
+                  to={`/register?plan=${tier.name.toLowerCase()}`}
+                  className={`block w-full text-center py-2 px-4 rounded-lg text-sm font-semibold transition-colors ${
+                    tier.highlight
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-500'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {tier.name === 'Free' ? 'Start Free' : `Get ${tier.name}`}
+                </Link>
               </div>
             ))}
           </div>

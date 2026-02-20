@@ -97,18 +97,21 @@ export default function Register() {
         </div>
 
         <div className="bg-white shadow-sm rounded-xl p-8 space-y-5">
-          {fromDemo && (
+          {(fromDemo || plan) && (
             <div className="bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-lg px-4 py-3 text-sm">
-              Love what you saw? Create an account to get your own workspace.
-            </div>
-          )}
-
-          {plan && !fromDemo && (
-            <div className="bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-lg px-4 py-3 text-sm flex items-center justify-between">
-              <span>
-                Signing up for <strong className="capitalize">{plan}</strong>
-                {plan !== 'free' && ' — 14-day free trial, no credit card required'}
-              </span>
+              {fromDemo && !plan && 'Love what you saw? Create an account to get your own workspace.'}
+              {fromDemo && plan && (
+                <span>
+                  Love what you saw? Sign up for <strong className="capitalize">{plan}</strong>
+                  {plan !== 'free' && ' — 14-day free trial, no credit card required'}
+                </span>
+              )}
+              {!fromDemo && plan && (
+                <span>
+                  Signing up for <strong className="capitalize">{plan}</strong>
+                  {plan !== 'free' && ' — 14-day free trial, no credit card required'}
+                </span>
+              )}
             </div>
           )}
 
