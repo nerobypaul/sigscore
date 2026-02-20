@@ -4,6 +4,8 @@ declare global {
   namespace Express {
     interface User extends PrismaUser {}
     interface Request {
+      /** The authenticated user, set by the `authenticate` middleware. */
+      user?: User;
       /** Unique identifier for this request, used for tracing and debugging. */
       requestId?: string;
       organizationId?: string;
