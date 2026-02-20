@@ -21,6 +21,8 @@ interface NavItem {
   dataTour?: string;
   /** Hide this item when viewing the demo org */
   hideInDemo?: boolean;
+  /** Show as disabled with "Pro" badge in demo instead of hiding */
+  disabledInDemo?: boolean;
 }
 
 interface NavSection {
@@ -38,7 +40,7 @@ const navSections: NavSection[] = [
     items: [
       { to: '/', label: 'Dashboard', icon: DashboardIcon },
       { to: '/contacts', label: 'Contacts', icon: ContactsIcon },
-      { to: '/enrichment', label: 'Enrichment', icon: EnrichmentIcon, hideInDemo: true },
+      { to: '/enrichment', label: 'Enrichment', icon: EnrichmentIcon, disabledInDemo: true },
       { to: '/companies', label: 'Companies', icon: CompaniesIcon },
       { to: '/signals', label: 'Signals', icon: SignalsIcon, dataTour: 'nav-signals' },
       { to: '/signals/feed', label: 'Signal Feed', icon: SignalFeedIcon },
@@ -51,8 +53,8 @@ const navSections: NavSection[] = [
     label: 'AUTOMATION',
     items: [
       { to: '/workflows', label: 'Workflows', icon: WorkflowsIcon, dataTour: 'nav-workflows' },
-      { to: '/playbooks', label: 'Playbooks', icon: PlaybooksIcon, hideInDemo: true },
-      { to: '/sequences', label: 'Sequences', icon: SequencesIcon, hideInDemo: true },
+      { to: '/playbooks', label: 'Playbooks', icon: PlaybooksIcon, disabledInDemo: true },
+      { to: '/sequences', label: 'Sequences', icon: SequencesIcon, disabledInDemo: true },
     ],
   },
   {
@@ -72,8 +74,8 @@ const navSections: NavSection[] = [
     items: [
       { to: '/settings', label: 'General', icon: SettingsIcon, hideInDemo: true },
       { to: '/integrations', label: 'Integrations', icon: IntegrationsIcon, dataTour: 'nav-integrations' },
-      { to: '/webhooks', label: 'Webhooks', icon: WebhooksIcon, hideInDemo: true },
-      { to: '/api-usage', label: 'API Usage', icon: ApiUsageIcon, hideInDemo: true },
+      { to: '/webhooks', label: 'Webhooks', icon: WebhooksIcon, disabledInDemo: true },
+      { to: '/api-usage', label: 'API Usage', icon: ApiUsageIcon, disabledInDemo: true },
       { to: '/scoring', label: 'Scoring Rules', icon: ScoringBuilderIcon },
       { to: '/team', label: 'Team', icon: TeamIcon, hideInDemo: true },
       { to: '/billing', label: 'Billing', icon: BillingIcon, hideInDemo: true },
@@ -210,6 +212,8 @@ export default function Layout() {
               : section.items;
             if (visibleItems.length === 0) return null;
 
+            const isItemDisabled = (item: NavItem) => isDemo && item.disabledInDemo;
+
             return (
               <div key={section.id} className={section.id !== 'intelligence' ? 'mt-5' : 'mt-1'}>
                 {/* Section header */}
@@ -234,7 +238,18 @@ export default function Layout() {
                 {/* Section items */}
                 {isExpanded && (
                   <div className="mt-0.5 space-y-0.5">
-                    {visibleItems.map((item) => (
+                    {visibleItems.map((item) =>
+                      isItemDisabled(item) ? (
+                        <div
+                          key={item.to}
+                          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 cursor-default"
+                          title="Available with your own account"
+                        >
+                          <item.icon />
+                          <span className="flex-1">{item.label}</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">Pro</span>
+                        </div>
+                      ) : (
                       <NavLink
                         key={item.to}
                         to={item.to}
@@ -252,7 +267,8 @@ export default function Layout() {
                         <item.icon />
                         {item.label}
                       </NavLink>
-                    ))}
+                      )
+                    )}
                   </div>
                 )}
               </div>
