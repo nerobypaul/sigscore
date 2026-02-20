@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
+import { useAuth } from '../lib/auth';
 import type { Company, Contact, Deal, Signal, AccountScore, Activity } from '../types';
 import { STAGE_LABELS, STAGE_COLORS } from '../types';
 import Spinner from '../components/Spinner';
@@ -551,9 +552,18 @@ function OverviewTab({ companyId, company, score, signals, activities, contacts,
 
 function ContactsTab({ contacts }: { contacts: Contact[] }) {
   const toast = useToast();
+  const { user } = useAuth();
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
 
+  const isDemo = user?.organizations?.some(
+    (uo: { organization?: { name?: string } }) => uo.organization?.name === 'DevSignal Demo',
+  );
+
   const handleEnrich = async (contactId: string) => {
+    if (isDemo) {
+      toast.success('Contact enriched with demo data. Connect your API key in production for live enrichment.');
+      return;
+    }
     setEnrichingId(contactId);
     try {
       await api.post(`/ai/enrich/${contactId}`);
@@ -736,12 +746,26 @@ const PRIORITY_STYLES: Record<string, string> = {
 
 function NextBestActions({ accountId }: { accountId: string }) {
   const toast = useToast();
+  const { user } = useAuth();
   const [actions, setActions] = useState<AIAction[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
   const [error, setError] = useState('');
 
+  const isDemo = user?.organizations?.some(
+    (uo: { organization?: { name?: string } }) => uo.organization?.name === 'DevSignal Demo',
+  );
+
   const fetchActions = useCallback(async () => {
+    if (isDemo) {
+      setActions([
+        { action: 'Schedule enterprise demo', reasoning: 'Account shows high engagement across multiple signal sources. Reach out to the technical lead for a tailored demo.', priority: 'high', contact: null },
+        { action: 'Share case study', reasoning: 'Similar companies in this industry have seen 3x pipeline acceleration. Send the relevant case study to the decision maker.', priority: 'medium', contact: null },
+        { action: 'Invite to community Slack', reasoning: 'Active GitHub contributors benefit from community access. This deepens engagement and builds advocacy.', priority: 'low', contact: null },
+      ]);
+      setFetched(true);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -763,7 +787,7 @@ function NextBestActions({ accountId }: { accountId: string }) {
     } finally {
       setLoading(false);
     }
-  }, [accountId]);
+  }, [accountId, isDemo]);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">

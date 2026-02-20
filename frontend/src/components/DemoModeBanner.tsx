@@ -32,7 +32,7 @@ export default function DemoModeBanner() {
           <span className="hidden sm:inline">Exploring demo: </span>
           <span className="sm:hidden">Demo: </span>
           <span className="text-indigo-200">
-            8 accounts, 395 signals, AI briefs — all interactive
+            8 accounts, 600 signals, AI briefs — all interactive
           </span>
         </p>
 

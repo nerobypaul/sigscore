@@ -475,17 +475,10 @@ export default function Landing() {
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                to="/register"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-8 py-3.5 rounded-xl text-base transition-colors shadow-lg shadow-emerald-600/25"
-              >
-                Start Free — No Credit Card
-                <ArrowRightIcon />
-              </Link>
               <button
                 onClick={handleStartDemo}
                 disabled={demoLoading}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-transparent hover:bg-gray-800 text-gray-200 font-semibold px-8 py-3.5 rounded-xl text-base transition-colors border border-gray-600 hover:border-gray-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3.5 rounded-xl text-base transition-colors shadow-lg shadow-indigo-600/25 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {demoLoading ? (
                   <>
@@ -502,6 +495,13 @@ export default function Landing() {
                   </>
                 )}
               </button>
+              <Link
+                to="/register"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-transparent hover:bg-gray-800 text-gray-200 font-semibold px-8 py-3.5 rounded-xl text-base transition-colors border border-gray-600 hover:border-gray-500"
+              >
+                Start Free — No Credit Card
+                <ArrowRightIcon />
+              </Link>
             </div>
 
             {/* Demo loading progress overlay */}
@@ -573,7 +573,7 @@ export default function Landing() {
                   </svg>
                 </div>
                 <div className="text-left">
-                  <div className="text-sm font-bold text-white">5 min</div>
+                  <div className="text-sm font-bold text-white">2 min</div>
                   <div className="text-xs text-gray-500">Setup</div>
                 </div>
               </div>

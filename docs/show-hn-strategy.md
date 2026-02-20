@@ -102,7 +102,7 @@ Happy to answer questions about architecture, devtool GTM, or anything else.
 - [x] Fix pricing FAQ self-host answer
 - [x] Deploy to Railway and verify /health
 - [ ] Load test for ~2,000-5,000 visitors in 4 hours
-- [x] Build demo mode with pre-seeded data (8 companies, 395 signals, score trends)
+- [x] Build demo mode with pre-seeded data (8 companies, 600 signals, score trends, 3 AI briefs)
 - [x] Prepare Reddit cross-posts (r/SaaS, r/devtools, r/selfhosted)
 - [x] SEO: robots.txt, sitemap.xml, per-page document.title (16 pages)
 - [x] Production hardening: gzip compression, Redis rate limiting, connection pooling
