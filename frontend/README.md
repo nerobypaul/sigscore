@@ -1,6 +1,6 @@
-# Headless CRM - Frontend
+# DevSignal — Frontend
 
-React-based admin UI for the Headless CRM system.
+React-based dashboard for DevSignal developer signal intelligence.
 
 ## Setup
 
@@ -12,10 +12,10 @@ npm run dev
 ## Tech Stack
 
 - React 18 + TypeScript
-- Vite
+- Vite (dev server + production build)
 - TailwindCSS
-- TanStack Query
-- React Router
+- React Router v6
+- Axios (HTTP client)
 
 ## Development
 

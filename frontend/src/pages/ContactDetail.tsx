@@ -375,7 +375,10 @@ function IdentitySection({ contactId }: { contactId: string }) {
     api
       .get(`/identity/graph/${contactId}`)
       .then(({ data }) => setGraph(data))
-      .catch(() => { setGraph(null); })
+      .catch(() => {
+        setGraph(null);
+        toast.error('Failed to load identity graph');
+      })
       .finally(() => setLoadingGraph(false));
   }, [contactId]);
 

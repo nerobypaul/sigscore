@@ -29,6 +29,10 @@ const crawlLimiter = rateLimit({
 // Validation schemas
 // ---------------------------------------------------------------------------
 
+const reposSchema = z.object({
+  token: z.string().min(1, 'GitHub token is required'),
+});
+
 const connectSchema = z.object({
   token: z.string().min(1, 'GitHub token is required'),
   repos: z
@@ -49,14 +53,9 @@ const connectSchema = z.object({
  *
  * Body: { token: string }
  */
-router.post('/github/repos', async (req: Request, res: Response): Promise<void> => {
+router.post('/github/repos', validate(reposSchema), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { token } = req.body as { token?: string };
-
-    if (!token) {
-      res.status(400).json({ error: 'GitHub token is required' });
-      return;
-    }
+    const { token } = req.body as z.infer<typeof reposSchema>;
 
     const repos = await listUserRepos(token);
     res.json({ repos });

@@ -52,8 +52,7 @@ export default function DemoModeBanner() {
 
           {/* Secondary CTA */}
           <Link
-            to="/register?from=demo"
-            onClick={clearDemoTokens}
+            to="/pricing"
             className="hidden sm:inline-flex items-center gap-1 text-sm text-indigo-200 hover:text-white transition-colors whitespace-nowrap"
           >
             See Pricing
