@@ -17,7 +17,25 @@ const orgConnections = new Map<string, Set<AuthenticatedSocket>>();
 let wss: WebSocketServer;
 
 export function initWebSocket(server: Server): void {
-  wss = new WebSocketServer({ server, path: '/ws' });
+  const allowedOrigin = config.corsOrigin;
+  wss = new WebSocketServer({
+    server,
+    path: '/ws',
+    perMessageDeflate: false,
+    verifyClient: ({ origin }, cb) => {
+      // In development, allow all origins
+      if (config.nodeEnv !== 'production') {
+        cb(true);
+        return;
+      }
+      if (!origin || origin === allowedOrigin) {
+        cb(true);
+      } else {
+        logger.warn('WebSocket connection rejected: invalid origin', { origin });
+        cb(false, 403, 'Forbidden');
+      }
+    },
+  });
 
   wss.on('connection', async (ws: WebSocket, req) => {
     // Extract token from query string: ws://host/ws?token=xxx&orgId=xxx
