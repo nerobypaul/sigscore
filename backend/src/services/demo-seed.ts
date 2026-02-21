@@ -662,7 +662,7 @@ async function seedFullDemoData(
       accountId: companies[0].id, // Acme DevTools
       content: `## Acme DevTools - Account Intelligence Brief
 
-**Company Overview:** Acme DevTools builds modern CLI tooling for cloud-native development. Series A ($12M raised), 45 employees, headquartered in San Francisco. Founded 2022.
+**Company Overview:** Acme DevTools builds modern CLI tooling for cloud-native development. Series A, 45 employees, headquartered in San Francisco. Founded 2022.
 
 **Product Usage Signals (Last 30 Days):**
 - 8 active developers using the SDK (up from 3 last month - 167% growth)
@@ -671,7 +671,7 @@ async function seedFullDemoData(
 - Sarah Chen (VP Engineering) personally evaluated enterprise features last week
 
 **Key Expansion Indicators:**
-- Team size grew from 3 to 8 users in 30 days - fastest organic growth we have seen
+- Team size grew from 3 to 8 users in 30 days - strong organic adoption
 - Opened GitHub issue requesting SSO support (strong enterprise buying signal)
 - npm download spike of 300% coincided with internal hackathon mention on Twitter
 - Marcus Johnson (Sr Backend Engineer) starred 3 SDK repos in a single session
@@ -699,7 +699,7 @@ async function seedFullDemoData(
       accountId: companies[1].id, // NovaCLI
       content: `## NovaCLI - Account Intelligence Brief
 
-**Company Overview:** NovaCLI builds a next-generation command-line framework with built-in AI assistance. Seed stage, 12 employees, founded 2024. Backed by Y Combinator (W24 batch).
+**Company Overview:** NovaCLI builds a next-generation command-line framework with built-in AI assistance. Seed stage, 12 employees, founded 2024. Well-funded with strong technical founders.
 
 **Product Usage Signals (Last 30 Days):**
 - 5 active developers using the SDK (CTO Alex Rivera is a daily user)
@@ -735,7 +735,7 @@ async function seedFullDemoData(
       accountId: companies[2].id, // CloudForge
       content: `## CloudForge - Account Intelligence Brief
 
-**Company Overview:** CloudForge is an infrastructure-as-code platform for multi-cloud deployments. Series B ($45M raised), 120 employees, HQ in Austin TX. Known for enterprise-grade reliability.
+**Company Overview:** CloudForge is an infrastructure-as-code platform for multi-cloud deployments. Series B, 120 employees, HQ in Austin TX. Known for enterprise-grade reliability.
 
 **Product Usage Signals (Last 30 Days):**
 - 4 active users, led by Jordan Park (Engineering Manager) and Logan Fischer (SRE Lead)
