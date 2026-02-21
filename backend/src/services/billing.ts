@@ -12,7 +12,9 @@ import { logger } from '../utils/logger';
 let _stripe: Stripe | null = null;
 
 function getStripe(): Stripe {
-  if (config.stripe.secretKey.startsWith('sk_test_placeholder') || !config.stripe.secretKey.startsWith('sk_')) {
+  const key = config.stripe.secretKey;
+  const isValidKey = key.startsWith('sk_') || key.startsWith('rk_');
+  if (!isValidKey || key.includes('placeholder')) {
     throw new AppError('Billing is not configured yet. Please contact support.', 503);
   }
   if (!_stripe) {
