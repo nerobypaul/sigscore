@@ -58,7 +58,7 @@ export async function createDemoEnvironment(): Promise<DemoSeedResult> {
   // Each demo session gets a unique slug so concurrent visitors don't interfere.
   // The cleanup cron (daily at 4 AM) finds all orgs with slug starting with
   // 'devsignal-demo' and deletes those older than 24 hours.
-  const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${Math.random().toString(36).slice(2, 9)}`;
   const slug = `${DEMO_ORG_SLUG}-${uniqueSuffix}`;
 
   // Create user + org in parallel (they don't depend on each other)

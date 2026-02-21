@@ -56,4 +56,9 @@ tests/load/results/
 
 # Docker
 .docker/
-.nero/*.log
+
+# Internal / private files (not for public repo)
+pauls-to-dos.md
+docs/financial-model.md
+docs/cold-outreach-templates.md
+factory-monitor/
