@@ -51,8 +51,11 @@
 - Create @devsignal org on npmjs.com if needed
 - `cd packages/sdk && npm publish --access public`
 
-### 9. Make GitHub repo public
+### 9. Make GitHub repo public + rename to `devsignal`
 - Go to https://github.com/nerobypaul/headless-crm/settings
+- Under "General", change repository name from `headless-crm` to `devsignal`
+  - GitHub auto-creates a redirect from the old name
+  - Tell NERO after renaming so all in-code URLs get updated
 - Scroll to "Danger Zone" > Change visibility > Make public
 
 ### 10. Submit Show HN post
