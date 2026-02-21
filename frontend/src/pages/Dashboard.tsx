@@ -233,22 +233,14 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Daily Digest Card */}
-      <DailyDigest
-        signalCount={todaySignalCount}
-        contactCount={todayContactCount}
-        topAccount={topRisingAccount}
-        totalSignals={stats.signals.recent.length}
-      />
-
-      {/* Hot Accounts Spotlight — demo users see this immediately for "wow" moment */}
+      {/* Hot Accounts Spotlight — demo users see this first for "wow" moment */}
       {isDemo && stats.hotAccounts.length > 0 && (() => {
         const hot = stats.hotAccounts.filter((a) => (a.score ?? 0) >= 70).slice(0, 3);
         if (hot.length === 0) return null;
         return (
           <Link
             to="/scores"
-            className="block mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
+            className="block mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all hover:scale-[1.01]"
           >
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -257,7 +249,7 @@ export default function Dashboard() {
                   {stats.hotAccounts.length} accounts scored — {hot.length} ready to convert
                 </p>
               </div>
-              <span className="text-sm font-medium text-white bg-white/20 px-3 py-1 rounded-full">
+              <span className="text-sm font-medium text-white bg-white/20 px-3 py-1 rounded-full group-hover:bg-white/30 transition-colors">
                 View All Scores &rarr;
               </span>
             </div>
@@ -288,6 +280,14 @@ export default function Dashboard() {
           </Link>
         );
       })()}
+
+      {/* Daily Digest Card */}
+      <DailyDigest
+        signalCount={todaySignalCount}
+        contactCount={todayContactCount}
+        topAccount={topRisingAccount}
+        totalSignals={stats.signals.recent.length}
+      />
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" data-tour="stat-cards">

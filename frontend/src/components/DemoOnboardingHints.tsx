@@ -88,7 +88,7 @@ export default function DemoOnboardingHints() {
   const isLast = step === STEPS.length - 1;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-80 animate-in fade-in slide-in-from-bottom-4">
+    <div className="fixed bottom-6 left-6 z-50 w-80 animate-in fade-in slide-in-from-bottom-4">
       <div className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
         {/* Header */}
         <div className="px-5 pt-5 pb-1">
