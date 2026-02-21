@@ -37,6 +37,7 @@ export default function Dashboard() {
   const isDemo = user?.organizations?.some(
     (uo: { organization?: { name?: string } }) => uo.organization?.name?.startsWith('DevSignal Demo'),
   );
+  const [contextDismissed, setContextDismissed] = useState(() => sessionStorage.getItem('demoContextDismissed') === '1');
 
   useEffect(() => { document.title = 'Dashboard — DevSignal'; }, []);
 
@@ -232,6 +233,36 @@ export default function Dashboard() {
           </button>
         )}
       </div>
+
+      {/* Demo context card — explains what the visitor is looking at */}
+      {isDemo && !contextDismissed && (
+        <div className="mb-6 bg-gradient-to-r from-gray-50 to-indigo-50 border border-indigo-100 rounded-xl p-5 relative">
+          <button
+            onClick={() => { setContextDismissed(true); sessionStorage.setItem('demoContextDismissed', '1'); }}
+            className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Dismiss"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <h3 className="text-sm font-bold text-gray-900 mb-2">What you're seeing</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-600">
+            <div className="flex items-start gap-2">
+              <span className="mt-0.5 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 text-[10px] font-bold">1</span>
+              <span><strong className="text-gray-900">16 signal sources</strong> — GitHub, npm, PyPI, Stack Overflow, and more aggregated automatically</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="mt-0.5 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 text-[10px] font-bold">2</span>
+              <span><strong className="text-gray-900">AI-scored accounts</strong> — each company scored 0-100 based on developer engagement signals</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="mt-0.5 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 text-[10px] font-bold">3</span>
+              <span><strong className="text-gray-900">Actionable briefs</strong> — AI-generated insights on every HOT account with next-step recommendations</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hot Accounts Spotlight — demo users see this first for "wow" moment */}
       {isDemo && stats.hotAccounts.length > 0 && (() => {
