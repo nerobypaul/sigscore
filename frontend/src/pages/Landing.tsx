@@ -130,7 +130,7 @@ const features = [
   {
     icon: WorkflowIcon,
     title: 'Workflows',
-    metric: '10 pre-built playbooks for devtool growth',
+    metric: 'Automated playbooks for devtool growth',
     description:
       'Automated workflows for Slack alerts, HubSpot sync, email sequences, and more. Trigger actions based on signals, scores, and stages.',
   },
@@ -238,9 +238,9 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 
 function ProductMockup() {
   const accounts = [
-    { name: 'Acme Tools', score: 87, tier: 'HOT', tierColor: 'bg-red-100 text-red-700', signals: 24, users: 5 },
-    { name: 'NovaCLI', score: 72, tier: 'WARM', tierColor: 'bg-amber-100 text-amber-700', signals: 15, users: 3 },
-    { name: 'CloudForge', score: 45, tier: 'COLD', tierColor: 'bg-blue-100 text-blue-700', signals: 8, users: 1 },
+    { name: 'Acme Tools', score: 92, tier: 'HOT', tierColor: 'bg-red-100 text-red-700', signals: 210, users: 8 },
+    { name: 'NovaCLI', score: 84, tier: 'HOT', tierColor: 'bg-red-100 text-red-700', signals: 130, users: 5 },
+    { name: 'CloudForge', score: 71, tier: 'WARM', tierColor: 'bg-amber-100 text-amber-700', signals: 95, users: 3 },
   ];
 
   const signalFeed = [

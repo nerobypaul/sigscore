@@ -268,8 +268,8 @@ export default function CompareReodev() {
               <div className="text-sm text-gray-500">signal sources vs limited</div>
             </div>
             <div className="bg-white rounded-2xl p-8 border border-gray-200 text-center">
-              <div className="text-4xl font-extrabold text-indigo-600 mb-2">10</div>
-              <div className="text-sm text-gray-500">pre-built playbooks included</div>
+              <div className="text-4xl font-extrabold text-indigo-600 mb-2">20</div>
+              <div className="text-sm text-gray-500">automated workflow queues</div>
             </div>
             <div className="bg-white rounded-2xl p-8 border border-gray-200 text-center">
               <div className="text-4xl font-extrabold text-indigo-600 mb-2">$0</div>
