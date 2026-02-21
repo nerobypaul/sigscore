@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
 
-const LAST_UPDATED = 'February 18, 2026';
+const LAST_UPDATED = 'February 21, 2026';
 
 interface Section {
   id: string;
@@ -133,15 +133,50 @@ const sections: Section[] = [
         </p>
         <p>
           <strong>International Transfers:</strong> Your data may be transferred to and processed
-          in the United States. We use Standard Contractual Clauses (SCCs) approved by the
-          European Commission to protect data transferred outside the EEA.
+          in the United States. We rely on the EU-US Data Privacy Framework for transfers to
+          certified recipients and Standard Contractual Clauses (SCCs) approved by the European
+          Commission for all other transfers outside the EEA.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'automated-decisions',
+    title: '3a. Automated Decision-Making',
+    content: (
+      <>
+        <h3>Automated Decision-Making &amp; Profiling (Art. 13(2)(f) GDPR)</h3>
+        <p>
+          Sigscore uses automated processing to generate PQA (Product-Qualified Account) scores
+          for accounts based on developer activity signals. This scoring:
+        </p>
+        <ul>
+          <li>
+            Aggregates publicly available signals (GitHub activity, npm downloads, community
+            engagement) to calculate a 0-100 score
+          </li>
+          <li>
+            Does not make automated decisions that produce legal effects or similarly significantly
+            affect individuals
+          </li>
+          <li>
+            Is used solely to help our B2B customers prioritize business outreach
+          </li>
+          <li>
+            Can be reviewed and overridden by human users at any time
+          </li>
+        </ul>
+        <p>
+          AI-generated account briefs are produced using third-party AI models (Anthropic Claude) to
+          summarize account activity. These briefs are informational only and do not trigger automated
+          actions.
         </p>
       </>
     ),
   },
   {
     id: 'third-party',
-    title: '4. Third-Party Services',
+    title: '5. Third-Party Services',
     content: (
       <>
         <p>
@@ -186,7 +221,7 @@ const sections: Section[] = [
   },
   {
     id: 'data-retention',
-    title: '5. Data Retention',
+    title: '6. Data Retention',
     content: (
       <>
         <p>We retain your data according to the following schedule:</p>
@@ -219,7 +254,7 @@ const sections: Section[] = [
   },
   {
     id: 'your-rights',
-    title: '6. Your Rights (GDPR)',
+    title: '7. Your Rights (GDPR)',
     content: (
       <>
         <p>
@@ -257,8 +292,10 @@ const sections: Section[] = [
             processing.
           </li>
           <li>
-            <strong>Right to Lodge a Complaint:</strong> File a complaint with your local data
-            protection supervisory authority.
+            <strong>Right to Lodge a Complaint:</strong> File a complaint with your competent
+            data protection supervisory authority. If the controller is based in Germany, the
+            competent authority depends on the federal state (Bundesland) of the controller's
+            registered address.
           </li>
         </ul>
         <p>
@@ -272,12 +309,18 @@ const sections: Section[] = [
           collected, the right to delete, and the right to opt out of the sale of personal
           information. We do not sell personal information. Contact us to exercise your rights.
         </p>
+        <p>
+          <strong>Data Protection Officer:</strong> Given the current scale of operations, Sigscore
+          is not required to appoint a Data Protection Officer under Section 38 BDSG or Art. 37
+          GDPR. For all data protection inquiries, please contact{' '}
+          <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a>.
+        </p>
       </>
     ),
   },
   {
     id: 'cookies',
-    title: '7. Cookies & Tracking',
+    title: '8. Cookies & Tracking',
     content: (
       <>
         <p>
@@ -311,7 +354,7 @@ const sections: Section[] = [
   },
   {
     id: 'security',
-    title: '8. Security',
+    title: '9. Security',
     content: (
       <>
         <p>
@@ -359,7 +402,7 @@ const sections: Section[] = [
   },
   {
     id: 'breach-notification',
-    title: '9. Data Breach Notification',
+    title: '10. Data Breach Notification',
     content: (
       <>
         <p>
@@ -393,7 +436,7 @@ const sections: Section[] = [
   },
   {
     id: 'children',
-    title: '10. Children\'s Privacy',
+    title: '11. Children\'s Privacy',
     content: (
       <>
         <p>
@@ -408,7 +451,7 @@ const sections: Section[] = [
   },
   {
     id: 'changes',
-    title: '11. Changes to This Policy',
+    title: '12. Changes to This Policy',
     content: (
       <>
         <p>
@@ -433,11 +476,17 @@ const sections: Section[] = [
   },
   {
     id: 'contact',
-    title: '12. Contact Us',
+    title: '13. Contact Us',
     content: (
       <>
         <p>
           If you have questions about this Privacy Policy or our data practices, please contact us:
+        </p>
+        <h3>Data Controller</h3>
+        <p>
+          Sigscore<br />
+          Paul Nispel<br />
+          [Address to be updated]
         </p>
         <ul>
           <li>
@@ -445,16 +494,13 @@ const sections: Section[] = [
             <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a>
           </li>
           <li>
-            <strong>Security Issues:</strong>{' '}
+            <strong>Security:</strong>{' '}
             <a href="mailto:security@sigscore.dev">security@sigscore.dev</a>
-          </li>
-          <li>
-            <strong>Company:</strong> Sigscore, Inc.
           </li>
         </ul>
         <p>
-          For GDPR-related inquiries, you may also contact your local data protection supervisory
-          authority.
+          For GDPR-related inquiries, you may also contact your competent data protection
+          supervisory authority.
         </p>
       </>
     ),

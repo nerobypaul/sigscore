@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import PublicNav from '../components/PublicNav';
 import PublicFooter from '../components/PublicFooter';
 
-const LAST_UPDATED = 'February 18, 2026';
+const LAST_UPDATED = 'February 21, 2026';
 
 interface Section {
   id: string;
@@ -202,7 +202,7 @@ const sections: Section[] = [
           </li>
           <li>
             <strong>Paid Plans:</strong> Paid subscriptions are billed monthly or annually in
-            advance. All fees are non-refundable except as required by law.
+            advance. All fees are non-refundable except as required by applicable law, including mandatory consumer protection provisions.
           </li>
           <li>
             <strong>Upgrades & Downgrades:</strong> Plan changes take effect at the start of the
@@ -279,6 +279,9 @@ const sections: Section[] = [
         <p>
           We do not warrant that the Service will be uninterrupted, error-free, or secure, or that
           any defects will be corrected. You use the Service at your own risk.
+        </p>
+        <p>
+          Nothing in these Terms excludes or limits liability for (a) death or personal injury caused by negligence, (b) fraud or fraudulent misrepresentation, (c) intentional misconduct (Vorsatz) or gross negligence (grobe Fahrlassigkeit), or (d) any other liability that cannot be excluded or limited under applicable law, including mandatory provisions of German civil law (BGB).
         </p>
       </>
     ),
@@ -375,17 +378,13 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          These Terms shall be governed by and construed in accordance with the laws of the State
-          of Delaware, United States, without regard to its conflict of law provisions.
+          These Terms shall be governed by and construed in accordance with the laws of the Federal Republic of Germany, without regard to its conflict of law provisions.
         </p>
         <p>
-          Any dispute arising from or relating to these Terms or the Service shall be resolved
-          exclusively in the federal or state courts located in Delaware. You consent to the
-          personal jurisdiction of such courts.
+          For B2B customers, any dispute arising from or relating to these Terms shall be resolved exclusively in the courts of [city to be determined], Germany. For consumers within the EU, mandatory consumer protection laws of your country of residence shall apply to the extent they provide greater protection.
         </p>
         <p>
-          Notwithstanding the foregoing, either party may seek injunctive or equitable relief in
-          any court of competent jurisdiction to protect its intellectual property rights.
+          Notwithstanding the foregoing, either party may seek injunctive or equitable relief in any court of competent jurisdiction to protect its intellectual property rights.
         </p>
       </>
     ),
@@ -434,7 +433,7 @@ const sections: Section[] = [
             <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a>
           </li>
           <li>
-            <strong>Company:</strong> Sigscore, Inc.
+            <strong>Company:</strong> Sigscore — Paul Nispel
           </li>
         </ul>
       </>

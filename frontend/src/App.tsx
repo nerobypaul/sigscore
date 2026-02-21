@@ -60,6 +60,7 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
 const Dpa = lazy(() => import('./pages/Dpa'));
 const AcceptableUse = lazy(() => import('./pages/AcceptableUse'));
+const Impressum = lazy(() => import('./pages/Impressum'));
 const TeamSettings = lazy(() => import('./pages/TeamSettings'));
 const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
 const DataExport = lazy(() => import('./pages/DataExport'));
@@ -129,6 +130,7 @@ function AppRoutes() {
         <Route path="/cookies" element={<CookiePolicy />} />
         <Route path="/dpa" element={<Dpa />} />
         <Route path="/acceptable-use" element={<AcceptableUse />} />
+        <Route path="/impressum" element={<Impressum />} />
         <Route path="/changelog" element={<Changelog />} />
         <Route path="/compare/common-room" element={<CompareCommonRoom />} />
         <Route path="/compare/reo-dev" element={<CompareReodev />} />

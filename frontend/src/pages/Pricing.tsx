@@ -760,6 +760,10 @@ export default function Pricing() {
           ))}
         </div>
 
+        <p className="text-center text-xs text-gray-500 mt-4">
+          All prices shown are net prices in USD, excluding applicable taxes (VAT/sales tax).
+        </p>
+
         <div className="mt-12 text-center">
           <p className="text-sm text-gray-500">
             All plans include REST + GraphQL API, WebSocket real-time updates,

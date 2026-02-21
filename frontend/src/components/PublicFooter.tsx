@@ -31,6 +31,16 @@ export default function PublicFooter() {
             <Link to="/dpa" className="hover:text-gray-400 transition-colors">DPA</Link>
             <Link to="/cookies" className="hover:text-gray-400 transition-colors">Cookies</Link>
             <Link to="/acceptable-use" className="hover:text-gray-400 transition-colors">Acceptable Use</Link>
+            <Link to="/impressum" className="hover:text-gray-400 transition-colors">Impressum</Link>
+            <button
+              onClick={() => {
+                localStorage.removeItem('sigscore-cookie-consent');
+                window.location.reload();
+              }}
+              className="hover:text-gray-400 transition-colors"
+            >
+              Cookie Preferences
+            </button>
           </div>
           <p className="text-xs text-gray-600">
             &copy; {new Date().getFullYear()} Sigscore. All rights reserved.

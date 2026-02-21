@@ -12,6 +12,10 @@ export default function CookieConsent() {
   const accept = (level: 'all' | 'essential') => {
     localStorage.setItem('sigscore-cookie-consent', level);
     setVisible(false);
+    if (level === 'all') {
+      // Initialize Sentry now that user has consented
+      import('../lib/sentry').then(m => m.initSentry());
+    }
   };
 
   if (!visible) return null;
@@ -48,13 +52,13 @@ export default function CookieConsent() {
           <div className="flex items-center gap-3 flex-shrink-0">
             <button
               onClick={() => accept('essential')}
-              className="px-4 py-2 text-sm font-medium rounded-md border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+              className="px-4 py-2 text-sm font-medium rounded-md bg-gray-600 hover:bg-gray-500 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-800"
             >
               Essential Only
             </button>
             <button
               onClick={() => accept('all')}
-              className="px-4 py-2 text-sm font-medium rounded-md bg-indigo-600 hover:bg-indigo-500 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+              className="px-4 py-2 text-sm font-medium rounded-md bg-gray-600 hover:bg-gray-500 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-800"
             >
               Accept All
             </button>

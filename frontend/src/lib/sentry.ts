@@ -7,6 +7,10 @@ export async function initSentry(): Promise<void> {
   const dsn = import.meta.env.VITE_SENTRY_DSN;
   if (!dsn) return;
 
+  // Only load Sentry if the user has consented to all cookies
+  const consent = localStorage.getItem('sigscore-cookie-consent');
+  if (consent !== 'all') return;
+
   const Sentry = await import('@sentry/react');
 
   Sentry.init({

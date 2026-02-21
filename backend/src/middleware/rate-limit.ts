@@ -7,6 +7,8 @@ import { redis } from '../config/redis';
 // Falls back to in-memory in development/test.
 // ---------------------------------------------------------------------------
 
+const isTest = process.env.NODE_ENV === 'test';
+
 function getStore(): Options['store'] | undefined {
   if (process.env.NODE_ENV === 'production') {
     return new RedisStore({
@@ -34,6 +36,7 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: getStore(),
+  skip: () => isTest,
 });
 
 /**
@@ -63,7 +66,7 @@ export const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: getStore(),
-  skip: (req) => DEDICATED_LIMITER_PATHS.some((p) => req.originalUrl.startsWith(p)),
+  skip: (req) => isTest || DEDICATED_LIMITER_PATHS.some((p) => req.originalUrl.startsWith(p)),
 });
 
 /**
