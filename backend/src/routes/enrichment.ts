@@ -11,6 +11,7 @@ import {
   getEnrichmentStats,
 } from '../services/clearbit-enrichment';
 import { enqueueBulkEnrichment } from '../jobs/producers';
+import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -107,6 +108,7 @@ router.post(
 // ---------------------------------------------------------------------------
 // POST /api/v1/enrichment/contacts/:contactId
 // Enrich a single contact (MEMBER+)
+// Gracefully degrades when Clearbit is not connected -- returns available data
 // ---------------------------------------------------------------------------
 
 router.post(
@@ -120,6 +122,57 @@ router.post(
       const result = await enrichContact(organizationId, contactId);
 
       res.json(result);
+    } catch (error) {
+      // If Clearbit is not connected (400) or API key issues, degrade gracefully
+      if (error instanceof Error && (
+        error.message.includes('not connected') ||
+        error.message.includes('API key')
+      )) {
+        try {
+          const profile = await buildContactProfile(req.organizationId!, req.params.contactId);
+          res.json({
+            success: false,
+            fieldsUpdated: [],
+            error: 'Clearbit is not connected. Showing available data from existing records.',
+            availableData: profile,
+            configurationRequired: {
+              message: 'Connect a Clearbit API key in Settings > Enrichment to enable full enrichment.',
+              settingsPath: '/settings',
+            },
+          });
+        } catch (profileError) {
+          next(profileError);
+        }
+        return;
+      }
+      next(error);
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// GET /api/v1/enrichment/contacts/:contactId/profile
+// Return all available enrichment data for a contact from existing records.
+// Does NOT require any external API key -- shows whatever data is available
+// from the contact record, company, signals, and customFields.
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/contacts/:contactId/profile',
+  requireOrgRole('MEMBER'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const organizationId = req.organizationId!;
+      const { contactId } = req.params;
+
+      const profile = await buildContactProfile(organizationId, contactId);
+
+      if (!profile) {
+        res.status(404).json({ error: 'Contact not found' });
+        return;
+      }
+
+      res.json(profile);
     } catch (error) {
       next(error);
     }
@@ -216,5 +269,182 @@ router.delete(
     }
   },
 );
+
+// ---------------------------------------------------------------------------
+// Helper: build a contact enrichment profile from existing data
+// ---------------------------------------------------------------------------
+
+interface ContactProfile {
+  contact: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string | null;
+    phone: string | null;
+    title: string | null;
+    avatar: string | null;
+    github: string | null;
+    linkedIn: string | null;
+    twitter: string | null;
+    address: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+  };
+  company: {
+    id: string;
+    name: string;
+    domain: string | null;
+    industry: string | null;
+    size: string | null;
+    description: string | null;
+    website: string | null;
+    githubOrg: string | null;
+  } | null;
+  enrichmentData: Record<string, unknown>;
+  signalSummary: {
+    totalSignals: number;
+    recentSignals: number;
+    signalTypes: Record<string, number>;
+    lastSignalAt: string | null;
+  };
+  sources: string[];
+}
+
+async function buildContactProfile(
+  organizationId: string,
+  contactId: string,
+): Promise<ContactProfile | null> {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const [contact, signals] = await Promise.all([
+    prisma.contact.findFirst({
+      where: { id: contactId, organizationId },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            domain: true,
+            industry: true,
+            size: true,
+            description: true,
+            website: true,
+            githubOrg: true,
+            customFields: true,
+          },
+        },
+      },
+    }),
+    prisma.signal.findMany({
+      where: {
+        actorId: contactId,
+        organizationId,
+      },
+      orderBy: { timestamp: 'desc' },
+      select: {
+        type: true,
+        metadata: true,
+        timestamp: true,
+      },
+      take: 200,
+    }),
+  ]);
+
+  if (!contact) return null;
+
+  // Build signal summary
+  const signalTypes: Record<string, number> = {};
+  let recentSignals = 0;
+  for (const signal of signals) {
+    signalTypes[signal.type] = (signalTypes[signal.type] || 0) + 1;
+    if (signal.timestamp >= thirtyDaysAgo) {
+      recentSignals++;
+    }
+  }
+
+  // Extract enrichment data from customFields
+  const contactCustomFields = (contact.customFields as Record<string, unknown>) || {};
+  const companyCustomFields = (contact.company?.customFields as Record<string, unknown>) || {};
+
+  // Collect data sources that have contributed
+  const sources: string[] = [];
+  if (contactCustomFields.clearbitEnrichedAt || contactCustomFields.enrichmentSource === 'clearbit') {
+    sources.push('clearbit');
+  }
+  if (contact.github) {
+    sources.push('github');
+  }
+  if (signals.some((s) => s.type.includes('npm') || s.type.includes('pypi'))) {
+    sources.push('npm/pypi');
+  }
+  if (signals.length > 0) {
+    sources.push('signals');
+  }
+
+  // Merge useful enrichment data from customFields
+  const enrichmentData: Record<string, unknown> = {};
+
+  // Contact-level enrichment fields
+  const contactEnrichmentKeys = [
+    'seniority', 'role', 'location', 'twitterHandle', 'linkedinHandle',
+    'clearbitEnrichedAt', 'enrichmentSource', 'inferredRole',
+    'inferredSeniority', 'interests', 'engagementLevel', 'summary',
+  ];
+  for (const key of contactEnrichmentKeys) {
+    if (contactCustomFields[key] !== undefined) {
+      enrichmentData[key] = contactCustomFields[key];
+    }
+  }
+
+  // Company-level enrichment fields
+  const companyEnrichmentKeys = [
+    'logo', 'country', 'city', 'annualRevenue', 'totalFunding',
+    'techStack', 'twitterHandle', 'linkedinHandle', 'sector',
+    'subIndustry', 'foundedYear',
+  ];
+  for (const key of companyEnrichmentKeys) {
+    if (companyCustomFields[key] !== undefined) {
+      enrichmentData[`company_${key}`] = companyCustomFields[key];
+    }
+  }
+
+  return {
+    contact: {
+      id: contact.id,
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+      email: contact.email,
+      phone: contact.phone,
+      title: contact.title,
+      avatar: contact.avatar,
+      github: contact.github,
+      linkedIn: contact.linkedIn,
+      twitter: contact.twitter,
+      address: contact.address,
+      city: contact.city,
+      state: contact.state,
+      country: contact.country,
+    },
+    company: contact.company ? {
+      id: contact.company.id,
+      name: contact.company.name,
+      domain: contact.company.domain,
+      industry: contact.company.industry,
+      size: contact.company.size,
+      description: contact.company.description,
+      website: contact.company.website,
+      githubOrg: contact.company.githubOrg,
+    } : null,
+    enrichmentData,
+    signalSummary: {
+      totalSignals: signals.length,
+      recentSignals,
+      signalTypes,
+      lastSignalAt: signals.length > 0 ? signals[0].timestamp.toISOString() : null,
+    },
+    sources,
+  };
+}
 
 export default router;

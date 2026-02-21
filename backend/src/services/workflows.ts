@@ -223,6 +223,76 @@ export const evaluateConditions = (
 };
 
 // ---------------------------------------------------------------------------
+// Template variable interpolation
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolves a dot-notation path against a nested object.
+ * e.g. resolveNestedValue({ contact: { email: 'a@b.c' } }, 'contact.email') => 'a@b.c'
+ * Returns undefined when any segment along the path is missing.
+ */
+const resolveNestedValue = (
+  data: Record<string, unknown>,
+  path: string,
+): unknown => {
+  const segments = path.split('.');
+  let current: unknown = data;
+  for (const segment of segments) {
+    if (current === null || current === undefined || typeof current !== 'object') {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return current;
+};
+
+/**
+ * Replaces all `{{key}}` and `{{nested.key}}` placeholders in a template
+ * string with the corresponding values from eventData. Unresolved
+ * placeholders are replaced with an empty string.
+ */
+export const interpolateTemplate = (
+  template: string,
+  eventData: Record<string, unknown>,
+): string => {
+  return template.replace(/\{\{([\w.]+)\}\}/g, (_match, path: string) => {
+    const value = resolveNestedValue(eventData, path);
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  });
+};
+
+/**
+ * Recursively walks an action params object and applies template
+ * interpolation to every string value. Non-string leaves, arrays,
+ * and nested objects are all handled.
+ */
+export const interpolateActionParams = (
+  params: Record<string, unknown>,
+  eventData: Record<string, unknown>,
+): Record<string, unknown> => {
+  const interpolateValue = (value: unknown): unknown => {
+    if (typeof value === 'string') {
+      return interpolateTemplate(value, eventData);
+    }
+    if (Array.isArray(value)) {
+      return value.map(interpolateValue);
+    }
+    if (value !== null && typeof value === 'object') {
+      const result: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+        result[k] = interpolateValue(v);
+      }
+      return result;
+    }
+    return value;
+  };
+
+  return interpolateValue(params) as Record<string, unknown>;
+};
+
+// ---------------------------------------------------------------------------
 // Action execution
 // ---------------------------------------------------------------------------
 
@@ -453,7 +523,13 @@ export const processEvent = async (
 
     for (const action of actions) {
       try {
-        const result = await executeAction(action, organizationId, eventData);
+        // Interpolate template variables (e.g. {{companyName}}, {{contact.email}})
+        // in action params before execution so actions receive resolved values.
+        const interpolatedAction: WorkflowAction = {
+          ...action,
+          params: interpolateActionParams(action.params, eventData),
+        };
+        const result = await executeAction(interpolatedAction, organizationId, eventData);
         results.push(result);
       } catch (err) {
         failed = true;

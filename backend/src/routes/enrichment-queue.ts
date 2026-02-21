@@ -74,7 +74,7 @@ router.get(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const organizationId = req.organizationId!;
-      const batches = getBatchHistory(organizationId);
+      const batches = await getBatchHistory(organizationId);
 
       res.json({ batches });
     } catch (error) {
@@ -91,9 +91,10 @@ router.get(
 router.get(
   '/stats',
   requireOrgRole('MEMBER'),
-  async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const stats = getEnrichmentQueueStats();
+      const organizationId = req.organizationId!;
+      const stats = await getEnrichmentQueueStats(organizationId);
       res.json(stats);
     } catch (error) {
       next(error);
@@ -113,17 +114,9 @@ router.get(
     try {
       const { batchId } = req.params;
       const organizationId = req.organizationId!;
-      const batch = getBatchStatus(batchId);
+      const batch = await getBatchStatus(batchId, organizationId);
 
       if (!batch) {
-        res.status(404).json({ error: 'Batch not found' });
-        return;
-      }
-
-      // Verify the batch belongs to this organization by checking batch history
-      const orgBatches = getBatchHistory(organizationId);
-      const belongs = orgBatches.some((b) => b.batchId === batchId);
-      if (!belongs) {
         res.status(404).json({ error: 'Batch not found' });
         return;
       }
@@ -148,15 +141,7 @@ router.post(
       const { batchId } = req.params;
       const organizationId = req.organizationId!;
 
-      // Verify ownership
-      const orgBatches = getBatchHistory(organizationId);
-      const belongs = orgBatches.some((b) => b.batchId === batchId);
-      if (!belongs) {
-        res.status(404).json({ error: 'Batch not found' });
-        return;
-      }
-
-      const batch = await retryFailedInBatch(batchId);
+      const batch = await retryFailedInBatch(batchId, organizationId);
 
       if (!batch) {
         res.status(404).json({ error: 'Batch not found' });
@@ -188,15 +173,7 @@ router.post(
       const { batchId } = req.params;
       const organizationId = req.organizationId!;
 
-      // Verify ownership
-      const orgBatches = getBatchHistory(organizationId);
-      const belongs = orgBatches.some((b) => b.batchId === batchId);
-      if (!belongs) {
-        res.status(404).json({ error: 'Batch not found' });
-        return;
-      }
-
-      const batch = cancelBatch(batchId);
+      const batch = await cancelBatch(batchId, organizationId);
 
       if (!batch) {
         res.status(404).json({ error: 'Batch not found' });

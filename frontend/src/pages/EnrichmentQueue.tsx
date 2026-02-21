@@ -51,6 +51,43 @@ interface ContactOption {
   email: string | null;
 }
 
+interface ContactProfile {
+  contact: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string | null;
+    phone: string | null;
+    title: string | null;
+    avatar: string | null;
+    github: string | null;
+    linkedIn: string | null;
+    twitter: string | null;
+    address: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+  };
+  company: {
+    id: string;
+    name: string;
+    domain: string | null;
+    industry: string | null;
+    size: string | null;
+    description: string | null;
+    website: string | null;
+    githubOrg: string | null;
+  } | null;
+  enrichmentData: Record<string, unknown>;
+  signalSummary: {
+    totalSignals: number;
+    recentSignals: number;
+    signalTypes: Record<string, number>;
+    lastSignalAt: string | null;
+  };
+  sources: string[];
+}
+
 const SOURCE_OPTIONS = [
   { value: 'clearbit', label: 'Clearbit', description: 'Company & person data' },
   { value: 'github', label: 'GitHub', description: 'Developer profiles' },
@@ -106,7 +143,7 @@ function StatusBadge({ status }: { status: string }) {
 // ---------------------------------------------------------------------------
 
 export default function EnrichmentQueue() {
-  useEffect(() => { document.title = 'Enrichment Queue — Sigscore'; }, []);
+  useEffect(() => { document.title = 'Enrichment Queue -- Sigscore'; }, []);
   const toast = useToast();
 
   // Stats
@@ -120,6 +157,11 @@ export default function EnrichmentQueue() {
   const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null);
   const [batchDetail, setBatchDetail] = useState<BatchDetail | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+
+  // Contact profile drawer
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [contactProfile, setContactProfile] = useState<ContactProfile | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
   // Start enrichment panel
   const [showStartPanel, setShowStartPanel] = useState(false);
@@ -172,6 +214,19 @@ export default function EnrichmentQueue() {
       setIsLoadingDetail(false);
     }
   }, [toast]);
+
+  // ----- Fetch contact profile -----
+  const fetchContactProfile = useCallback(async (contactId: string) => {
+    setIsLoadingProfile(true);
+    try {
+      const { data } = await api.get<ContactProfile>(`/enrichment/contacts/${contactId}/profile`);
+      setContactProfile(data);
+    } catch {
+      setContactProfile(null);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  }, []);
 
   // ----- Search contacts -----
   const searchContacts = useCallback(async (query: string) => {
@@ -317,9 +372,23 @@ export default function EnrichmentQueue() {
     if (expandedBatchId === batchId) {
       setExpandedBatchId(null);
       setBatchDetail(null);
+      setSelectedContactId(null);
+      setContactProfile(null);
     } else {
       setExpandedBatchId(batchId);
       fetchBatchDetail(batchId);
+      setSelectedContactId(null);
+      setContactProfile(null);
+    }
+  };
+
+  const handleViewContactProfile = (contactId: string) => {
+    if (selectedContactId === contactId) {
+      setSelectedContactId(null);
+      setContactProfile(null);
+    } else {
+      setSelectedContactId(contactId);
+      fetchContactProfile(contactId);
     }
   };
 
@@ -648,8 +717,12 @@ export default function EnrichmentQueue() {
                     isExpanded={expandedBatchId === batch.batchId}
                     detail={expandedBatchId === batch.batchId ? batchDetail : null}
                     isLoadingDetail={expandedBatchId === batch.batchId && isLoadingDetail}
+                    selectedContactId={selectedContactId}
+                    contactProfile={contactProfile}
+                    isLoadingProfile={isLoadingProfile}
                     onExpand={() => handleExpandBatch(batch.batchId)}
                     onRetry={() => handleRetry(batch.batchId)}
+                    onViewContactProfile={handleViewContactProfile}
                     onDownload={() => {
                       if (batchDetail && expandedBatchId === batch.batchId) {
                         handleDownloadCsv(batchDetail);
@@ -763,21 +836,227 @@ function ActiveBatchCard({
   );
 }
 
+function ContactProfilePanel({
+  profile,
+  isLoading,
+}: {
+  profile: ContactProfile | null;
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-4">
+        <Spinner size="sm" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <p className="text-xs text-gray-500 py-2">Could not load profile data.</p>
+    );
+  }
+
+  const { contact, company, enrichmentData, signalSummary, sources } = profile;
+  const enrichmentEntries = Object.entries(enrichmentData).filter(
+    ([, v]) => v !== null && v !== undefined && v !== '',
+  );
+
+  return (
+    <div className="mt-3 p-4 bg-white border border-indigo-200 rounded-lg space-y-4">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-semibold text-gray-900">
+          {contact.firstName} {contact.lastName}
+        </h4>
+        {sources.length > 0 && (
+          <div className="flex gap-1">
+            {sources.map((src) => (
+              <span
+                key={src}
+                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700"
+              >
+                {src}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Contact basics */}
+      <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
+        {contact.email && (
+          <div>
+            <span className="text-gray-400">Email:</span>{' '}
+            <span className="text-gray-700">{contact.email}</span>
+          </div>
+        )}
+        {contact.title && (
+          <div>
+            <span className="text-gray-400">Title:</span>{' '}
+            <span className="text-gray-700">{contact.title}</span>
+          </div>
+        )}
+        {contact.phone && (
+          <div>
+            <span className="text-gray-400">Phone:</span>{' '}
+            <span className="text-gray-700">{contact.phone}</span>
+          </div>
+        )}
+        {contact.github && (
+          <div>
+            <span className="text-gray-400">GitHub:</span>{' '}
+            <span className="text-gray-700">@{contact.github}</span>
+          </div>
+        )}
+        {contact.linkedIn && (
+          <div>
+            <span className="text-gray-400">LinkedIn:</span>{' '}
+            <span className="text-gray-700">{contact.linkedIn}</span>
+          </div>
+        )}
+        {contact.twitter && (
+          <div>
+            <span className="text-gray-400">Twitter:</span>{' '}
+            <span className="text-gray-700">@{contact.twitter}</span>
+          </div>
+        )}
+        {(contact.city || contact.state || contact.country) && (
+          <div>
+            <span className="text-gray-400">Location:</span>{' '}
+            <span className="text-gray-700">
+              {[contact.city, contact.state, contact.country].filter(Boolean).join(', ')}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Company info */}
+      {company && (
+        <div className="border-t border-gray-100 pt-3">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Company</p>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
+            <div>
+              <span className="text-gray-400">Name:</span>{' '}
+              <span className="text-gray-700">{company.name}</span>
+            </div>
+            {company.domain && (
+              <div>
+                <span className="text-gray-400">Domain:</span>{' '}
+                <span className="text-gray-700">{company.domain}</span>
+              </div>
+            )}
+            {company.industry && (
+              <div>
+                <span className="text-gray-400">Industry:</span>{' '}
+                <span className="text-gray-700">{company.industry}</span>
+              </div>
+            )}
+            {company.size && (
+              <div>
+                <span className="text-gray-400">Size:</span>{' '}
+                <span className="text-gray-700">{company.size}</span>
+              </div>
+            )}
+            {company.githubOrg && (
+              <div>
+                <span className="text-gray-400">GitHub Org:</span>{' '}
+                <span className="text-gray-700">{company.githubOrg}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Enrichment data */}
+      {enrichmentEntries.length > 0 && (
+        <div className="border-t border-gray-100 pt-3">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Enrichment Data</p>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
+            {enrichmentEntries.map(([key, value]) => (
+              <div key={key}>
+                <span className="text-gray-400">{formatEnrichmentKey(key)}:</span>{' '}
+                <span className="text-gray-700">
+                  {Array.isArray(value) ? value.join(', ') : String(value)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Signal summary */}
+      <div className="border-t border-gray-100 pt-3">
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Signal Activity</p>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
+          <div>
+            <span className="text-gray-400">Total signals:</span>{' '}
+            <span className="text-gray-700">{signalSummary.totalSignals}</span>
+          </div>
+          <div>
+            <span className="text-gray-400">Last 30 days:</span>{' '}
+            <span className="text-gray-700">{signalSummary.recentSignals}</span>
+          </div>
+          {signalSummary.lastSignalAt && (
+            <div>
+              <span className="text-gray-400">Last signal:</span>{' '}
+              <span className="text-gray-700">{formatDate(signalSummary.lastSignalAt)}</span>
+            </div>
+          )}
+        </div>
+        {Object.keys(signalSummary.signalTypes).length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {Object.entries(signalSummary.signalTypes)
+              .sort(([, a], [, b]) => b - a)
+              .slice(0, 8)
+              .map(([type, count]) => (
+                <span
+                  key={type}
+                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600"
+                >
+                  {type}: {count}
+                </span>
+              ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function formatEnrichmentKey(key: string): string {
+  // Convert camelCase/snake_case keys to readable labels
+  return key
+    .replace(/^company_/, 'Company ')
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/_/g, ' ')
+    .replace(/^\s/, '')
+    .replace(/^./, (c) => c.toUpperCase())
+    .trim();
+}
+
 function BatchHistoryRow({
   batch,
   isExpanded,
   detail,
   isLoadingDetail,
+  selectedContactId,
+  contactProfile,
+  isLoadingProfile,
   onExpand,
   onRetry,
+  onViewContactProfile,
   onDownload,
 }: {
   batch: BatchSummary;
   isExpanded: boolean;
   detail: BatchDetail | null;
   isLoadingDetail: boolean;
+  selectedContactId: string | null;
+  contactProfile: ContactProfile | null;
+  isLoadingProfile: boolean;
   onExpand: () => void;
   onRetry: () => void;
+  onViewContactProfile: (contactId: string) => void;
   onDownload: () => void;
 }) {
   return (
@@ -841,17 +1120,17 @@ function BatchHistoryRow({
               <div className="flex justify-center py-6">
                 <Spinner size="md" />
               </div>
-            ) : detail ? (
+            ) : detail && detail.contacts.length > 0 ? (
               <div className="space-y-2">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Per-Contact Results
+                    Per-Contact Results ({detail.contacts.length} contacts)
                   </p>
                   <span className="text-xs text-gray-400">
                     Batch ID: {detail.batchId.slice(0, 8)}...
                   </span>
                 </div>
-                <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg bg-white">
+                <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg bg-white">
                   <table className="min-w-full divide-y divide-gray-100">
                     <thead className="bg-gray-50 sticky top-0">
                       <tr>
@@ -864,38 +1143,84 @@ function BatchHistoryRow({
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {detail.contacts.map((contact) => (
-                        <tr key={contact.contactId} className="text-xs">
-                          <td className="px-3 py-2 text-gray-900 font-medium">{contact.contactName}</td>
-                          <td className="px-3 py-2 text-gray-500">{contact.contactEmail || '--'}</td>
-                          <td className="px-3 py-2">
-                            <StatusBadge status={contact.status} />
-                          </td>
-                          <td className="px-3 py-2 text-gray-500">
-                            {contact.fieldsEnriched.length > 0
-                              ? contact.fieldsEnriched.join(', ')
-                              : contact.error || '--'}
-                          </td>
-                          <td className="px-3 py-2">
-                            {contact.status === 'failed' && (
-                              <button
-                                onClick={() => {
-                                  // Individual retry is handled via the batch retry
-                                }}
-                                className="text-indigo-600 hover:text-indigo-800 font-medium"
-                              >
-                                Retry
-                              </button>
-                            )}
-                          </td>
-                        </tr>
+                        <ContactResultRow
+                          key={contact.contactId}
+                          contact={contact}
+                          isSelected={selectedContactId === contact.contactId}
+                          contactProfile={selectedContactId === contact.contactId ? contactProfile : null}
+                          isLoadingProfile={selectedContactId === contact.contactId && isLoadingProfile}
+                          onViewProfile={() => onViewContactProfile(contact.contactId)}
+                        />
                       ))}
                     </tbody>
                   </table>
                 </div>
               </div>
+            ) : detail && detail.contacts.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">
+                No contacts found for this batch. The contact records may have been deleted.
+              </p>
             ) : (
-              <p className="text-sm text-gray-500 text-center py-4">No detail available.</p>
+              <p className="text-sm text-gray-500 text-center py-4">
+                No detail available. This batch may have been created before data persistence was enabled.
+              </p>
             )}
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+function ContactResultRow({
+  contact,
+  isSelected,
+  contactProfile,
+  isLoadingProfile,
+  onViewProfile,
+}: {
+  contact: ContactResult;
+  isSelected: boolean;
+  contactProfile: ContactProfile | null;
+  isLoadingProfile: boolean;
+  onViewProfile: () => void;
+}) {
+  return (
+    <>
+      <tr className="text-xs">
+        <td className="px-3 py-2 text-gray-900 font-medium">
+          <button
+            onClick={onViewProfile}
+            className="text-left hover:text-indigo-600 transition-colors"
+          >
+            {contact.contactName}
+          </button>
+        </td>
+        <td className="px-3 py-2 text-gray-500">{contact.contactEmail || '--'}</td>
+        <td className="px-3 py-2">
+          <StatusBadge status={contact.status} />
+        </td>
+        <td className="px-3 py-2 text-gray-500">
+          {contact.fieldsEnriched.length > 0
+            ? contact.fieldsEnriched.join(', ')
+            : contact.error || '--'}
+        </td>
+        <td className="px-3 py-2">
+          <button
+            onClick={onViewProfile}
+            className="text-indigo-600 hover:text-indigo-800 font-medium"
+          >
+            {isSelected ? 'Hide' : 'View'}
+          </button>
+        </td>
+      </tr>
+      {isSelected && (
+        <tr>
+          <td colSpan={5} className="px-3 py-0">
+            <ContactProfilePanel
+              profile={contactProfile}
+              isLoading={isLoadingProfile}
+            />
           </td>
         </tr>
       )}

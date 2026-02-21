@@ -79,7 +79,7 @@ const navSections: NavSection[] = [
       { to: '/api-usage', label: 'API Usage', icon: ApiUsageIcon, disabledInDemo: true },
       { to: '/scoring', label: 'Scoring Rules', icon: ScoringBuilderIcon },
       { to: '/team', label: 'Team', icon: TeamIcon, hideInDemo: true },
-      { to: '/billing', label: 'Billing', icon: BillingIcon, hideInDemo: true },
+      { to: '/billing', label: 'Billing', icon: BillingIcon, disabledInDemo: true },
       { to: '/audit', label: 'Audit Log', icon: AuditLogIcon, hideInDemo: true },
       { to: '/sso-settings', label: 'SSO', icon: SsoIcon, hideInDemo: true },
       { to: '/settings/export', label: 'Data Export', icon: DataExportIcon, hideInDemo: true },

@@ -17,7 +17,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      res.status(400).json({ error: 'Unable to create account with the provided information' });
+      res.status(409).json({ error: 'An account with this email already exists. Try signing in instead.' });
       return;
     }
 
@@ -59,7 +59,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
     // Handle Prisma unique constraint violation (concurrent registration race)
     const prismaError = error as { code?: string };
     if (prismaError.code === 'P2002') {
-      res.status(400).json({ error: 'Unable to create account with the provided information' });
+      res.status(409).json({ error: 'An account with this email already exists. Try signing in instead.' });
       return;
     }
     next(error);

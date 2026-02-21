@@ -4,20 +4,39 @@ import api from '../lib/api';
 import { useToast } from '../components/Toast';
 import type { IntegrationMeta, SignalSource, SyncHistoryEntry, IntegrationCategory } from '../types';
 
-// Integrations that have dedicated setup flows in Settings (source type → Settings tab id)
+// Integrations that have dedicated setup flows in Settings (source type -> Settings tab id)
+// Only OAuth-based integrations that truly need a Settings page flow
 const SETTINGS_TAB_MAP: Record<string, string> = {
   HUBSPOT: 'hubspot',
   SALESFORCE: 'salesforce',
-  SLACK: 'slack',
-  DISCORD: 'discord',
-  STACKOVERFLOW: 'stackoverflow',
-  TWITTER: 'twitter',
-  REDDIT: 'reddit',
-  LINKEDIN: 'linkedin',
-  POSTHOG: 'posthog',
-  CLEARBIT: 'clearbit',
-  INTERCOM: 'intercom',
-  ZENDESK: 'zendesk',
+};
+
+// OAuth integrations that require external app configuration before they can be connected
+const OAUTH_INTEGRATIONS: Set<string> = new Set(['LINKEDIN']);
+
+// Field metadata for better UX: labels, placeholders, whether the field is a secret
+const FIELD_META: Record<string, { label: string; placeholder: string; secret?: boolean; hint?: string; isList?: boolean }> = {
+  webhookSecret: { label: 'Webhook Secret', placeholder: 'whsec_...', secret: true, hint: 'Found in your GitHub webhook settings' },
+  packages: { label: 'Package Names', placeholder: 'e.g. react, next, express', isList: true, hint: 'Comma-separated list of package names to track' },
+  sharedSecret: { label: 'Shared Secret', placeholder: 'Auto-generated on connect', secret: true, hint: 'Used to verify webhook payloads from Segment' },
+  domain: { label: 'Domain', placeholder: 'e.g. example.com' },
+  trackingId: { label: 'Tracking ID', placeholder: 'e.g. UA-XXXXXXXX-X' },
+  docsUrl: { label: 'Documentation URL', placeholder: 'e.g. https://docs.example.com' },
+  apiEndpoint: { label: 'API Endpoint', placeholder: 'e.g. https://api.example.com' },
+  botToken: { label: 'Bot Token', placeholder: 'Bot token from Discord Developer Portal', secret: true },
+  guildId: { label: 'Server (Guild) ID', placeholder: 'e.g. 123456789012345678', hint: 'Right-click your server name and copy ID' },
+  bearerToken: { label: 'Bearer Token', placeholder: 'Bearer token from Twitter Developer Portal', secret: true },
+  keywords: { label: 'Keywords', placeholder: 'e.g. react, nextjs, vercel', isList: true, hint: 'Comma-separated list of keywords to track' },
+  tags: { label: 'Tags', placeholder: 'e.g. reactjs, nextjs', isList: true, hint: 'Comma-separated Stack Overflow tags to monitor' },
+  clientId: { label: 'Client ID', placeholder: 'Reddit app client ID', secret: false },
+  clientSecret: { label: 'Client Secret', placeholder: 'Reddit app client secret', secret: true },
+  subreddits: { label: 'Subreddits', placeholder: 'e.g. reactjs, node, typescript', isList: true, hint: 'Comma-separated subreddit names (without r/)' },
+  apiKey: { label: 'API Key', placeholder: 'phx_...', secret: true },
+  webhookSecret2: { label: 'Webhook Secret', placeholder: 'Webhook signing secret', secret: true },
+  accessToken: { label: 'Access Token', placeholder: 'Access token from the service', secret: true },
+  subdomain: { label: 'Subdomain', placeholder: 'e.g. yourcompany (from yourcompany.zendesk.com)' },
+  email: { label: 'Admin Email', placeholder: 'admin@yourcompany.com' },
+  apiToken: { label: 'API Token', placeholder: 'Zendesk API token', secret: true, hint: 'Generate from Admin > Channels > API' },
 };
 
 const CATEGORY_COLORS: Record<IntegrationCategory, { bg: string; text: string }> = {
@@ -118,6 +137,9 @@ export default function IntegrationDetail() {
   const [history, setHistory] = useState<SyncHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
+  const [configValues, setConfigValues] = useState<Record<string, string>>({});
+  const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
     document.title = meta ? `${meta.name} Integration — Sigscore` : 'Integration — Sigscore';
@@ -184,6 +206,59 @@ export default function IntegrationDetail() {
       setTimeout(loadData, 1500);
     } catch {
       toast.error('Failed to trigger sync');
+    }
+  };
+
+  const handleConnect = async () => {
+    if (!meta) return;
+
+    // Validate that all required config fields have values
+    const emptyFields = meta.configFields.filter((f) => !configValues[f]?.trim());
+    if (emptyFields.length > 0) {
+      toast.error(`Please fill in all required fields: ${emptyFields.join(', ')}`);
+      return;
+    }
+
+    setConnecting(true);
+    try {
+      const config: Record<string, unknown> = {};
+      for (const field of meta.configFields) {
+        // Fields named "packages", "subreddits", "keywords", "tags" are comma-separated lists
+        const listFields = ['packages', 'subreddits', 'keywords', 'tags'];
+        if (listFields.includes(field)) {
+          config[field] = configValues[field].split(',').map((s) => s.trim()).filter(Boolean);
+        } else {
+          config[field] = configValues[field].trim();
+        }
+      }
+
+      await api.post('/sources', {
+        type: sourceType,
+        name: meta.name,
+        config,
+      });
+
+      toast.success(`${meta.name} connected successfully`);
+      setConfigValues({});
+      await loadData();
+    } catch {
+      toast.error(`Failed to connect ${meta.name}. Please check your credentials and try again.`);
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!source) return;
+    setDisconnecting(true);
+    try {
+      await api.delete(`/sources/${source.id}`);
+      toast.success('Integration disconnected');
+      await loadData();
+    } catch {
+      toast.error('Failed to disconnect integration');
+    } finally {
+      setDisconnecting(false);
     }
   };
 
@@ -335,6 +410,23 @@ export default function IntegrationDetail() {
                 </svg>
                 Sync Now
               </button>
+              <button
+                onClick={handleDisconnect}
+                disabled={disconnecting}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-red-200 text-red-600 bg-white hover:bg-red-50 transition-colors disabled:opacity-50"
+              >
+                {disconnecting ? (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+                Disconnect
+              </button>
             </div>
           </div>
 
@@ -419,67 +511,173 @@ export default function IntegrationDetail() {
           </div>
         </>
       ) : (
-        /* Not connected: Setup instructions */
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-sm font-semibold text-gray-900 mb-1">{setupInfo.title}</h2>
-          <p className="text-xs text-gray-500 mb-6">
-            Follow these steps to connect {meta.name} with Sigscore
-          </p>
+        /* Not connected: Setup + config form */
+        <div className="space-y-6">
+          {/* Setup instructions */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-sm font-semibold text-gray-900 mb-1">{setupInfo.title}</h2>
+            <p className="text-xs text-gray-500 mb-6">
+              Follow these steps to connect {meta.name} with Sigscore
+            </p>
 
-          <div className="space-y-4">
-            {setupInfo.steps.map((step, i) => (
-              <div key={i} className="flex gap-3">
-                <div className="w-7 h-7 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bold text-indigo-600">{i + 1}</span>
+            <div className="space-y-4">
+              {setupInfo.steps.map((step, i) => (
+                <div key={i} className="flex gap-3">
+                  <div className="w-7 h-7 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-indigo-600">{i + 1}</span>
+                  </div>
+                  <div className="flex-1 pt-1">
+                    <p className="text-sm text-gray-700">{step}</p>
+                  </div>
                 </div>
-                <div className="flex-1 pt-1">
-                  <p className="text-sm text-gray-700">{step}</p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          {/* Configuration CTA — link to Settings for integrations with setup flows */}
+          {/* OAuth integrations that need external app setup */}
           {SETTINGS_TAB_MAP[sourceType] ? (
-            <div className="mt-8 pt-6 border-t border-gray-100">
-              <h3 className="text-xs font-semibold text-gray-900 mb-2">Ready to connect?</h3>
-              <p className="text-sm text-gray-500 mb-4">
-                {meta.name} has a dedicated setup flow. Configure your credentials and connection settings from the Settings page.
-              </p>
-              <Link
-                to={`/settings?tab=${SETTINGS_TAB_MAP[sourceType]}`}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Configure {meta.name} in Settings
-              </Link>
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Requires OAuth App Configuration</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {meta.name} uses OAuth for authentication. You need to configure OAuth credentials (client ID and secret) in your {meta.name} developer portal first, then complete the connection from the Settings page.
+                  </p>
+                  <Link
+                    to={`/settings?tab=${SETTINGS_TAB_MAP[sourceType]}`}
+                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Configure in Settings
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ) : OAUTH_INTEGRATIONS.has(sourceType) ? (
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Requires OAuth App Configuration</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {meta.name} requires an OAuth application to be configured before it can be connected.
+                    This involves creating an app in the {meta.name} developer portal and providing the
+                    OAuth credentials to Sigscore. Contact your administrator or check the documentation for setup instructions.
+                  </p>
+                </div>
+              </div>
             </div>
           ) : meta.configFields.length > 0 ? (
-            <div className="mt-8 pt-6 border-t border-gray-100">
-              <h3 className="text-xs font-semibold text-gray-900 mb-3">Required Configuration</h3>
-              <div className="space-y-3">
-                {meta.configFields.map((field) => (
-                  <div key={field}>
-                    <label className="block text-xs font-medium text-gray-600 mb-1 capitalize">
-                      {field.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase())}
-                    </label>
-                    <input
-                      type="text"
-                      disabled
-                      placeholder={`Enter ${field}`}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-400 placeholder:text-gray-300"
-                    />
-                  </div>
-                ))}
-              </div>
-              <p className="mt-4 text-xs text-gray-400">
-                Configuration support coming soon. Use the Sigscore API to set up this integration in the meantime.
+            /* Credential-based configuration form */
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Connect {meta.name}</h3>
+              <p className="text-xs text-gray-500 mb-6">
+                Enter your credentials below to establish the connection.
               </p>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleConnect();
+                }}
+                className="space-y-4"
+              >
+                {meta.configFields.map((field) => {
+                  const fieldMeta = FIELD_META[field];
+                  const label = fieldMeta?.label || field.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
+                  const placeholder = fieldMeta?.placeholder || `Enter ${field}`;
+                  const isSecret = fieldMeta?.secret ?? false;
+                  const hint = fieldMeta?.hint;
+
+                  return (
+                    <div key={field}>
+                      <label htmlFor={`config-${field}`} className="block text-xs font-medium text-gray-700 mb-1">
+                        {label}
+                      </label>
+                      <input
+                        id={`config-${field}`}
+                        type={isSecret ? 'password' : 'text'}
+                        value={configValues[field] || ''}
+                        onChange={(e) => setConfigValues((prev) => ({ ...prev, [field]: e.target.value }))}
+                        placeholder={placeholder}
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      />
+                      {hint && (
+                        <p className="mt-1 text-xs text-gray-400">{hint}</p>
+                      )}
+                    </div>
+                  );
+                })}
+
+                <div className="flex items-center gap-3 pt-2">
+                  <button
+                    type="submit"
+                    disabled={connecting}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {connecting ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Connecting...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 002.25-2.25V6a2.25 2.25 0 00-2.25-2.25H6A2.25 2.25 0 003.75 6v2.25A2.25 2.25 0 006 10.5zm0 9.75h2.25A2.25 2.25 0 0010.5 18v-2.25a2.25 2.25 0 00-2.25-2.25H6a2.25 2.25 0 00-2.25 2.25V18A2.25 2.25 0 006 20.25zm9.75-9.75H18a2.25 2.25 0 002.25-2.25V6A2.25 2.25 0 0018 3.75h-2.25A2.25 2.25 0 0013.5 6v2.25a2.25 2.25 0 002.25 2.25z" />
+                        </svg>
+                        Connect {meta.name}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
-          ) : null}
+          ) : (
+            /* No config fields — e.g. Custom Webhook with auto-generated URL */
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Connect {meta.name}</h3>
+              <p className="text-xs text-gray-500 mb-4">
+                This integration does not require any configuration. Click Connect to activate it.
+              </p>
+              <button
+                onClick={handleConnect}
+                disabled={connecting}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {connecting ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 002.25-2.25V6a2.25 2.25 0 00-2.25-2.25H6A2.25 2.25 0 003.75 6v2.25A2.25 2.25 0 006 10.5zm0 9.75h2.25A2.25 2.25 0 0010.5 18v-2.25a2.25 2.25 0 00-2.25-2.25H6a2.25 2.25 0 00-2.25 2.25V18A2.25 2.25 0 006 20.25zm9.75-9.75H18a2.25 2.25 0 002.25-2.25V6A2.25 2.25 0 0018 3.75h-2.25A2.25 2.25 0 0013.5 6v2.25a2.25 2.25 0 002.25 2.25z" />
+                    </svg>
+                    Connect {meta.name}
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

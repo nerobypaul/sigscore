@@ -1,16 +1,19 @@
 /**
  * Enrichment Queue Service
  *
- * Manages bulk contact enrichment batches with in-memory progress tracking.
+ * Manages bulk contact enrichment batches with database-backed persistence.
  * Each batch tracks per-contact status (pending, processing, success, failed)
- * and auto-evicts after 24 hours.
+ * and stores results in the organization's settings JSON so they survive
+ * server restarts.
  *
- * This service is separate from clearbit-enrichment.ts to avoid modifying
- * the existing enrichment pipeline. It orchestrates batches on top of the
- * existing enrichment queue infrastructure.
+ * Batch metadata is stored in organization.settings under the key
+ * "enrichmentBatches" as an array of serializable batch objects. Individual
+ * contact enrichment results are stored on each Contact's customFields under
+ * the key "enrichmentBatchResults".
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { enrichmentQueue, EnrichmentJobData } from '../jobs/queue';
 import { logger } from '../utils/logger';
@@ -31,12 +34,12 @@ export interface ContactEnrichmentResult {
   completedAt?: string;
 }
 
-export interface EnrichmentBatch {
+export interface SerializedBatch {
   batchId: string;
   organizationId: string;
   status: 'queued' | 'processing' | 'completed' | 'cancelled';
   sources: string[];
-  contacts: Map<string, ContactEnrichmentResult>;
+  contactIds: string[];
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
@@ -70,50 +73,97 @@ export interface EnrichmentQueueStats {
 }
 
 // ---------------------------------------------------------------------------
-// In-memory batch store with auto-eviction
+// Database helpers
 // ---------------------------------------------------------------------------
 
-const batchStore = new Map<string, EnrichmentBatch>();
+/**
+ * Read enrichment batches array from organization settings.
+ */
+async function readBatches(organizationId: string): Promise<SerializedBatch[]> {
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { settings: true },
+  });
+  if (!org) return [];
+  const settings = (org.settings as Record<string, unknown>) || {};
+  return (settings.enrichmentBatches as SerializedBatch[]) || [];
+}
 
-const EVICTION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const EVICTION_INTERVAL_MS = 60 * 60 * 1000; // Check every hour
+/**
+ * Write enrichment batches array back to organization settings.
+ * Keeps only the most recent 50 batches to avoid unbounded growth.
+ */
+async function writeBatches(organizationId: string, batches: SerializedBatch[]): Promise<void> {
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { settings: true },
+  });
+  if (!org) return;
 
-// Stats accumulator (survives batch eviction)
-let statsAccumulator = {
-  totalEnriched: 0,
-  totalAttempted: 0,
-  totalDurationMs: 0,
-  completedBatches: 0,
-};
+  const settings = ((org.settings as Record<string, unknown>) || {});
+  // Keep only the latest 50 batches
+  settings.enrichmentBatches = batches.slice(0, 50);
 
-// Eviction timer
-const evictionTimer = setInterval(() => {
-  const now = Date.now();
-  for (const [batchId, batch] of batchStore.entries()) {
-    const createdAt = new Date(batch.createdAt).getTime();
-    if (now - createdAt > EVICTION_TTL_MS) {
-      batchStore.delete(batchId);
-      logger.debug('Evicted stale enrichment batch', { batchId });
-    }
-  }
-}, EVICTION_INTERVAL_MS);
+  await prisma.organization.update({
+    where: { id: organizationId },
+    data: { settings: settings as unknown as Prisma.InputJsonValue },
+  });
+}
 
-// Prevent the timer from keeping the process alive
-if (evictionTimer.unref) {
-  evictionTimer.unref();
+/**
+ * Read a contact's batch enrichment result from its customFields.
+ */
+function readContactBatchResult(
+  customFields: unknown,
+  batchId: string,
+): ContactEnrichmentResult | null {
+  const fields = (customFields as Record<string, unknown>) || {};
+  const results = (fields.enrichmentBatchResults as Record<string, ContactEnrichmentResult>) || {};
+  return results[batchId] || null;
+}
+
+/**
+ * Write a contact's batch enrichment result into its customFields.
+ */
+async function writeContactBatchResult(
+  contactId: string,
+  batchId: string,
+  result: ContactEnrichmentResult,
+): Promise<void> {
+  const contact = await prisma.contact.findUnique({
+    where: { id: contactId },
+    select: { customFields: true },
+  });
+  if (!contact) return;
+
+  const fields = ((contact.customFields as Record<string, unknown>) || {});
+  const results = ((fields.enrichmentBatchResults as Record<string, unknown>) || {});
+  results[batchId] = result;
+  fields.enrichmentBatchResults = results;
+
+  await prisma.contact.update({
+    where: { id: contactId },
+    data: { customFields: fields as unknown as Prisma.InputJsonValue },
+  });
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function summarizeBatch(batch: EnrichmentBatch): BatchSummary {
+/**
+ * Build a BatchSummary from a serialized batch + contact results fetched from DB.
+ */
+function summarizeFromResults(
+  batch: SerializedBatch,
+  contactResults: ContactEnrichmentResult[],
+): BatchSummary {
   let completed = 0;
   let failed = 0;
   let pending = 0;
   let skipped = 0;
 
-  for (const contact of batch.contacts.values()) {
+  for (const contact of contactResults) {
     switch (contact.status) {
       case 'success':
         completed++;
@@ -131,7 +181,7 @@ function summarizeBatch(batch: EnrichmentBatch): BatchSummary {
     }
   }
 
-  const total = batch.contacts.size;
+  const total = batch.contactIds.length;
   const successRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   const createdMs = new Date(batch.createdAt).getTime();
@@ -158,6 +208,58 @@ function summarizeBatch(batch: EnrichmentBatch): BatchSummary {
     durationMs,
   };
 }
+
+/**
+ * Fetch all contact enrichment results for a given batch from the database.
+ */
+async function fetchContactResultsForBatch(
+  batch: SerializedBatch,
+): Promise<ContactEnrichmentResult[]> {
+  if (batch.contactIds.length === 0) return [];
+
+  const contacts = await prisma.contact.findMany({
+    where: {
+      id: { in: batch.contactIds },
+      organizationId: batch.organizationId,
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      customFields: true,
+    },
+  });
+
+  const results: ContactEnrichmentResult[] = [];
+
+  for (const contact of contacts) {
+    const storedResult = readContactBatchResult(contact.customFields, batch.batchId);
+    if (storedResult) {
+      results.push(storedResult);
+    } else {
+      // Contact exists but has no stored result yet -- treat as pending
+      const name = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || 'Unknown';
+      results.push({
+        contactId: contact.id,
+        contactName: name,
+        contactEmail: contact.email,
+        status: 'pending',
+        fieldsEnriched: [],
+      });
+    }
+  }
+
+  return results;
+}
+
+// ---------------------------------------------------------------------------
+// In-memory cache (for active batch performance -- backed by DB)
+// ---------------------------------------------------------------------------
+
+// Light in-memory cache for active batch IDs to avoid DB reads on every
+// worker callback. The canonical data always lives in the database.
+const activeBatchCache = new Map<string, SerializedBatch>();
 
 // ---------------------------------------------------------------------------
 // Service functions
@@ -202,6 +304,7 @@ export async function startBulkEnrichment(
       firstName: true,
       lastName: true,
       email: true,
+      customFields: true,
     },
   });
 
@@ -209,29 +312,38 @@ export async function startBulkEnrichment(
   const batchId = uuidv4();
   const now = new Date().toISOString();
 
-  const contacts = new Map<string, ContactEnrichmentResult>();
+  const serializedBatch: SerializedBatch = {
+    batchId,
+    organizationId,
+    status: 'queued',
+    sources,
+    contactIds: contactRecords.map((c) => c.id),
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  // Store initial pending results on each contact
+  const contactResults: ContactEnrichmentResult[] = [];
   for (const contact of contactRecords) {
     const name = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || 'Unknown';
-    contacts.set(contact.id, {
+    const result: ContactEnrichmentResult = {
       contactId: contact.id,
       contactName: name,
       contactEmail: contact.email,
       status: 'pending',
       fieldsEnriched: [],
-    });
+    };
+    contactResults.push(result);
+    await writeContactBatchResult(contact.id, batchId, result);
   }
 
-  const batch: EnrichmentBatch = {
-    batchId,
-    organizationId,
-    status: 'queued',
-    sources,
-    contacts,
-    createdAt: now,
-    updatedAt: now,
-  };
+  // Persist the batch metadata
+  const existingBatches = await readBatches(organizationId);
+  existingBatches.unshift(serializedBatch);
+  await writeBatches(organizationId, existingBatches);
 
-  batchStore.set(batchId, batch);
+  // Cache for active tracking
+  activeBatchCache.set(batchId, serializedBatch);
 
   // Queue individual enrichment jobs via BullMQ
   const jobs = contactRecords.map((contact) => ({
@@ -247,8 +359,10 @@ export async function startBulkEnrichment(
 
   await enrichmentQueue.addBulk(jobs);
 
-  batch.status = 'processing';
-  batch.updatedAt = new Date().toISOString();
+  // Update status to processing
+  serializedBatch.status = 'processing';
+  serializedBatch.updatedAt = new Date().toISOString();
+  await updateBatchInDb(organizationId, serializedBatch);
 
   logger.info('Bulk enrichment batch started', {
     batchId,
@@ -257,64 +371,119 @@ export async function startBulkEnrichment(
     sources,
   });
 
-  return summarizeBatch(batch);
+  return summarizeFromResults(serializedBatch, contactResults);
+}
+
+/**
+ * Update a batch record in the organization settings.
+ */
+async function updateBatchInDb(
+  organizationId: string,
+  updatedBatch: SerializedBatch,
+): Promise<void> {
+  const batches = await readBatches(organizationId);
+  const idx = batches.findIndex((b) => b.batchId === updatedBatch.batchId);
+  if (idx >= 0) {
+    batches[idx] = updatedBatch;
+  } else {
+    batches.unshift(updatedBatch);
+  }
+  await writeBatches(organizationId, batches);
 }
 
 /**
  * Get the status of a specific batch.
  */
-export function getBatchStatus(batchId: string): BatchDetail | null {
-  const batch = batchStore.get(batchId);
+export async function getBatchStatus(batchId: string, organizationId?: string): Promise<BatchDetail | null> {
+  // Try cache first
+  let batch = activeBatchCache.get(batchId) || null;
+
+  // If not cached, search the database
+  if (!batch && organizationId) {
+    const batches = await readBatches(organizationId);
+    batch = batches.find((b) => b.batchId === batchId) || null;
+  }
+
+  // If still not found, scan all orgs with enrichmentBatches (fallback)
+  if (!batch) {
+    const orgs = await prisma.organization.findMany({
+      where: {
+        settings: {
+          path: ['enrichmentBatches'],
+          not: Prisma.AnyNull,
+        },
+      },
+      select: { id: true, settings: true },
+    });
+
+    for (const org of orgs) {
+      const settings = (org.settings as Record<string, unknown>) || {};
+      const orgBatches = (settings.enrichmentBatches as SerializedBatch[]) || [];
+      const found = orgBatches.find((b) => b.batchId === batchId);
+      if (found) {
+        batch = found;
+        break;
+      }
+    }
+  }
+
   if (!batch) return null;
 
-  const summary = summarizeBatch(batch);
-  const contacts = Array.from(batch.contacts.values());
+  const contactResults = await fetchContactResultsForBatch(batch);
+  const summary = summarizeFromResults(batch, contactResults);
 
   return {
     ...summary,
-    contacts,
+    contacts: contactResults,
   };
 }
 
 /**
  * List recent enrichment batches for an organization.
  */
-export function getBatchHistory(organizationId: string): BatchSummary[] {
-  const batches: BatchSummary[] = [];
+export async function getBatchHistory(organizationId: string): Promise<BatchSummary[]> {
+  const batches = await readBatches(organizationId);
+  const summaries: BatchSummary[] = [];
 
-  for (const batch of batchStore.values()) {
-    if (batch.organizationId === organizationId) {
-      batches.push(summarizeBatch(batch));
-    }
+  for (const batch of batches) {
+    const contactResults = await fetchContactResultsForBatch(batch);
+    summaries.push(summarizeFromResults(batch, contactResults));
   }
 
   // Sort by createdAt descending
-  batches.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  summaries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  return batches;
+  return summaries;
 }
 
 /**
  * Retry failed contacts in a batch by re-queuing them.
  */
-export async function retryFailedInBatch(batchId: string): Promise<BatchSummary | null> {
-  const batch = batchStore.get(batchId);
+export async function retryFailedInBatch(batchId: string, organizationId: string): Promise<BatchSummary | null> {
+  const batches = await readBatches(organizationId);
+  const batch = batches.find((b) => b.batchId === batchId);
   if (!batch) return null;
 
+  const contactResults = await fetchContactResultsForBatch(batch);
   const failedContacts: string[] = [];
 
-  for (const [contactId, result] of batch.contacts) {
+  for (const result of contactResults) {
     if (result.status === 'failed') {
-      result.status = 'pending';
-      result.error = undefined;
-      result.fieldsEnriched = [];
-      result.completedAt = undefined;
-      failedContacts.push(contactId);
+      // Reset to pending
+      const resetResult: ContactEnrichmentResult = {
+        ...result,
+        status: 'pending',
+        error: undefined,
+        fieldsEnriched: [],
+        completedAt: undefined,
+      };
+      await writeContactBatchResult(result.contactId, batchId, resetResult);
+      failedContacts.push(result.contactId);
     }
   }
 
   if (failedContacts.length === 0) {
-    return summarizeBatch(batch);
+    return summarizeFromResults(batch, contactResults);
   }
 
   // Re-queue failed contacts
@@ -334,117 +503,163 @@ export async function retryFailedInBatch(batchId: string): Promise<BatchSummary 
   batch.status = 'processing';
   batch.updatedAt = new Date().toISOString();
   batch.completedAt = undefined;
+  await updateBatchInDb(organizationId, batch);
+  activeBatchCache.set(batchId, batch);
 
   logger.info('Retrying failed contacts in batch', {
     batchId,
     retryCount: failedContacts.length,
   });
 
-  return summarizeBatch(batch);
+  const updatedResults = await fetchContactResultsForBatch(batch);
+  return summarizeFromResults(batch, updatedResults);
 }
 
 /**
  * Update a contact's enrichment status within a batch.
  * Called by the enrichment worker callback or via polling.
  */
-export function updateContactStatus(
+export async function updateContactStatus(
   batchId: string,
   contactId: string,
   status: ContactEnrichmentStatus,
   fieldsEnriched: string[] = [],
   error?: string,
-): void {
-  const batch = batchStore.get(batchId);
-  if (!batch) return;
+): Promise<void> {
+  // Read the contact to get current name/email for the result
+  const contact = await prisma.contact.findUnique({
+    where: { id: contactId },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      customFields: true,
+    },
+  });
 
-  const contact = batch.contacts.get(contactId);
   if (!contact) return;
 
-  contact.status = status;
-  contact.fieldsEnriched = fieldsEnriched;
-  contact.error = error;
-  if (status === 'success' || status === 'failed' || status === 'skipped') {
-    contact.completedAt = new Date().toISOString();
-  }
+  const existingResult = readContactBatchResult(contact.customFields, batchId);
+  const name = existingResult?.contactName
+    || [contact.firstName, contact.lastName].filter(Boolean).join(' ')
+    || 'Unknown';
 
-  batch.updatedAt = new Date().toISOString();
+  const updatedResult: ContactEnrichmentResult = {
+    contactId: contact.id,
+    contactName: name,
+    contactEmail: existingResult?.contactEmail ?? contact.email,
+    status,
+    fieldsEnriched,
+    error,
+    completedAt: (status === 'success' || status === 'failed' || status === 'skipped')
+      ? new Date().toISOString()
+      : undefined,
+  };
 
-  // Check if the batch is complete
-  let allDone = true;
-  for (const c of batch.contacts.values()) {
-    if (c.status === 'pending' || c.status === 'processing') {
-      allDone = false;
-      break;
+  await writeContactBatchResult(contactId, batchId, updatedResult);
+
+  // Check if batch is now complete and update batch status
+  const cached = activeBatchCache.get(batchId);
+  if (cached && cached.status === 'processing') {
+    const allResults = await fetchContactResultsForBatch(cached);
+    const allDone = allResults.every(
+      (c) => c.status === 'success' || c.status === 'failed' || c.status === 'skipped',
+    );
+
+    if (allDone) {
+      cached.status = 'completed';
+      cached.completedAt = new Date().toISOString();
+      cached.updatedAt = new Date().toISOString();
+      await updateBatchInDb(cached.organizationId, cached);
+      activeBatchCache.delete(batchId);
+
+      const succeeded = allResults.filter((c) => c.status === 'success').length;
+      logger.info('Enrichment batch completed', {
+        batchId: cached.batchId,
+        total: cached.contactIds.length,
+        succeeded,
+      });
+    } else {
+      cached.updatedAt = new Date().toISOString();
     }
-  }
-
-  if (allDone && batch.status === 'processing') {
-    batch.status = 'completed';
-    batch.completedAt = new Date().toISOString();
-
-    // Update stats accumulator
-    let succeeded = 0;
-    for (const c of batch.contacts.values()) {
-      if (c.status === 'success') succeeded++;
-    }
-    statsAccumulator.totalEnriched += succeeded;
-    statsAccumulator.totalAttempted += batch.contacts.size;
-    statsAccumulator.completedBatches++;
-    const durationMs = new Date(batch.completedAt).getTime() - new Date(batch.createdAt).getTime();
-    statsAccumulator.totalDurationMs += durationMs;
-
-    logger.info('Enrichment batch completed', {
-      batchId: batch.batchId,
-      total: batch.contacts.size,
-      succeeded,
-    });
   }
 }
 
 /**
  * Cancel an active batch (marks remaining pending contacts as skipped).
  */
-export function cancelBatch(batchId: string): BatchSummary | null {
-  const batch = batchStore.get(batchId);
+export async function cancelBatch(batchId: string, organizationId: string): Promise<BatchSummary | null> {
+  const batches = await readBatches(organizationId);
+  const batch = batches.find((b) => b.batchId === batchId);
   if (!batch) return null;
 
-  for (const contact of batch.contacts.values()) {
-    if (contact.status === 'pending' || contact.status === 'processing') {
-      contact.status = 'skipped';
-      contact.completedAt = new Date().toISOString();
+  const contactResults = await fetchContactResultsForBatch(batch);
+
+  for (const result of contactResults) {
+    if (result.status === 'pending' || result.status === 'processing') {
+      const cancelled: ContactEnrichmentResult = {
+        ...result,
+        status: 'skipped',
+        completedAt: new Date().toISOString(),
+      };
+      await writeContactBatchResult(result.contactId, batchId, cancelled);
     }
   }
 
   batch.status = 'cancelled';
   batch.completedAt = new Date().toISOString();
   batch.updatedAt = new Date().toISOString();
+  await updateBatchInDb(organizationId, batch);
+  activeBatchCache.delete(batchId);
 
   logger.info('Enrichment batch cancelled', { batchId });
 
-  return summarizeBatch(batch);
+  const updatedResults = await fetchContactResultsForBatch(batch);
+  return summarizeFromResults(batch, updatedResults);
 }
 
 /**
  * Get aggregated enrichment queue stats.
  */
-export function getEnrichmentQueueStats(): EnrichmentQueueStats {
+export async function getEnrichmentQueueStats(organizationId: string): Promise<EnrichmentQueueStats> {
+  const batches = await readBatches(organizationId);
+
+  let totalEnriched = 0;
+  let totalAttempted = 0;
+  let totalDurationMs = 0;
+  let completedBatchCount = 0;
   let activeBatches = 0;
-  for (const batch of batchStore.values()) {
+
+  for (const batch of batches) {
     if (batch.status === 'queued' || batch.status === 'processing') {
       activeBatches++;
     }
+
+    if (batch.status === 'completed') {
+      completedBatchCount++;
+      const contactResults = await fetchContactResultsForBatch(batch);
+      const succeeded = contactResults.filter((c) => c.status === 'success').length;
+      totalEnriched += succeeded;
+      totalAttempted += batch.contactIds.length;
+
+      if (batch.completedAt) {
+        const durationMs = new Date(batch.completedAt).getTime() - new Date(batch.createdAt).getTime();
+        totalDurationMs += durationMs;
+      }
+    }
   }
 
-  const avgTime = statsAccumulator.completedBatches > 0
-    ? Math.round(statsAccumulator.totalDurationMs / statsAccumulator.completedBatches)
+  const avgTime = completedBatchCount > 0
+    ? Math.round(totalDurationMs / completedBatchCount)
     : 0;
 
-  const successRate = statsAccumulator.totalAttempted > 0
-    ? Math.round((statsAccumulator.totalEnriched / statsAccumulator.totalAttempted) * 100)
+  const successRate = totalAttempted > 0
+    ? Math.round((totalEnriched / totalAttempted) * 100)
     : 0;
 
   return {
-    totalEnrichedAllTime: statsAccumulator.totalEnriched,
+    totalEnrichedAllTime: totalEnriched,
     overallSuccessRate: successRate,
     averageEnrichmentTimeMs: avgTime,
     activeBatches,
@@ -454,9 +669,10 @@ export function getEnrichmentQueueStats(): EnrichmentQueueStats {
 /**
  * Find a batch ID that contains a given contact ID (used by workers).
  */
-export function findBatchForContact(contactId: string): string | null {
-  for (const [batchId, batch] of batchStore.entries()) {
-    if (batch.status === 'processing' && batch.contacts.has(contactId)) {
+export async function findBatchForContact(contactId: string): Promise<string | null> {
+  // Check active cache first
+  for (const [batchId, batch] of activeBatchCache.entries()) {
+    if (batch.status === 'processing' && batch.contactIds.includes(contactId)) {
       return batchId;
     }
   }
