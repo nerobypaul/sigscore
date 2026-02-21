@@ -100,7 +100,7 @@ const whyChoose = [
 
 export default function CompareReodev() {
   useEffect(() => {
-    document.title = 'DevSignal vs Reo.dev - Developer Signal Intelligence';
+    document.title = 'DevSignal vs Reo.dev — Developer Signal Intelligence';
   }, []);
 
   return (

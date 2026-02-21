@@ -120,7 +120,7 @@ export default function IntegrationDetail() {
   const [testing, setTesting] = useState(false);
 
   useEffect(() => {
-    document.title = meta ? `${meta.name} Integration | DevSignal` : 'Integration | DevSignal';
+    document.title = meta ? `${meta.name} Integration — DevSignal` : 'Integration — DevSignal';
   }, [meta]);
 
   const loadData = useCallback(async () => {

@@ -101,7 +101,7 @@ const whyChoose = [
 
 export default function CompareCommonRoom() {
   useEffect(() => {
-    document.title = 'DevSignal vs Common Room - Developer Signal Intelligence';
+    document.title = 'DevSignal vs Common Room — Developer Signal Intelligence';
   }, []);
 
   return (

@@ -12,6 +12,9 @@ import { logger } from '../utils/logger';
 let _stripe: Stripe | null = null;
 
 function getStripe(): Stripe {
+  if (config.stripe.secretKey.startsWith('sk_test_placeholder') || !config.stripe.secretKey.startsWith('sk_')) {
+    throw new AppError('Billing is not configured yet. Please contact support.', 503);
+  }
   if (!_stripe) {
     _stripe = new Stripe(config.stripe.secretKey, {
       apiVersion: '2026-01-28.clover',
