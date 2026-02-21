@@ -15,6 +15,7 @@ import { logger } from '../utils/logger';
 import { scanOrganizationAnomalies } from '../services/signal-anomaly';
 import type { AnomalyResult } from '../services/signal-anomaly';
 import { notifyOrgUsers } from '../services/notifications';
+import { broadcastAnomaly } from '../services/websocket';
 
 const COOLDOWN_HOURS = 24;
 
@@ -137,6 +138,16 @@ export async function processAnomalyDetection(
     }
 
     await createAnomalyNotification(organizationId, anomaly);
+
+    // Broadcast anomaly over WebSocket (fire-and-forget)
+    broadcastAnomaly(organizationId, {
+      accountId: anomaly.accountId,
+      companyName: anomaly.accountName,
+      type: anomaly.anomalyType,
+      zScore: anomaly.zScore,
+      severity: anomaly.severity,
+    });
+
     notificationsCreated++;
   }
 

@@ -5,10 +5,16 @@ import { config } from '../config';
 import { logger } from '../utils/logger';
 import { prisma } from '../config/database';
 
+interface SubscriptionFilter {
+  events?: string[];      // event types to receive: 'signal', 'score', 'tier', 'anomaly', 'deal', 'contact'
+  accountIds?: string[];  // specific accounts to follow (empty = all)
+}
+
 interface AuthenticatedSocket extends WebSocket {
   userId: string;
   organizationId: string;
   isAlive: boolean;
+  subscriptionFilter?: SubscriptionFilter;
 }
 
 // Track connections by organizationId
@@ -82,6 +88,35 @@ export function initWebSocket(server: Server): void {
         socket.isAlive = true;
       });
 
+      // Handle incoming messages (subscription filtering)
+      socket.on('message', (raw) => {
+        try {
+          const msg = JSON.parse(String(raw));
+          if (msg.subscribe && typeof msg.subscribe === 'object') {
+            const filter: SubscriptionFilter = {};
+            if (Array.isArray(msg.subscribe.events)) {
+              filter.events = msg.subscribe.events.filter(
+                (e: unknown) => typeof e === 'string',
+              );
+            }
+            if (Array.isArray(msg.subscribe.accountIds)) {
+              filter.accountIds = msg.subscribe.accountIds.filter(
+                (id: unknown) => typeof id === 'string',
+              );
+            }
+            socket.subscriptionFilter = filter;
+            socket.send(JSON.stringify({ subscribed: true, filter }));
+            logger.debug('WebSocket subscription updated', {
+              userId: socket.userId,
+              orgId,
+              filter,
+            });
+          }
+        } catch {
+          // Ignore non-JSON or malformed messages
+        }
+      });
+
       socket.on('close', () => {
         orgConnections.get(orgId)?.delete(socket);
         if (orgConnections.get(orgId)?.size === 0) {
@@ -115,23 +150,86 @@ export function initWebSocket(server: Server): void {
   logger.info('WebSocket server initialized on /ws');
 }
 
-// Broadcast to all connections in an organization
+// ---------------------------------------------------------------------------
+// Event category mapping — maps event type prefixes to subscription categories
+// ---------------------------------------------------------------------------
+
+const EVENT_CATEGORY_MAP: Record<string, string> = {
+  'signal': 'signal',
+  'score': 'score',
+  'tier': 'tier',
+  'anomaly': 'anomaly',
+  'deal': 'deal',
+  'contact': 'contact',
+};
+
+/**
+ * Extract the subscription category from an event type string.
+ * e.g. 'signal.created' -> 'signal', 'score.changed' -> 'score'
+ */
+function getEventCategory(eventType: string): string {
+  const prefix = eventType.split('.')[0];
+  return EVENT_CATEGORY_MAP[prefix] || prefix;
+}
+
+/**
+ * Check whether a socket's subscription filter allows a given event.
+ * If the socket has no filter, all events pass (backward compatible).
+ */
+function matchesFilter(
+  socket: AuthenticatedSocket,
+  eventType: string,
+  accountId?: string,
+): boolean {
+  const filter = socket.subscriptionFilter;
+  if (!filter) return true; // no filter = receive everything
+
+  // Check event type filter
+  if (filter.events && filter.events.length > 0) {
+    const category = getEventCategory(eventType);
+    if (!filter.events.includes(category)) {
+      return false;
+    }
+  }
+
+  // Check account ID filter
+  if (filter.accountIds && filter.accountIds.length > 0 && accountId) {
+    if (!filter.accountIds.includes(accountId)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// Broadcast helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Broadcast to all connections in an organization, respecting subscription filters.
+ * @param accountId - Optional account ID for per-account filtering
+ */
 export function broadcast(
   organizationId: string,
-  event: { type: string; data: unknown }
+  event: { type: string; data: unknown },
+  accountId?: string,
 ): void {
   const connections = orgConnections.get(organizationId);
   if (!connections || connections.size === 0) return;
 
   const message = JSON.stringify(event);
   connections.forEach((socket) => {
-    if (socket.readyState === WebSocket.OPEN) {
+    if (socket.readyState === WebSocket.OPEN && matchesFilter(socket, event.type, accountId)) {
       socket.send(message);
     }
   });
 }
 
+// ---------------------------------------------------------------------------
 // Specific event broadcasters
+// ---------------------------------------------------------------------------
+
 export function broadcastDealUpdate(organizationId: string, deal: unknown): void {
   broadcast(organizationId, { type: 'deal.updated', data: deal });
 }
@@ -146,6 +244,64 @@ export function broadcastSignalCreated(organizationId: string, signal: unknown):
 
 export function broadcastContactCreated(organizationId: string, contact: unknown): void {
   broadcast(organizationId, { type: 'contact.created', data: contact });
+}
+
+// ---------------------------------------------------------------------------
+// Score, tier, and anomaly broadcasters
+// ---------------------------------------------------------------------------
+
+export function broadcastScoreChange(
+  organizationId: string,
+  data: {
+    accountId: string;
+    companyName: string;
+    oldScore: number;
+    newScore: number;
+    oldTier: string;
+    newTier: string;
+    delta: number;
+    scoredAt: string;
+  },
+): void {
+  broadcast(
+    organizationId,
+    { type: 'score.changed', data },
+    data.accountId,
+  );
+}
+
+export function broadcastTierChange(
+  organizationId: string,
+  data: {
+    accountId: string;
+    companyName: string;
+    oldTier: string;
+    newTier: string;
+    score: number;
+  },
+): void {
+  broadcast(
+    organizationId,
+    { type: 'tier.changed', data },
+    data.accountId,
+  );
+}
+
+export function broadcastAnomaly(
+  organizationId: string,
+  data: {
+    accountId: string;
+    companyName: string;
+    type: 'SPIKE' | 'DROP';
+    zScore: number;
+    severity: string;
+  },
+): void {
+  broadcast(
+    organizationId,
+    { type: 'anomaly.detected', data },
+    data.accountId,
+  );
 }
 
 export function getConnectionCount(organizationId?: string): number {
