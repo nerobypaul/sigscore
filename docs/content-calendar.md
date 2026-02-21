@@ -1,6 +1,6 @@
-# DevSignal 30-Day Content Calendar
+# Sigscore 30-Day Content Calendar
 
-Launch month plan. Goal: establish DevSignal as the developer pipeline intelligence category leader for devtool companies.
+Launch month plan. Goal: establish Sigscore as the developer pipeline intelligence category leader for devtool companies.
 
 ---
 
@@ -54,11 +54,11 @@ Launch month plan. Goal: establish DevSignal as the developer pipeline intellige
 
 ### Day 10 (Wednesday) -- Case Study Prep
 - **Reach out to 5 early users** for testimonial or case study
-- **Create:** "How [Company] uses DevSignal to track developer signals" template
+- **Create:** "How [Company] uses Sigscore to track developer signals" template
 - **Daily task:** Post a genuine product insight on LinkedIn (not promotional)
 
 ### Day 11 (Thursday) -- Technical Content
-- **Write:** Short technical walkthrough -- "Track npm downloads in 5 lines of code with DevSignal SDK"
+- **Write:** Short technical walkthrough -- "Track npm downloads in 5 lines of code with Sigscore SDK"
 - **Post on:** Dev.to, Twitter, relevant Discord servers
 - **Daily task:** Answer a question in a dev community with genuine helpfulness
 
@@ -124,7 +124,7 @@ Launch month plan. Goal: establish DevSignal as the developer pipeline intellige
 ### Day 24 (Wednesday) -- Outreach Round 2
 - **Send 15 emails** using Template 2 ("Your GitHub stars don't pay bills")
 - **Follow up** on Day 22 emails that got opens but no replies
-- **Daily task:** Post a "day in the life" of building DevSignal on Twitter
+- **Daily task:** Post a "day in the life" of building Sigscore on Twitter
 
 ### Day 25 (Thursday) -- Blog Post #2
 - **Publish:** "Why $48M in PLG CRM Startups Failed (and What We Built Instead)"

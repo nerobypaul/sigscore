@@ -42,18 +42,18 @@ export interface EmailDeliveryResult {
 type TransactionalEmailType = 'welcome' | 'password_reset' | 'invite' | 'sequence_step';
 
 const TRANSACTIONAL_SUBJECTS: Record<TransactionalEmailType, string> = {
-  welcome: 'Welcome to DevSignal',
+  welcome: 'Welcome to Sigscore',
   password_reset: 'Reset your password',
-  invite: 'You\'ve been invited to join {{orgName}} on DevSignal',
+  invite: 'You\'ve been invited to join {{orgName}} on Sigscore',
   sequence_step: '{{subject}}',
 };
 
 const TRANSACTIONAL_TEMPLATES: Record<TransactionalEmailType, string> = {
   welcome: `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>Welcome to DevSignal</h1>
+      <h1>Welcome to Sigscore</h1>
       <p>Hi {{name}},</p>
-      <p>Thanks for signing up! DevSignal helps you capture developer signals and turn them into pipeline.</p>
+      <p>Thanks for signing up! Sigscore helps you capture developer signals and turn them into pipeline.</p>
       <p>Here are your next steps:</p>
       <ul>
         <li>Connect your first signal source (GitHub, npm, or PyPI)</li>
@@ -61,7 +61,7 @@ const TRANSACTIONAL_TEMPLATES: Record<TransactionalEmailType, string> = {
         <li>Set up your first workflow automation</li>
       </ul>
       <p>If you have any questions, just reply to this email.</p>
-      <p>The DevSignal Team</p>
+      <p>The Sigscore Team</p>
     </div>
   `,
   password_reset: `
@@ -71,16 +71,16 @@ const TRANSACTIONAL_TEMPLATES: Record<TransactionalEmailType, string> = {
       <p>We received a request to reset your password. Click the link below to set a new one:</p>
       <p><a href="{{resetUrl}}" style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset Password</a></p>
       <p>This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
-      <p>The DevSignal Team</p>
+      <p>The Sigscore Team</p>
     </div>
   `,
   invite: `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
       <h1>You've been invited!</h1>
       <p>Hi {{name}},</p>
-      <p>{{inviterName}} has invited you to join <strong>{{orgName}}</strong> on DevSignal.</p>
+      <p>{{inviterName}} has invited you to join <strong>{{orgName}}</strong> on Sigscore.</p>
       <p><a href="{{inviteUrl}}" style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Accept Invitation</a></p>
-      <p>The DevSignal Team</p>
+      <p>The Sigscore Team</p>
     </div>
   `,
   sequence_step: '{{body}}',

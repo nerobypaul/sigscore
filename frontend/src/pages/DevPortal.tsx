@@ -339,12 +339,12 @@ const API_CATEGORIES: EndpointCategory[] = [
         path: '/api/v1/webhooks',
         description: 'Register a new webhook endpoint (HTTPS only)',
         request: JSON.stringify({
-          url: 'https://your-app.com/webhooks/devsignal',
+          url: 'https://your-app.com/webhooks/sigscore',
           events: ['signal.created', 'deal.stage_changed', 'score.changed'],
         }, null, 2),
         response: JSON.stringify({
           id: 'wh_abc123',
-          url: 'https://your-app.com/webhooks/devsignal',
+          url: 'https://your-app.com/webhooks/sigscore',
           events: ['signal.created', 'deal.stage_changed', 'score.changed'],
           secret: 'whsec_xxxxxxxxxxxxxxxxxxxxxxxx',
           active: true,
@@ -364,7 +364,7 @@ const SDK_RESOURCES: SdkResourceDoc[] = [
   {
     name: 'SignalsResource',
     accessor: 'ds.signals',
-    description: 'Ingest and query product usage signals. Signals are the core of DevSignal\'s PLG intelligence.',
+    description: 'Ingest and query product usage signals. Signals are the core of Sigscore\'s PLG intelligence.',
     methods: [
       {
         name: 'ingest',
@@ -605,27 +605,27 @@ console.log(score.tier); // 'HOT' | 'WARM' | 'COLD' | 'INACTIVE'`,
 // ---------------------------------------------------------------------------
 
 const QUICKSTART_INSTALL: Record<Language, string> = {
-  node: 'npm install @devsignal/node',
-  python: 'pip install devsignal',
+  node: 'npm install @sigscore/node',
+  python: 'pip install sigscore',
   curl: '# No installation needed -- use curl directly',
-  go: 'go get github.com/devsignal/devsignal-go',
+  go: 'go get github.com/sigscore/sigscore-go',
 };
 
 const QUICKSTART_INIT: Record<Language, string> = {
-  node: `import { DevSignal } from '@devsignal/node';
+  node: `import { Sigscore } from '@sigscore/node';
 
-const ds = new DevSignal({
-  apiKey: process.env.DEVSIGNAL_API_KEY,  // ds_live_xxx...
+const ds = new Sigscore({
+  apiKey: process.env.SIGSCORE_API_KEY,  // ds_live_xxx...
 });`,
-  python: `from devsignal import DevSignal
+  python: `from sigscore import Sigscore
 
-ds = DevSignal(api_key=os.environ["DEVSIGNAL_API_KEY"])`,
+ds = Sigscore(api_key=os.environ["SIGSCORE_API_KEY"])`,
   curl: `# Set your API key as an environment variable
-export DEVSIGNAL_API_KEY="ds_live_xxx..."
-export DEVSIGNAL_ORG_ID="org_xxx..."`,
-  go: `import "github.com/devsignal/devsignal-go"
+export SIGSCORE_API_KEY="ds_live_xxx..."
+export SIGSCORE_ORG_ID="org_xxx..."`,
+  go: `import "github.com/sigscore/sigscore-go"
 
-ds := devsignal.NewClient(os.Getenv("DEVSIGNAL_API_KEY"))`,
+ds := sigscore.NewClient(os.Getenv("SIGSCORE_API_KEY"))`,
 };
 
 const QUICKSTART_SIGNAL: Record<Language, string> = {
@@ -651,9 +651,9 @@ ds.signals.ingest(
     },
     actor_id="contact_abc123",
 )`,
-  curl: `curl -X POST https://devsignal.dev/api/v1/signals \\
-  -H "Authorization: Bearer $DEVSIGNAL_API_KEY" \\
-  -H "X-Organization-Id: $DEVSIGNAL_ORG_ID" \\
+  curl: `curl -X POST https://sigscore.dev/api/v1/signals \\
+  -H "Authorization: Bearer $SIGSCORE_API_KEY" \\
+  -H "X-Organization-Id: $SIGSCORE_ORG_ID" \\
   -H "Content-Type: application/json" \\
   -d '{
     "type": "feature_used",
@@ -666,7 +666,7 @@ ds.signals.ingest(
     "actorId": "contact_abc123"
   }'`,
   go: `// Track a product usage signal
-err := ds.Signals.Ingest(ctx, &devsignal.SignalInput{
+err := ds.Signals.Ingest(ctx, &sigscore.SignalInput{
     Type:     "feature_used",
     SourceID: "web-app",
     Metadata: map[string]interface{}{
@@ -1187,32 +1187,32 @@ function SdkTab() {
       <div>
         <h2 className="text-3xl font-bold text-white tracking-tight">SDK Documentation</h2>
         <p className="mt-3 text-gray-400 text-lg leading-relaxed max-w-2xl">
-          The <code className="text-indigo-400 text-sm bg-gray-800 px-1.5 py-0.5 rounded">@devsignal/node</code> TypeScript
-          SDK provides a type-safe, zero-dependency client for the DevSignal API.
+          The <code className="text-indigo-400 text-sm bg-gray-800 px-1.5 py-0.5 rounded">@sigscore/node</code> TypeScript
+          SDK provides a type-safe, zero-dependency client for the Sigscore API.
         </p>
       </div>
 
       {/* Installation */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-white">Installation</h3>
-        <CodeBlock code="npm install @devsignal/node" language="bash" />
+        <CodeBlock code="npm install @sigscore/node" language="bash" />
       </div>
 
       {/* Configuration */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-white">Configuration</h3>
         <CodeBlock
-          code={`import { DevSignal } from '@devsignal/node';
+          code={`import { Sigscore } from '@sigscore/node';
 
-const ds = new DevSignal({
+const ds = new Sigscore({
   apiKey: 'ds_live_xxxxxxxxxxxx',   // Required. Your API key.
-  baseUrl: 'https://devsignal.dev', // Optional. Defaults to https://api.devsignal.dev
+  baseUrl: 'https://sigscore.dev', // Optional. Defaults to https://api.sigscore.dev
 });`}
           language="typescript"
         />
 
         <div className="rounded-lg border border-gray-700/50 bg-gray-800/30 p-5">
-          <h4 className="text-sm font-semibold text-gray-200 mb-3">DevSignalOptions</h4>
+          <h4 className="text-sm font-semibold text-gray-200 mb-3">SigscoreOptions</h4>
           <div className="space-y-2">
             <div className="flex items-start gap-3">
               <code className="text-xs font-mono text-indigo-400 bg-gray-900/60 px-2 py-0.5 rounded mt-0.5 flex-shrink-0">apiKey</code>
@@ -1227,7 +1227,7 @@ const ds = new DevSignal({
               <div>
                 <span className="text-xs text-gray-600 font-medium">optional</span>
                 <span className="text-xs text-gray-500 ml-2">string</span>
-                <p className="text-xs text-gray-400 mt-0.5">Base URL of the DevSignal API. Defaults to https://api.devsignal.dev</p>
+                <p className="text-xs text-gray-400 mt-0.5">Base URL of the Sigscore API. Defaults to https://api.sigscore.dev</p>
               </div>
             </div>
           </div>
@@ -1299,16 +1299,16 @@ const ds = new DevSignal({
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-white">Error Handling</h3>
         <p className="text-sm text-gray-400">
-          All API errors throw a <code className="text-indigo-400 text-xs bg-gray-800 px-1.5 py-0.5 rounded">DevSignalError</code>{' '}
+          All API errors throw a <code className="text-indigo-400 text-xs bg-gray-800 px-1.5 py-0.5 rounded">SigscoreError</code>{' '}
           with the HTTP status code, error message, and optional error code.
         </p>
         <CodeBlock
-          code={`import { DevSignal, DevSignalError } from '@devsignal/node';
+          code={`import { Sigscore, SigscoreError } from '@sigscore/node';
 
 try {
   await ds.contacts.get('nonexistent_id');
 } catch (error) {
-  if (error instanceof DevSignalError) {
+  if (error instanceof SigscoreError) {
     console.error(error.message);  // "Contact not found"
     console.error(error.status);   // 404
     console.error(error.code);     // "NOT_FOUND"
@@ -1318,7 +1318,7 @@ try {
         />
 
         <div className="rounded-lg border border-gray-700/50 bg-gray-800/30 p-5">
-          <h4 className="text-sm font-semibold text-gray-200 mb-3">DevSignalError Properties</h4>
+          <h4 className="text-sm font-semibold text-gray-200 mb-3">SigscoreError Properties</h4>
           <div className="space-y-2">
             <div className="flex items-start gap-3">
               <code className="text-xs font-mono text-indigo-400 bg-gray-900/60 px-2 py-0.5 rounded mt-0.5 flex-shrink-0">message</code>
@@ -1363,8 +1363,8 @@ try {
   PaginatedResponse,
   PaginationMeta,
   BatchIngestResult,
-  DevSignalOptions,
-} from '@devsignal/node';`}
+  SigscoreOptions,
+} from '@sigscore/node';`}
           language="typescript"
         />
       </div>
@@ -1382,7 +1382,7 @@ function WebhooksTab() {
       <div>
         <h2 className="text-3xl font-bold text-white tracking-tight">Webhooks</h2>
         <p className="mt-3 text-gray-400 text-lg leading-relaxed max-w-2xl">
-          Receive real-time notifications when events occur in DevSignal.
+          Receive real-time notifications when events occur in Sigscore.
           Webhooks are delivered as HTTP POST requests to your endpoint.
         </p>
       </div>
@@ -1395,12 +1395,12 @@ function WebhooksTab() {
           Your endpoint must be a publicly accessible HTTPS URL.
         </p>
         <CodeBlock
-          code={`curl -X POST https://devsignal.dev/api/v1/webhooks \\
+          code={`curl -X POST https://sigscore.dev/api/v1/webhooks \\
   -H "Authorization: Bearer ds_live_YOUR_KEY" \\
   -H "X-Organization-Id: YOUR_ORG_ID" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "url": "https://your-app.com/webhooks/devsignal",
+    "url": "https://your-app.com/webhooks/sigscore",
     "events": ["signal.created", "deal.stage_changed", "score.changed"]
   }'`}
           language="bash"
@@ -1468,7 +1468,7 @@ function WebhooksTab() {
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-white">Signature Verification</h3>
         <p className="text-sm text-gray-400">
-          Every webhook delivery includes an <code className="text-indigo-400 text-xs bg-gray-800 px-1.5 py-0.5 rounded">X-DevSignal-Signature</code> header
+          Every webhook delivery includes an <code className="text-indigo-400 text-xs bg-gray-800 px-1.5 py-0.5 rounded">X-Sigscore-Signature</code> header
           containing an HMAC-SHA256 signature of the request body, computed using your webhook secret.
         </p>
 
@@ -1500,8 +1500,8 @@ function verifyWebhook(payload: string, signature: string, secret: string): bool
 }
 
 // Express middleware example
-app.post('/webhooks/devsignal', express.raw({ type: 'application/json' }), (req, res) => {
-  const signature = req.headers['x-devsignal-signature'] as string;
+app.post('/webhooks/sigscore', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['x-sigscore-signature'] as string;
   const isValid = verifyWebhook(req.body.toString(), signature, WEBHOOK_SECRET);
 
   if (!isValid) {
@@ -1561,7 +1561,7 @@ function AuthTab() {
       <div>
         <h2 className="text-3xl font-bold text-white tracking-tight">Authentication</h2>
         <p className="mt-3 text-gray-400 text-lg leading-relaxed max-w-2xl">
-          DevSignal supports multiple authentication methods for different use cases.
+          Sigscore supports multiple authentication methods for different use cases.
           Choose the method that best fits your integration.
         </p>
       </div>
@@ -1582,7 +1582,7 @@ function AuthTab() {
         </p>
         <CodeBlock
           code={`# Pass the API key in the Authorization header
-curl https://devsignal.dev/api/v1/signals \\
+curl https://sigscore.dev/api/v1/signals \\
   -H "Authorization: Bearer ds_live_a1b2c3d4e5f6g7h8" \\
   -H "X-Organization-Id: org_abc123"`}
           language="bash"
@@ -1629,7 +1629,7 @@ curl https://devsignal.dev/api/v1/signals \\
         </p>
         <CodeBlock
           code={`# 1. Login to get tokens
-curl -X POST https://devsignal.dev/api/v1/auth/login \\
+curl -X POST https://sigscore.dev/api/v1/auth/login \\
   -H "Content-Type: application/json" \\
   -d '{ "email": "you@company.com", "password": "your-password" }'
 
@@ -1637,12 +1637,12 @@ curl -X POST https://devsignal.dev/api/v1/auth/login \\
 # { "accessToken": "eyJhbG...", "refreshToken": "eyJhbG..." }
 
 # 2. Use the access token
-curl https://devsignal.dev/api/v1/contacts \\
+curl https://sigscore.dev/api/v1/contacts \\
   -H "Authorization: Bearer eyJhbG..." \\
   -H "X-Organization-Id: org_abc123"
 
 # 3. Refresh when expired (access tokens expire in 15 minutes)
-curl -X POST https://devsignal.dev/api/v1/auth/refresh \\
+curl -X POST https://sigscore.dev/api/v1/auth/refresh \\
   -H "Content-Type: application/json" \\
   -d '{ "refreshToken": "eyJhbG..." }'`}
           language="bash"
@@ -1656,7 +1656,7 @@ curl -X POST https://devsignal.dev/api/v1/auth/refresh \\
           <h3 className="text-lg font-semibold text-white">Organization Context</h3>
         </div>
         <p className="text-sm text-gray-400">
-          DevSignal is multi-tenant. Every API request (except auth endpoints) requires
+          Sigscore is multi-tenant. Every API request (except auth endpoints) requires
           the <code className="text-indigo-400 text-xs bg-gray-800 px-1.5 py-0.5 rounded">X-Organization-Id</code> header
           for proper data isolation.
         </p>
@@ -1791,7 +1791,7 @@ export default function DevPortal() {
   const [searchQuery, setSearchQuery] = useState('');
   const mainRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { document.title = 'Developer Portal — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Developer Portal — Sigscore'; }, []);
 
   // Scroll to top when changing tabs
   useEffect(() => {
@@ -1872,7 +1872,7 @@ export default function DevPortal() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
                 </svg>
               </div>
-              <span className="text-base font-bold tracking-tight text-white">DevSignal</span>
+              <span className="text-base font-bold tracking-tight text-white">Sigscore</span>
               <span className="text-xs text-gray-500 font-medium ml-1 hidden sm:inline">Developers</span>
             </Link>
 
@@ -1926,7 +1926,7 @@ export default function DevPortal() {
 
           <div className="flex items-center gap-3">
             <a
-              href="https://github.com/nerobypaul/headless-crm"
+              href="https://github.com/nerobypaul/sigscore"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-white transition-colors p-1.5"
@@ -2013,7 +2013,7 @@ export default function DevPortal() {
                 Swagger / OpenAPI
               </a>
               <a
-                href="https://www.npmjs.com/package/@devsignal/node"
+                href="https://www.npmjs.com/package/@sigscore/node"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-md transition-colors"
@@ -2042,7 +2042,7 @@ export default function DevPortal() {
                   <span className="text-xs font-medium text-emerald-400">All systems operational</span>
                 </div>
                 <p className="text-[10px] text-gray-500">
-                  Base URL: <code className="text-gray-400">devsignal.dev</code>
+                  Base URL: <code className="text-gray-400">sigscore.dev</code>
                 </p>
                 <p className="text-[10px] text-gray-500 mt-0.5">
                   API version: <code className="text-gray-400">v1</code>
@@ -2111,7 +2111,7 @@ export default function DevPortal() {
               </div>
 
               <div className="mt-8 flex items-center justify-between text-xs text-gray-600">
-                <span>DevSignal -- Built for devtool PLG teams</span>
+                <span>Sigscore -- Built for devtool PLG teams</span>
                 <div className="flex items-center gap-4">
                   <Link to="/" className="hover:text-gray-400 transition-colors">Home</Link>
                   <Link to="/pricing" className="hover:text-gray-400 transition-colors">Pricing</Link>

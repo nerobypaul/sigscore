@@ -9,7 +9,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
  * localStorage (same keys the app already uses) and redirect to the dashboard.
  */
 export default function OAuthCallback() {
-  useEffect(() => { document.title = 'Signing In — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Signing In — Sigscore'; }, []);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);

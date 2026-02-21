@@ -173,13 +173,13 @@ export async function generateExport(jobData: DataExportJobData): Promise<Export
   const orgName = org?.name ?? 'Unknown';
 
   // Create a temp directory for the export
-  const exportDir = path.join(os.tmpdir(), 'devsignal-exports');
+  const exportDir = path.join(os.tmpdir(), 'sigscore-exports');
   if (!fs.existsSync(exportDir)) {
     fs.mkdirSync(exportDir, { recursive: true });
   }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const fileName = `devsignal-export-${timestamp}.${format === 'csv' ? 'csv' : 'json'}`;
+  const fileName = `sigscore-export-${timestamp}.${format === 'csv' ? 'csv' : 'json'}`;
   const filePath = path.join(exportDir, fileName);
 
   const recordCounts: Record<string, number> = {};

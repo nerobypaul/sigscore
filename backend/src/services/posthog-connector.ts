@@ -644,7 +644,7 @@ function getPostHogSource(organizationId: string) {
 }
 
 function buildWebhookUrl(sourceId: string): string {
-  const baseUrl = process.env.APP_URL || process.env.BASE_URL || 'https://devsignal.dev';
+  const baseUrl = process.env.APP_URL || process.env.BASE_URL || 'https://sigscore.dev';
   return `${baseUrl}/api/v1/webhooks/posthog/${sourceId}`;
 }
 

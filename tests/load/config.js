@@ -1,5 +1,5 @@
 /**
- * Load Test Configuration for DevSignal — Show HN Traffic Simulation
+ * Load Test Configuration for Sigscore — Show HN Traffic Simulation
  *
  * Models a realistic Hacker News front-page traffic pattern:
  * - 2,000-5,000 unique visitors over 4 hours

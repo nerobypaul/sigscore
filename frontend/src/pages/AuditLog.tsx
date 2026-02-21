@@ -154,7 +154,7 @@ function ChangesDiff({
 // ---------------------------------------------------------------------------
 
 export default function AuditLog() {
-  useEffect(() => { document.title = 'Audit Log — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Audit Log — Sigscore'; }, []);
   const toast = useToast();
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);

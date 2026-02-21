@@ -609,7 +609,7 @@ function ApiKeysTab() {
         <div>
           <h3 className="text-sm font-medium text-gray-900">Your API Keys</h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            Manage keys for programmatic access to the DevSignal API.
+            Manage keys for programmatic access to the Sigscore API.
           </p>
         </div>
         <button
@@ -642,7 +642,7 @@ function ApiKeysTab() {
             No API keys yet
           </h4>
           <p className="text-sm text-gray-500 mb-4">
-            Create an API key to start integrating with the DevSignal API.
+            Create an API key to start integrating with the Sigscore API.
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -997,7 +997,7 @@ function WebhooksTab() {
               type="url"
               value={newUrl}
               onChange={(e) => setNewUrl(e.target.value)}
-              placeholder="https://example.com/webhooks/devsignal"
+              placeholder="https://example.com/webhooks/sigscore"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
@@ -1132,17 +1132,17 @@ function SignalSourcesTab() {
           </h4>
           <p className="text-sm text-gray-500 mb-4 max-w-sm mx-auto">
             Signal sources are configured through the API or SDK. Use the
-            DevSignal SDK to start sending signals from your application.
+            Sigscore SDK to start sending signals from your application.
           </p>
           <div className="rounded-lg bg-gray-50 border border-gray-100 p-4 text-left max-w-sm mx-auto">
             <p className="text-xs font-medium text-gray-700 mb-2">
               Quick start with the SDK:
             </p>
             <pre className="text-xs text-gray-600 font-mono whitespace-pre overflow-x-auto">
-{`npm install @devsignal/node
+{`npm install @sigscore/node
 
-import { DevSignal } from '@devsignal/node';
-const ds = new DevSignal({ apiKey: '...' });
+import { Sigscore } from '@sigscore/node';
+const ds = new Sigscore({ apiKey: '...' });
 
 await ds.signal({
   type: 'app.signup',
@@ -1479,7 +1479,7 @@ function SlackTab() {
             <p className="text-xs text-gray-400 mt-3">
               For interactive buttons (Claim, Snooze), also enable{' '}
               <strong>Interactivity</strong> in your Slack app and set the Request
-              URL to your DevSignal backend:{' '}
+              URL to your Sigscore backend:{' '}
               <code className="text-xs">
                 https://your-domain.com/api/v1/webhooks/slack/interactions
               </code>
@@ -1620,7 +1620,7 @@ function SlackTab() {
                     </div>
                   </div>
                   <p className="text-[10px] text-gray-400">
-                    DevSignal &bull; 2024-01-15
+                    Sigscore &bull; 2024-01-15
                   </p>
                 </div>
               </div>
@@ -1769,7 +1769,7 @@ function SegmentTab() {
                 </h2>
                 <p className="text-sm text-gray-500">
                   Stream identify, track, group, and page events from Segment
-                  into DevSignal.
+                  into Sigscore.
                 </p>
               </div>
             </div>
@@ -1803,7 +1803,7 @@ function SegmentTab() {
               <ol className="text-sm text-gray-600 space-y-1.5 list-decimal list-inside">
                 <li>Click "Connect Segment" to generate a webhook URL and shared secret.</li>
                 <li>In your Segment workspace, add a new Webhook destination.</li>
-                <li>Paste the webhook URL and shared secret from DevSignal.</li>
+                <li>Paste the webhook URL and shared secret from Sigscore.</li>
                 <li>
                   Segment will start streaming events -- identify calls create
                   contacts, track calls create signals, group calls create
@@ -1964,7 +1964,7 @@ function SegmentTab() {
               <li>Set the Shared Secret for HMAC signature verification.</li>
               <li>Enable the destination and choose which sources to connect.</li>
               <li>
-                DevSignal will automatically create contacts from identify calls,
+                Sigscore will automatically create contacts from identify calls,
                 signals from track calls, and companies from group calls.
               </li>
             </ol>
@@ -2177,7 +2177,7 @@ function HubSpotTab() {
               </h3>
               <ol className="text-sm text-gray-600 space-y-1.5 list-decimal list-inside">
                 <li>Connect using your HubSpot OAuth tokens (Private App or OAuth flow).</li>
-                <li>DevSignal auto-creates custom properties (PQA Score, Signal Count, etc.) in HubSpot.</li>
+                <li>Sigscore auto-creates custom properties (PQA Score, Signal Count, etc.) in HubSpot.</li>
                 <li>Contacts, companies, deals, and signals sync to HubSpot every 15 minutes.</li>
                 <li>Sales reps see enriched developer data directly in HubSpot records.</li>
               </ol>
@@ -2244,7 +2244,7 @@ function HubSpotTab() {
                 HubSpot Sync
               </h2>
               <p className="text-sm text-gray-500">
-                Bidirectional sync pushes DevSignal data into HubSpot.
+                Bidirectional sync pushes Sigscore data into HubSpot.
               </p>
             </div>
             <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700 border border-green-200">
@@ -2716,7 +2716,7 @@ function SalesforceTab() {
                 Salesforce Sync
               </h2>
               <p className="text-sm text-gray-500">
-                Bidirectional sync pushes DevSignal data into Salesforce.
+                Bidirectional sync pushes Sigscore data into Salesforce.
               </p>
             </div>
             <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700 border border-green-200">
@@ -3540,7 +3540,7 @@ function TwitterTab() {
             <li>Subscribe to at least the Basic tier ($100/mo) for search access</li>
             <li>Generate a Bearer Token under &quot;Keys and Tokens&quot;</li>
             <li>Paste the Bearer token above and add keywords to track</li>
-            <li>DevSignal will check for new mentions every 30 minutes</li>
+            <li>Sigscore will check for new mentions every 30 minutes</li>
           </ol>
         </div>
       </div>
@@ -3689,7 +3689,7 @@ function TwitterTab() {
         {/* Info */}
         <div className="rounded-lg bg-gray-50 border border-gray-100 p-4 mt-4">
           <p className="text-xs text-gray-500">
-            Automatic sync runs every 30 minutes. DevSignal searches for tweets
+            Automatic sync runs every 30 minutes. Sigscore searches for tweets
             mentioning your keywords, classifies sentiment (positive/negative/neutral),
             and creates signals for each mention. Signal types include: mentions,
             questions, complaints, and praise.
@@ -4105,7 +4105,7 @@ function AIConfigTab() {
                 AI Configuration
               </h2>
               <p className="text-sm text-gray-500">
-                DevSignal uses Claude AI to generate account briefs, next-best-actions, and contact enrichment. Add your Anthropic API key to enable these features. You can get one at{' '}
+                Sigscore uses Claude AI to generate account briefs, next-best-actions, and contact enrichment. Add your Anthropic API key to enable these features. You can get one at{' '}
                 <a
                   href="https://console.anthropic.com"
                   target="_blank"
@@ -4199,7 +4199,7 @@ function AIConfigTab() {
           </li>
         </ul>
         <p className="text-xs text-purple-700 mt-3 pt-3 border-t border-purple-200">
-          <strong>Note:</strong> You pay Anthropic directly for API usage. DevSignal does not charge for AI features.
+          <strong>Note:</strong> You pay Anthropic directly for API usage. Sigscore does not charge for AI features.
         </p>
       </div>
     </div>
@@ -4447,7 +4447,7 @@ function ToggleSwitch({
 // ---------------------------------------------------------------------------
 
 export default function Settings() {
-  useEffect(() => { document.title = 'Settings — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Settings — Sigscore'; }, []);
 
   // Support deep-linking via ?tab=hubspot (used by IntegrationDetail "Configure" CTA)
   const initialTab = (() => {
@@ -4975,7 +4975,7 @@ function PostHogTab() {
           <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
             <li>Enter your PostHog host, project ID, and API key</li>
             <li>Choose which event types to import (pageviews, signups, feature usage, etc.)</li>
-            <li>DevSignal syncs events hourly via the PostHog API</li>
+            <li>Sigscore syncs events hourly via the PostHog API</li>
             <li>Each event creates a signal with user and session metadata</li>
             <li>Identity resolution links PostHog users to your existing contacts via email</li>
             <li>Optionally set up a PostHog webhook for real-time signal ingestion</li>
@@ -5301,7 +5301,7 @@ function StackOverflowTab() {
           <h4 className="text-sm font-medium text-gray-700 mb-3">How it works</h4>
           <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
             <li>Enter the Stack Overflow tags associated with your product</li>
-            <li>DevSignal syncs questions and answers matching those tags every 6 hours</li>
+            <li>Sigscore syncs questions and answers matching those tags every 6 hours</li>
             <li>Each question and answer creates a signal with metadata (score, views, answers)</li>
             <li>Identity resolution links Stack Overflow users to your existing contacts</li>
             <li>Optionally register for a free API key to increase the daily request quota</li>
@@ -5741,7 +5741,7 @@ function LinkedInTab() {
               <li>Enter your LinkedIn company page URL to connect</li>
               <li>Manually import employees or contacts who interact with your page</li>
               <li>Use the webhook URL to receive real-time events from LinkedIn integrations (Zapier, Make, etc.)</li>
-              <li>DevSignal creates signals for page views, post engagement, follows, and employee activity</li>
+              <li>Sigscore creates signals for page views, post engagement, follows, and employee activity</li>
             </ol>
           </div>
         </div>
@@ -6276,7 +6276,7 @@ function RedditTab() {
           <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
             <li>Enter your product name(s) as keywords to search across Reddit</li>
             <li>Optionally add specific subreddits to monitor for keyword mentions</li>
-            <li>DevSignal syncs matching posts every 2 hours using the Reddit public JSON API</li>
+            <li>Sigscore syncs matching posts every 2 hours using the Reddit public JSON API</li>
             <li>Each post creates a signal classified as question, showcase, or discussion</li>
             <li>Identity resolution links Reddit usernames to your existing contacts</li>
             <li>No Reddit account or API key required -- uses public data only</li>
@@ -7215,7 +7215,7 @@ function ZendeskTab() {
           <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
             <li>Enter your Zendesk subdomain, admin email, and API token</li>
             <li>Choose which ticket events to track</li>
-            <li>DevSignal polls Zendesk for ticket updates and creates signals</li>
+            <li>Sigscore polls Zendesk for ticket updates and creates signals</li>
             <li>Optionally, copy the webhook URL into Zendesk triggers for real-time events</li>
             <li>Identity resolution links ticket requesters to your existing contacts</li>
             <li>Use ticket signals to detect churn risk, support burden, and expansion opportunities</li>

@@ -18,7 +18,7 @@ const SIZE_LABELS: Record<string, string> = {
 };
 
 export default function Companies() {
-  useEffect(() => { document.title = 'Companies — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Companies — Sigscore'; }, []);
   const toast = useToast();
   const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);

@@ -61,7 +61,7 @@ export default function Integrations() {
   const [activeCategory, setActiveCategory] = useState<IntegrationCategory | 'All'>('All');
 
   useEffect(() => {
-    document.title = 'Integrations — DevSignal';
+    document.title = 'Integrations — Sigscore';
   }, []);
 
   useEffect(() => {

@@ -48,7 +48,7 @@ export interface IntercomStatus {
 }
 
 /**
- * Intercom webhook topic to DevSignal signal type mapping.
+ * Intercom webhook topic to Sigscore signal type mapping.
  */
 const TOPIC_MAP: Record<string, IntercomTrackedEvent> = {
   'conversation.user.created': 'intercom_conversation_open',

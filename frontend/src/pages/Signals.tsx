@@ -55,7 +55,7 @@ function timeAgo(date: string): string {
 }
 
 export default function Signals() {
-  useEffect(() => { document.title = 'Signals — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Signals — Sigscore'; }, []);
   const toast = useToast();
 
   const [signals, setSignals] = useState<Signal[]>([]);

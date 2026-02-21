@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 
-const DISMISSED_KEY = 'devsignal_onboarding_checklist_dismissed';
+const DISMISSED_KEY = 'sigscore_onboarding_checklist_dismissed';
 
 interface OnboardingStep {
   id: string;
@@ -226,7 +226,7 @@ export default function OnboardingChecklist() {
                 </span>
               </div>
               <p className="text-xs text-gray-500 mt-0.5">
-                Complete these steps to get the most out of DevSignal
+                Complete these steps to get the most out of Sigscore
               </p>
             </div>
           </div>

@@ -7,7 +7,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '';
 function humanizeOAuthError(raw: string | null): string {
   if (!raw) return '';
   const map: Record<string, string> = {
-    access_denied: 'You denied access. Please try again and authorize DevSignal.',
+    access_denied: 'You denied access. Please try again and authorize Sigscore.',
     server_error: 'The authentication provider encountered an error. Please try again later.',
     user_exists: 'An account with this email already exists. Try signing in instead.',
     no_email: 'We could not retrieve your email from the provider. Please sign up with email.',
@@ -47,7 +47,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  useEffect(() => { document.title = 'Create Account — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Create Account — Sigscore'; }, []);
 
   const markTouched = (field: string) => setTouched((t) => ({ ...t, [field]: true }));
 
@@ -91,7 +91,7 @@ export default function Register() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">DevSignal</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Sigscore</h1>
           <p className="mt-1 text-sm font-medium text-indigo-600">Developer Signal Intelligence</p>
           <p className="mt-2 text-gray-600">Create your account</p>
         </div>

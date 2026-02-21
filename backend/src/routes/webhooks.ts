@@ -72,7 +72,7 @@ router.get('/', getWebhooks);
  *     summary: Create a webhook endpoint
  *     description: |
  *       Registers a new webhook endpoint. The URL must use HTTPS and point to a public endpoint (no localhost or private IPs).
- *       A signing secret is automatically generated and returned in the response. Use it to verify webhook payloads via the X-DevSignal-Signature header.
+ *       A signing secret is automatically generated and returned in the response. Use it to verify webhook payloads via the X-Sigscore-Signature header.
  *     security:
  *       - BearerAuth: []
  *       - ApiKeyAuth: []

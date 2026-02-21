@@ -36,7 +36,7 @@ interface ConnectorInfo {
 }
 
 // ---------------------------------------------------------------------------
-// Known connectors (static registry of all connector types in DevSignal)
+// Known connectors (static registry of all connector types in Sigscore)
 // ---------------------------------------------------------------------------
 
 interface ConnectorDef {

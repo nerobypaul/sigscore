@@ -11,7 +11,7 @@ const REDDIT_BASE = 'https://www.reddit.com';
 const REQUEST_TIMEOUT_MS = 15_000;
 const RATE_LIMIT_DELAY_MS = 1_000; // 1 second between requests (Reddit: 60 req/min unauthenticated)
 const MAX_RESULTS = 100;
-const USER_AGENT = 'DevSignal/1.0 (developer signal intelligence)';
+const USER_AGENT = 'Sigscore/1.0 (developer signal intelligence)';
 
 /** Subreddit name patterns indicating showcase / side-project communities. */
 const SHOWCASE_SUBREDDITS = new Set([

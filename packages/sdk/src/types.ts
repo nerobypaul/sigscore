@@ -208,9 +208,9 @@ export interface BatchIngestResult {
 // Client options
 // ---------------------------------------------------------------------------
 
-export interface DevSignalOptions {
+export interface SigscoreOptions {
   /** API key (starts with ds_live_ or ds_test_) */
   apiKey: string;
-  /** Base URL of the DevSignal API. Defaults to https://api.devsignal.dev */
+  /** Base URL of the Sigscore API. Defaults to https://api.sigscore.dev */
   baseUrl?: string;
 }

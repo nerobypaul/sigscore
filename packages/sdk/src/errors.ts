@@ -1,11 +1,11 @@
 /**
- * Base error class for all DevSignal SDK errors.
+ * Base error class for all Sigscore SDK errors.
  *
  * Thrown when the API returns a non-2xx response or when the request
  * fails at the network level.
  */
-export class DevSignalError extends Error {
-  public override readonly name = 'DevSignalError';
+export class SigscoreError extends Error {
+  public override readonly name = 'SigscoreError';
 
   constructor(
     message: string,
@@ -16,7 +16,7 @@ export class DevSignalError extends Error {
 
     // Maintains proper stack trace in V8 environments
     if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, DevSignalError);
+      Error.captureStackTrace(this, SigscoreError);
     }
   }
 }

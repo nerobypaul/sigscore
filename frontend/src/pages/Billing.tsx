@@ -122,7 +122,7 @@ const STATUS_BADGES: Record<PlanStatus, { label: string; className: string }> = 
 // ---------------------------------------------------------------------------
 
 export default function Billing() {
-  useEffect(() => { document.title = 'Billing — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Billing — Sigscore'; }, []);
   const toast = useToast();
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
@@ -345,7 +345,7 @@ export default function Billing() {
                     </button>
                   ) : plan.key === 'scale' ? (
                     <a
-                      href="mailto:hello@devsignal.dev?subject=DevSignal Scale Plan"
+                      href="mailto:hello@sigscore.dev?subject=Sigscore Scale Plan"
                       className="block w-full py-2.5 rounded-lg text-sm font-medium text-center bg-gray-900 text-white hover:bg-gray-800 transition-colors"
                     >
                       Contact Sales

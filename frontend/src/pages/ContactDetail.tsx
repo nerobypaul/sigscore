@@ -9,7 +9,7 @@ import CustomFieldsDisplay from '../components/CustomFieldsDisplay';
 import { CompanyHoverCard } from '../components/HoverCard';
 
 export default function ContactDetail() {
-  useEffect(() => { document.title = 'Contact Detail — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Contact Detail — Sigscore'; }, []);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const toast = useToast();

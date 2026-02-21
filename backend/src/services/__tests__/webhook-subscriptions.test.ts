@@ -417,7 +417,7 @@ describe('Webhook Subscriptions', () => {
           method: 'POST',
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
-            'X-DevSignal-Event': 'signal.created',
+            'X-Sigscore-Event': 'signal.created',
           }),
           body: expect.any(String),
         }),
@@ -425,7 +425,7 @@ describe('Webhook Subscriptions', () => {
 
       // Verify signature header is present
       const fetchCall = mockFetch.mock.calls[0][1];
-      expect(fetchCall.headers['X-DevSignal-Signature']).toMatch(/^sha256=[a-f0-9]{64}$/);
+      expect(fetchCall.headers['X-Sigscore-Signature']).toMatch(/^sha256=[a-f0-9]{64}$/);
     });
 
     it('should return failure when target responds with error', async () => {
@@ -481,7 +481,7 @@ describe('Webhook Subscriptions', () => {
         .update(body)
         .digest('hex');
 
-      expect(fetchCall.headers['X-DevSignal-Signature']).toBe(`sha256=${expectedSig}`);
+      expect(fetchCall.headers['X-Sigscore-Signature']).toBe(`sha256=${expectedSig}`);
     });
   });
 

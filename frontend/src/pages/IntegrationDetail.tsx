@@ -66,7 +66,7 @@ const SETUP_INSTRUCTIONS: Record<string, { title: string; steps: string[] }> = {
     title: 'OAuth Setup',
     steps: [
       'Click the "Connect" button below to start the OAuth flow',
-      'You will be redirected to authorize DevSignal',
+      'You will be redirected to authorize Sigscore',
       'Grant the requested permissions',
       'You will be redirected back once connected',
     ],
@@ -120,7 +120,7 @@ export default function IntegrationDetail() {
   const [testing, setTesting] = useState(false);
 
   useEffect(() => {
-    document.title = meta ? `${meta.name} Integration — DevSignal` : 'Integration — DevSignal';
+    document.title = meta ? `${meta.name} Integration — Sigscore` : 'Integration — Sigscore';
   }, [meta]);
 
   const loadData = useCallback(async () => {
@@ -423,7 +423,7 @@ export default function IntegrationDetail() {
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-sm font-semibold text-gray-900 mb-1">{setupInfo.title}</h2>
           <p className="text-xs text-gray-500 mb-6">
-            Follow these steps to connect {meta.name} with DevSignal
+            Follow these steps to connect {meta.name} with Sigscore
           </p>
 
           <div className="space-y-4">
@@ -476,7 +476,7 @@ export default function IntegrationDetail() {
                 ))}
               </div>
               <p className="mt-4 text-xs text-gray-400">
-                Configuration support coming soon. Use the DevSignal API to set up this integration in the meantime.
+                Configuration support coming soon. Use the Sigscore API to set up this integration in the meantime.
               </p>
             </div>
           ) : null}

@@ -1,10 +1,10 @@
-# Show HN: DevSignal -- Developer Pipeline Intelligence for devtool companies
+# Show HN: Sigscore -- Developer Pipeline Intelligence for devtool companies
 
-We built DevSignal because HubSpot doesn't know what an npm download is.
+We built Sigscore because HubSpot doesn't know what an npm download is.
 
 My co-founder and I spent years at devtool companies watching the same broken movie: marketing runs campaigns, developers sign up through docs or `npm install`, product usage spikes -- and none of that data makes it into the CRM. The "source of truth" is blind to the most important signals in a developer-led business.
 
-So we built DevSignal. It's a CRM purpose-built for devtool companies that run PLG motions.
+So we built Sigscore. It's a CRM purpose-built for devtool companies that run PLG motions.
 
 **What it does:**
 
@@ -32,5 +32,5 @@ We're two people. Built the whole thing in a few weeks. The AI-assisted developm
 
 Would love feedback from anyone running a devtool company. **What signals would you want tracked if you were trying to convert developers into paying customers?**
 
-GitHub: github.com/nerobypaul/headless-crm
-Site: devsignal.dev
+GitHub: github.com/nerobypaul/sigscore
+Site: sigscore.dev

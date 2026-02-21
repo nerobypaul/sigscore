@@ -1,5 +1,5 @@
 # ============================================================
-# DevSignal CRM — Docker Compose (Development Override)
+# Sigscore CRM — Docker Compose (Development Override)
 # ============================================================
 # Usage:
 #   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
@@ -27,13 +27,13 @@ services:
       context: .
       dockerfile: backend/Dockerfile
       target: builder
-    container_name: devsignal-backend-dev
+    container_name: sigscore-backend-dev
     ports:
       - "3001:3000"
     environment:
       NODE_ENV: development
       PORT: "3000"
-      DATABASE_URL: "postgresql://devsignal:devsignal_dev_pw@postgres:5432/devsignal?schema=public"
+      DATABASE_URL: "postgresql://sigscore:sigscore_dev_pw@postgres:5432/sigscore?schema=public"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       JWT_SECRET: dev-jwt-secret-not-for-production
@@ -64,7 +64,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       target: builder
-    container_name: devsignal-frontend-dev
+    container_name: sigscore-frontend-dev
     ports:
       - "5173:5173"
     environment:

@@ -1,16 +1,16 @@
-# Product Spec: DevSignal CRM
+# Product Spec: Sigscore CRM
 
 > A headless, AI-first CRM for developer tools companies. Collapses the signal layer + CRM into one API-first system of record.
 
 ## Product Name
 
-**DevSignal** — working name. The CRM that sees what developers are doing before sales ever picks up the phone.
+**Sigscore** — working name. The CRM that sees what developers are doing before sales ever picks up the phone.
 
 ---
 
 ## 1. Core Concept
 
-DevSignal replaces the fragmented stack (HubSpot + Koala + Hightouch + Clay) with a single headless CRM that:
+Sigscore replaces the fragmented stack (HubSpot + Koala + Hightouch + Clay) with a single headless CRM that:
 
 1. **Ingests developer signals natively** — GitHub, npm, PyPI, Docker, docs, API usage
 2. **Scores accounts by product usage** — not MQLs, not lead scores, PQAs

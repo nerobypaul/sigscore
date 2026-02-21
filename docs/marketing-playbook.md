@@ -1,4 +1,4 @@
-# DevSignal Marketing Playbook: 30-Day Launch Plan
+# Sigscore Marketing Playbook: 30-Day Launch Plan
 
 > Research-backed strategy for devtool developer pipeline intelligence launch
 
@@ -47,7 +47,7 @@ The pattern: **the marketing IS the product experience**. No gap between "learn 
 2. **Speed as proof** -- Connect GitHub/npm, see your first developer signal in under 60 seconds.
 3. **Building in public** -- Share roadmaps, decisions, progress publicly.
 4. **The "I switched" testimonial** -- One genuine tweet from a Head of Growth is worth more than any landing page.
-5. **The demo IS the pitch** -- 60-second video: npm installs spike, DevSignal surfaces the company, enriches contacts, scores them, triggers Slack notification.
+5. **The demo IS the pitch** -- 60-second video: npm installs spike, Sigscore surfaces the company, enriches contacts, scores them, triggers Slack notification.
 
 ---
 
@@ -56,7 +56,7 @@ The pattern: **the marketing IS the product experience**. No gap between "learn 
 ### Tier 1: High-Impact, Do These First
 
 **Hacker News / Show HN**
-- Title format: "Show HN: DevSignal -- Developer pipeline intelligence for devtool companies"
+- Title format: "Show HN: Sigscore -- Developer pipeline intelligence for devtool companies"
 - Personal framing: "I built this because at [previous company], we had 10K GitHub stars but no idea which companies were evaluating us"
 - Link to live demo with sample data (not signup wall)
 - Post 8-9am ET Tuesday/Wednesday
@@ -72,7 +72,7 @@ Tweet templates:
 ```
 "Your devtool has 50K npm installs/month.
 But how many of those are from companies with 200+ engineers?
-That's the question DevSignal answers."
+That's the question Sigscore answers."
 
 "The average devtool company discovers enterprise interest 47 days after evaluation starts.
 By then, they've already chosen your competitor."
@@ -119,11 +119,11 @@ AI is creating a Cambrian explosion of developer tools:
 **What this means for devtool companies:**
 - More developers = bigger TAM
 - Faster dev cycles = faster evaluation cycles = shorter time to win or lose
-- More tools being built = more devtool companies = more demand for DevSignal
+- More tools being built = more devtool companies = more demand for Sigscore
 
 **The positioning:**
 
-> "In the AI era, developers evaluate and adopt tools faster than ever. Your npm installs spike on Monday. By Friday, they've either integrated your tool or moved to a competitor. DevSignal gives you the 5-day window to convert evaluation into pipeline."
+> "In the AI era, developers evaluate and adopt tools faster than ever. Your npm installs spike on Monday. By Friday, they've either integrated your tool or moved to a competitor. Sigscore gives you the 5-day window to convert evaluation into pipeline."
 
 **Copy concepts:**
 
@@ -131,7 +131,7 @@ AI is creating a Cambrian explosion of developer tools:
 Headline: "AI made developers 10x faster. Your GTM is still manual."
 
 Subhead: "Developers evaluate tools in days, not months.
-DevSignal surfaces buying signals before your competitors do."
+Sigscore surfaces buying signals before your competitors do."
 ```
 
 **Content series: "The Developer Pipeline Gap"**
@@ -156,17 +156,17 @@ DevSignal surfaces buying signals before your competitors do."
 
 ### Why they failed
 
-1. **Required engineering buy-in** -- GTM teams couldn't self-serve setup. DevSignal's advantage: npm/PyPI/GitHub connectors pull PUBLIC data. No engineering needed.
+1. **Required engineering buy-in** -- GTM teams couldn't self-serve setup. Sigscore's advantage: npm/PyPI/GitHub connectors pull PUBLIC data. No engineering needed.
 
-2. **Tried to replace the CRM** -- DevSignal feeds INTO your existing CRM, doesn't replace it.
+2. **Tried to replace the CRM** -- Sigscore feeds INTO your existing CRM, doesn't replace it.
 
-3. **Horizontal instead of vertical** -- "PLG CRM for everyone" is too broad. DevSignal is laser-focused on devtools.
+3. **Horizontal instead of vertical** -- "PLG CRM for everyone" is too broad. Sigscore is laser-focused on devtools.
 
-4. **Couldn't justify standalone pricing** -- At $79-299/mo, DevSignal is a credit card expense, not a procurement cycle.
+4. **Couldn't justify standalone pricing** -- At $79-299/mo, Sigscore is a credit card expense, not a procurement cycle.
 
 5. **Raised too much, too early** -- Stay lean. The price point works for bootstrapped economics.
 
-**Critical: Do NOT position DevSignal as a "PLG CRM." That category is poisoned.**
+**Critical: Do NOT position Sigscore as a "PLG CRM." That category is poisoned.**
 
 ---
 
@@ -176,7 +176,7 @@ DevSignal surfaces buying signals before your competitors do."
 
 | Day | Action |
 |-----|--------|
-| 1 | Claim social handles (@devsignal everywhere) |
+| 1 | Claim social handles (@sigscore everywhere) |
 | 2 | Write manifesto: "Why devtool companies are flying blind" |
 | 3 | Record 60-second demo video |
 | 4 | Set up public changelog |
@@ -226,18 +226,18 @@ DevSignal surfaces buying signals before your competitors do."
 
 ### vs. Reo.dev
 
-| Dimension | Reo.dev | DevSignal |
+| Dimension | Reo.dev | Sigscore |
 |-----------|---------|-----------|
 | Pricing | Custom/enterprise | $79-299/mo, transparent |
 | Setup | Sales call required | Self-serve in 10 minutes |
 | Target | Series B+ | Seed to Series B |
 | Approach | Sales-led | Product-led |
 
-**The wedge:** Reo.dev requires a sales call. DevSignal is self-serve. At $79/mo, the Head of Growth signs up with a credit card.
+**The wedge:** Reo.dev requires a sales call. Sigscore is self-serve. At $79/mo, the Head of Growth signs up with a credit card.
 
 ### vs. Common Room
 
-Common Room starts at $1K/mo. DevSignal wins by being 12x cheaper, purpose-built for devtools, and focused on pipeline (not community health).
+Common Room starts at $1K/mo. Sigscore wins by being 12x cheaper, purpose-built for devtools, and focused on pipeline (not community health).
 
 ---
 
@@ -262,9 +262,9 @@ Common Room starts at $1K/mo. DevSignal wins by being 12x cheaper, purpose-built
 
 | Objection | Response |
 |-----------|----------|
-| "We use HubSpot/Salesforce" | "DevSignal feeds INTO your CRM. We don't replace it." |
+| "We use HubSpot/Salesforce" | "Sigscore feeds INTO your CRM. We don't replace it." |
 | "We can track this ourselves" | "We spent 6 months building connectors + enrichment. Or connect in 10 minutes." |
-| "How is this different from Common Room?" | "Common Room is $12K/year for community mgmt. DevSignal is $948/year for devtool pipeline." |
+| "How is this different from Common Room?" | "Common Room is $12K/year for community mgmt. Sigscore is $948/year for devtool pipeline." |
 | "We only have 1K npm installs" | "Perfect. Free tier covers that. Upgrade when adoption grows." |
 
 ---

@@ -1,13 +1,13 @@
 # ============================================================
-# DevSignal — Unified Multi-stage Production Dockerfile
+# Sigscore — Unified Multi-stage Production Dockerfile
 # ============================================================
 # Builds backend (TypeScript) and frontend (Vite) into a single
 # production image. The Express server serves both the API and
 # the static frontend bundle.
 #
 # Usage:
-#   docker build -t devsignal .
-#   docker run -p 3000:3000 --env-file .env devsignal
+#   docker build -t sigscore .
+#   docker run -p 3000:3000 --env-file .env sigscore
 # ============================================================
 
 # ---- Stage 1: Build the Backend (TypeScript -> JS via tsc) ----

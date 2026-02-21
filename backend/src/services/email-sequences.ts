@@ -620,8 +620,8 @@ export async function processEmailStep(enrollmentId: string, stepId: string) {
   });
 
   try {
-    const fromName = enrollment.sequence.fromName || 'DevSignal';
-    const fromEmail = enrollment.sequence.fromEmail || 'notifications@devsignal.dev';
+    const fromName = enrollment.sequence.fromName || 'Sigscore';
+    const fromEmail = enrollment.sequence.fromEmail || 'notifications@sigscore.dev';
     const fromAddress = `${fromName} <${fromEmail}>`;
 
     if (!contact.email) {

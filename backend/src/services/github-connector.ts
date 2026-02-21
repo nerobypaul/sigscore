@@ -4,7 +4,7 @@ import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
 import { resolveGitHubActor } from './identity-resolution';
 
-// Map GitHub event types to DevSignal signal types
+// Map GitHub event types to Sigscore signal types
 const EVENT_MAP: Record<string, string> = {
   'star.created': 'repo_star',
   'star.deleted': 'repo_unstar',
@@ -52,7 +52,7 @@ interface GitHubWebhookResult {
 }
 
 /**
- * Parses a GitHub webhook event into a normalized DevSignal result.
+ * Parses a GitHub webhook event into a normalized Sigscore result.
  * Returns null if the event type is not tracked.
  */
 export function parseGitHubEvent(

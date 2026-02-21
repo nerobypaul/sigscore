@@ -9,7 +9,7 @@ export default function ForgotPassword() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => { document.title = 'Reset Password — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Reset Password — Sigscore'; }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -41,7 +41,7 @@ export default function ForgotPassword() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">DevSignal</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Sigscore</h1>
           <p className="mt-1 text-sm font-medium text-indigo-600">Developer Signal Intelligence</p>
           <p className="mt-2 text-gray-600">Reset your password</p>
         </div>

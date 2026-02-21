@@ -1,4 +1,4 @@
-# DevSignal Twitter/X Threads
+# Sigscore Twitter/X Threads
 
 Five ready-to-post thread drafts. Each follows hook-story-CTA format.
 
@@ -54,11 +54,11 @@ They all have npm packages. They all have GitHub repos. They all have API keys. 
 
 $79/mo. Done.
 
-10/ We built DevSignal to be the thing the PLG CRM graveyard couldn't figure out: a developer pipeline intelligence platform that IS the CRM, built specifically for devtool companies.
+10/ We built Sigscore to be the thing the PLG CRM graveyard couldn't figure out: a developer pipeline intelligence platform that IS the CRM, built specifically for devtool companies.
 
 Signals + CRM + AI briefs + workflow automation. One product. One price.
 
-devsignal.dev
+sigscore.dev
 
 ---
 
@@ -117,13 +117,13 @@ This is the job that should not exist.
 
 What if the system just told you: "Acme Corp has 4 engineers using your SDK. API usage up 60%. Ready for outreach."
 
-10/ That's what we built with DevSignal. A CRM where developer signals aren't custom properties bolted on with duct tape -- they're the foundation.
+10/ That's what we built with Sigscore. A CRM where developer signals aren't custom properties bolted on with duct tape -- they're the foundation.
 
 npm, PyPI, GitHub, API usage. Native. Real-time. Scored by AI.
 
-HubSpot for the rest of SaaS. DevSignal for devtools.
+HubSpot for the rest of SaaS. Sigscore for devtools.
 
-devsignal.dev
+sigscore.dev
 
 ---
 
@@ -177,11 +177,11 @@ Who is actually USING the product?
 
 Not a CRM. Not a signal tool. Not analytics. The system that turns raw developer activity into pipeline.
 
-10/ We're building DevSignal for this exact moment. The devtool market is about to 10x. The companies that capture that growth will be the ones that know which developers are ready to buy.
+10/ We're building Sigscore for this exact moment. The devtool market is about to 10x. The companies that capture that growth will be the ones that know which developers are ready to buy.
 
 $79/mo. Signals + CRM + AI. Purpose-built for devtools.
 
-devsignal.dev
+sigscore.dev
 
 ---
 
@@ -258,13 +258,13 @@ npm data is on npmjs.com. GitHub data is in the API. API logs are in your backen
 
 The intelligence is distributed across 5+ systems.
 
-10/ That's the core problem DevSignal solves.
+10/ That's the core problem Sigscore solves.
 
 We ingest all these signals natively -- npm, PyPI, GitHub, API usage, doc visits -- score them with AI, and tell you exactly which accounts are ready for outreach.
 
 No more cross-referencing tabs. No more gut feelings.
 
-devsignal.dev/signals
+sigscore.dev/signals
 
 ---
 
@@ -346,12 +346,12 @@ AI is a time compressor, not a human replacer.
 
 10/ The meta-irony: we built a developer pipeline intelligence tool using AI-accelerated development.
 
-The same thesis applies to our product. More AI = more developers = more devtools = more need for DevSignal.
+The same thesis applies to our product. More AI = more developers = more devtools = more need for Sigscore.
 
 We're live. Repo is open source.
 
-github.com/nerobypaul/headless-crm
-devsignal.dev
+github.com/nerobypaul/sigscore
+sigscore.dev
 
 11/ If you're building a devtool and want to know which developers are ready to buy, we built this for you.
 

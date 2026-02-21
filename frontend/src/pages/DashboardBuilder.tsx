@@ -61,7 +61,7 @@ function nextWidgetId(): string {
 }
 
 export default function DashboardBuilder() {
-  useEffect(() => { document.title = 'Dashboard Builder — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Dashboard Builder — Sigscore'; }, []);
   const toast = useToast();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);

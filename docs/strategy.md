@@ -1,4 +1,4 @@
-# DevSignal — Strategy & Positioning
+# Sigscore — Strategy & Positioning
 
 > Last updated: 2026-02-14
 
@@ -9,7 +9,7 @@
 "Turn developer signals into pipeline"
 
 ## One-liner
-DevSignal tracks npm downloads, GitHub activity, API usage, and product signals — then tells you which developers are ready to buy. Purpose-built for devtool companies.
+Sigscore tracks npm downloads, GitHub activity, API usage, and product signals — then tells you which developers are ready to buy. Purpose-built for devtool companies.
 
 ## ICP (Ideal Customer Profile)
 
@@ -33,7 +33,7 @@ Resend, Railway, Neon, Inngest, Knock, Upstash, Trigger.dev, Axiom, Dub, Unkey, 
 - HubSpot/Salesforce is overkill for their stage
 
 ## USP (Unique Selling Proposition)
-DevSignal is the only product that combines:
+Sigscore is the only product that combines:
 1. **Native developer signal ingestion** (npm, PyPI, GitHub, Segment) — no middleware needed
 2. **CRM with PLG-native pipeline** — stages built for how devtools sell
 3. **AI-powered account intelligence** — briefs, enrichment, next-best-actions
@@ -43,7 +43,7 @@ DevSignal is the only product that combines:
 ### Positioning: "Reo.Dev + Attio in one box"
 - Reo.Dev has developer signals but no CRM
 - Attio has a great CRM but no native developer signals
-- DevSignal combines both in one product
+- Sigscore combines both in one product
 
 ## Competitive Landscape
 
@@ -54,13 +54,13 @@ DevSignal is the only product that combines:
 | Koala | $15M | Acqui-hired by Cursor, product sunset Sep 2025 |
 | Endgame | $17M+ | Pivoted to AI enterprise sales |
 
-### Key lesson: "PLG CRM for everyone" fails. DevSignal wins by being specifically for devtools.
+### Key lesson: "PLG CRM for everyone" fails. Sigscore wins by being specifically for devtools.
 
 ### Active Competitors
 | Competitor | Pricing | Gap |
 |-----------|---------|-----|
 | Pocus | Custom (enterprise) | Pivoted away from PLG focus, expensive |
-| Common Room | $1k+/mo | 5-12x more expensive than DevSignal |
+| Common Room | $1k+/mo | 5-12x more expensive than Sigscore |
 | Reo.Dev | Custom | Signals only, no CRM |
 | Attio | $29-119/user/mo | No native developer signals |
 | June.so | Custom | Analytics only, not a CRM |
@@ -71,7 +71,7 @@ DevSignal is the only product that combines:
 ### The buyer is NOT "Sales"
 - In PLG devtool companies, the free→paid funnel is owned by Growth, not Sales
 - The word "sales" alienates developer-led companies
-- Position DevSignal as a GROWTH tool
+- Position Sigscore as a GROWTH tool
 
 ### The "aha moment" in a demo
 Open the Account 360 page for a real account. Show:
@@ -93,6 +93,6 @@ The $79 price point is aggressive but intentional — it's 5-12x cheaper than al
 1. **Segment connector** (DONE) — removes "how do I get data in?" blocker
 2. **Account 360 + AI** (DONE) — the demo closer
 3. **Saved views / smart lists** (DONE) — the daily-use feature
-4. **Slack bot (bi-directional)** — makes DevSignal ambient in team workflow
+4. **Slack bot (bi-directional)** — makes Sigscore ambient in team workflow
 5. **Email sequences** — outreach from within the product
 6. **HubSpot/Salesforce import** — migration path for prospects already on CRM

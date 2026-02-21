@@ -953,7 +953,7 @@ function createDemoCleanupWorker(): Worker<DemoCleanupJobData> {
       const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const staleOrgs = await prisma.organization.findMany({
         where: {
-          slug: { startsWith: 'devsignal-demo' },
+          slug: { startsWith: 'sigscore-demo' },
           createdAt: { lt: cutoff },
         },
         select: { id: true, slug: true, createdAt: true },

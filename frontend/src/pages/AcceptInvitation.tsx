@@ -30,7 +30,7 @@ interface InvitationInfo {
 // ---------------------------------------------------------------------------
 
 export default function AcceptInvitation() {
-  useEffect(() => { document.title = 'Accept Invitation — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Accept Invitation — Sigscore'; }, []);
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading, refreshUser, setOrganizationId } = useAuth();
@@ -144,7 +144,7 @@ export default function AcceptInvitation() {
             <h1 className="text-xl font-bold text-white">Team Invitation</h1>
             {invitation && (
               <p className="text-indigo-100 mt-1 text-sm">
-                Join {invitation.organization.name} on DevSignal
+                Join {invitation.organization.name} on Sigscore
               </p>
             )}
           </div>
@@ -277,7 +277,7 @@ export default function AcceptInvitation() {
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-400 mt-4">
-          DevSignal -- Developer Signal Intelligence
+          Sigscore -- Developer Signal Intelligence
         </p>
       </div>
     </div>

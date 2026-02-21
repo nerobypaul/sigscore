@@ -35,11 +35,11 @@ export default function Dashboard() {
   const toast = useToast();
   const { user } = useAuth();
   const isDemo = user?.organizations?.some(
-    (uo: { organization?: { name?: string } }) => uo.organization?.name?.startsWith('DevSignal Demo'),
+    (uo: { organization?: { name?: string } }) => uo.organization?.name?.startsWith('Sigscore Demo'),
   );
   const [contextDismissed, setContextDismissed] = useState(() => sessionStorage.getItem('demoContextDismissed') === '1');
 
-  useEffect(() => { document.title = 'Dashboard — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Dashboard — Sigscore'; }, []);
 
   useEffect(() => {
     async function fetchStats() {
@@ -435,7 +435,7 @@ function OnboardingHero() {
     <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-5 sm:p-8 lg:p-10 text-white">
       <div className="max-w-2xl">
         <h2 className="text-2xl lg:text-3xl font-bold mb-3">
-          Welcome to DevSignal!
+          Welcome to Sigscore!
         </h2>
         <p className="text-indigo-100 text-lg mb-8 leading-relaxed">
           Connect your first signal source to start discovering who's evaluating your tool.
@@ -466,7 +466,7 @@ function OnboardingHero() {
             onClick={(e) => {
               e.preventDefault();
               // Trigger demo data load via the DemoDataBanner mechanism
-              window.dispatchEvent(new CustomEvent('devsignal:load-demo'));
+              window.dispatchEvent(new CustomEvent('sigscore:load-demo'));
             }}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/15 text-white font-semibold rounded-lg hover:bg-white/25 transition-colors border border-white/20"
           >

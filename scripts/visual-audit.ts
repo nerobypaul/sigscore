@@ -1,5 +1,5 @@
 /**
- * Visual Audit Script — Screenshots every page in DevSignal for visual UX review.
+ * Visual Audit Script — Screenshots every page in Sigscore for visual UX review.
  *
  * Usage: npx tsx scripts/visual-audit.ts
  *
@@ -7,14 +7,14 @@
  * 2. Injects auth tokens into localStorage before each page navigation
  * 3. Dismisses overlays (cookie consent, onboarding tour) for clean screenshots
  * 4. Takes full-page screenshots of all public and authenticated pages
- * 5. Saves to /tmp/devsignal-visual-audit/
+ * 5. Saves to /tmp/sigscore-visual-audit/
  */
 import { chromium, Page, BrowserContext } from 'playwright';
 import { mkdirSync, readdirSync } from 'fs';
 
 const BASE_URL = 'http://localhost:5173';
 const API_URL = 'http://localhost:3001';
-const OUTPUT_DIR = '/tmp/devsignal-visual-audit';
+const OUTPUT_DIR = '/tmp/sigscore-visual-audit';
 
 // Tokens from demo seed — populated in Phase 2
 let AUTH_TOKENS = {
@@ -81,14 +81,14 @@ async function setupAuthContext(context: BrowserContext): Promise<void> {
         localStorage.setItem('refreshToken', refreshToken);
         if (organizationId) localStorage.setItem('organizationId', organizationId);
       }
-      // Dismiss cookie consent (key: devsignal-cookie-consent)
-      localStorage.setItem('devsignal-cookie-consent', 'essential');
-      // Dismiss onboarding checklist (key: devsignal_onboarding_checklist_dismissed)
-      localStorage.setItem('devsignal_onboarding_checklist_dismissed', '1');
-      // Dismiss getting started (key: devsignal_onboarding_dismissed)
-      localStorage.setItem('devsignal_onboarding_dismissed', '1');
-      // Dismiss demo tour (key: devsignal-demo-tour-seen) — uses sessionStorage
-      sessionStorage.setItem('devsignal-demo-tour-seen', '1');
+      // Dismiss cookie consent (key: sigscore-cookie-consent)
+      localStorage.setItem('sigscore-cookie-consent', 'essential');
+      // Dismiss onboarding checklist (key: sigscore_onboarding_checklist_dismissed)
+      localStorage.setItem('sigscore_onboarding_checklist_dismissed', '1');
+      // Dismiss getting started (key: sigscore_onboarding_dismissed)
+      localStorage.setItem('sigscore_onboarding_dismissed', '1');
+      // Dismiss demo tour (key: sigscore-demo-tour-seen) — uses sessionStorage
+      sessionStorage.setItem('sigscore-demo-tour-seen', '1');
     },
     AUTH_TOKENS,
   );

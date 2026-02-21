@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * DevSignal Load Test — Show HN Traffic Simulator
+ * Sigscore Load Test — Show HN Traffic Simulator
  *
  * Pure Node.js (zero external dependencies). Simulates the traffic pattern of
  * a Hacker News front-page post: 2,000-5,000 visitors over 4 hours with a
@@ -11,7 +11,7 @@
  *   node tests/load/run.js                       # Full 4-hour simulation
  *   node tests/load/run.js --quick               # Quick ~60s smoke test
  *   node tests/load/run.js --duration 5          # Custom duration in minutes
- *   LOAD_TEST_URL=https://app.devsignal.dev node tests/load/run.js
+ *   LOAD_TEST_URL=https://app.sigscore.dev node tests/load/run.js
  *
  * Environment variables:
  *   LOAD_TEST_URL      Target URL (default: http://localhost:3000)
@@ -231,7 +231,7 @@ function saveReport(reportData) {
 // ---------------------------------------------------------------------------
 async function main() {
   console.log('==============================================================================');
-  console.log('  DEVSIGNAL LOAD TEST — Show HN Traffic Simulator');
+  console.log('  SIGSCORE LOAD TEST — Show HN Traffic Simulator');
   console.log('==============================================================================');
   console.log(`  Target:    ${BASE_URL}`);
   console.log(`  Mode:      ${isQuick ? 'QUICK (smoke test)' : 'FULL (4-hour simulation)'}`);

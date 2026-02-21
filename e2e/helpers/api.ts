@@ -22,7 +22,7 @@ let userCounter = 0;
 export async function createTestUser(request: APIRequestContext): Promise<TestUser> {
   const id = ++userCounter;
   const timestamp = Date.now();
-  const email = `e2e-${id}-${timestamp}@test.devsignal.io`;
+  const email = `e2e-${id}-${timestamp}@test.sigscore.dev`;
   const password = 'TestPass123!';
   const firstName = `Test${id}`;
   const lastName = 'User';

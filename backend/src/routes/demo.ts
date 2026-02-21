@@ -32,7 +32,7 @@ router.post(
         organizationId: result.organizationId,
         user: {
           id: result.userId,
-          email: 'demo@devsignal.dev',
+          email: 'demo@sigscore.dev',
           firstName: 'Demo',
           lastName: 'User',
           role: 'ADMIN',
@@ -42,8 +42,8 @@ router.post(
               role: 'OWNER',
               organization: {
                 id: result.organizationId,
-                name: 'DevSignal Demo',
-                slug: 'devsignal-demo',
+                name: 'Sigscore Demo',
+                slug: 'sigscore-demo',
               },
             },
           ],

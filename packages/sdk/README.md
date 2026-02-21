@@ -1,24 +1,24 @@
-# @devsignal/node
+# @sigscore/node
 
-[![npm version](https://img.shields.io/npm/v/@devsignal/node.svg)](https://www.npmjs.com/package/@devsignal/node)
-[![license](https://img.shields.io/npm/l/@devsignal/node.svg)](https://github.com/nerobypaul/headless-crm/blob/main/LICENSE)
+[![npm version](https://img.shields.io/npm/v/@sigscore/node.svg)](https://www.npmjs.com/package/@sigscore/node)
+[![license](https://img.shields.io/npm/l/@sigscore/node.svg)](https://github.com/nerobypaul/sigscore/blob/main/LICENSE)
 
-Official Node.js SDK for the [DevSignal](https://devsignal.dev) API.
+Official Node.js SDK for the [Sigscore](https://sigscore.dev) API.
 
 Zero dependencies. TypeScript-first. Works with any Node.js 18+ project.
 
 ## Install
 
 ```bash
-npm install @devsignal/node
+npm install @sigscore/node
 ```
 
 ## Quick start
 
 ```ts
-import { DevSignal } from '@devsignal/node';
+import { Sigscore } from '@sigscore/node';
 
-const ds = new DevSignal({ apiKey: 'ds_live_xxxxxxxxxxxx' });
+const ds = new Sigscore({ apiKey: 'ds_live_xxxxxxxxxxxx' });
 
 // Ingest a signal
 await ds.signals.ingest({
@@ -42,7 +42,7 @@ const hot = await ds.scores.topAccounts({ limit: 10, tier: 'HOT' });
 | Option    | Type     | Default                     | Description                                      |
 | --------- | -------- | --------------------------- | ------------------------------------------------ |
 | `apiKey`  | `string` | --                          | Required. Starts with `ds_live_` or `ds_test_`.  |
-| `baseUrl` | `string` | `https://api.devsignal.dev` | Override the API base URL.                       |
+| `baseUrl` | `string` | `https://api.sigscore.dev` | Override the API base URL.                       |
 
 ## Resources
 
@@ -96,15 +96,15 @@ const hot = await ds.scores.topAccounts({ limit: 10, tier: 'HOT' });
 
 ## Error handling
 
-All API errors throw a `DevSignalError` with `status`, `code`, and `message` properties.
+All API errors throw a `SigscoreError` with `status`, `code`, and `message` properties.
 
 ```ts
-import { DevSignal, DevSignalError } from '@devsignal/node';
+import { Sigscore, SigscoreError } from '@sigscore/node';
 
 try {
   await ds.contacts.get('nonexistent');
 } catch (err) {
-  if (err instanceof DevSignalError) {
+  if (err instanceof SigscoreError) {
     console.error(err.status);  // 404
     console.error(err.message); // "Contact not found"
   }
@@ -120,12 +120,12 @@ import type {
   Signal, SignalInput, Contact, ContactInput,
   Company, CompanyInput, Deal, DealInput,
   AccountScore, ScoreTier, PaginatedResponse,
-} from '@devsignal/node';
+} from '@sigscore/node';
 ```
 
 ## Documentation
 
-Full API reference and guides at [devsignal.dev/developers](https://devsignal.dev/developers).
+Full API reference and guides at [sigscore.dev/developers](https://sigscore.dev/developers).
 
 ## License
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 
-const STORAGE_KEY = 'devsignal-demo-tour-seen';
+const STORAGE_KEY = 'sigscore-demo-tour-seen';
 
 interface TourStep {
   title: string;
@@ -15,7 +15,7 @@ interface TourStep {
 
 const STEPS: TourStep[] = [
   {
-    title: 'Welcome to DevSignal',
+    title: 'Welcome to Sigscore',
     body: "You're exploring with realistic demo data. 8 companies, 600 signals, AI briefs \u2014 all interactive.",
   },
   {
@@ -41,7 +41,7 @@ export default function DemoOnboardingHints() {
   const [visible, setVisible] = useState(false);
 
   const isDemo = user?.organizations?.some(
-    (uo) => uo.organization?.name?.startsWith('DevSignal Demo'),
+    (uo) => uo.organization?.name?.startsWith('Sigscore Demo'),
   );
 
   useEffect(() => {

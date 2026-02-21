@@ -69,7 +69,7 @@ export const config = {
 
   email: {
     resendApiKey: process.env.RESEND_API_KEY || '',
-    fromAddress: process.env.EMAIL_FROM || 'DevSignal <notifications@devsignal.dev>',
+    fromAddress: process.env.EMAIL_FROM || 'Sigscore <notifications@sigscore.dev>',
   },
 
   rateLimit: {

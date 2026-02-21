@@ -20,7 +20,7 @@ const ENABLE_WORKERS = process.env.ENABLE_WORKERS === 'true';
 
   // Start HTTP server
   const server = app.listen(PORT, () => {
-    logger.info(`DevSignal CRM running on port ${PORT}`);
+    logger.info(`Sigscore CRM running on port ${PORT}`);
     logger.info(`Environment: ${config.nodeEnv}`);
     logger.info(`API Documentation: http://localhost:${PORT}/api-docs`);
     logger.info(`OpenAPI JSON: http://localhost:${PORT}/api-docs.json`);

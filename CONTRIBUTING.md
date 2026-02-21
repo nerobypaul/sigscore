@@ -1,6 +1,6 @@
-# Contributing to DevSignal
+# Contributing to Sigscore
 
-Thanks for your interest in contributing to DevSignal! This guide will help you get started.
+Thanks for your interest in contributing to Sigscore! This guide will help you get started.
 
 ## Development Setup
 
@@ -14,7 +14,7 @@ Thanks for your interest in contributing to DevSignal! This guide will help you 
 
 ```bash
 # Clone the repo
-git clone https://github.com/nerobypaul/headless-crm.git
+git clone https://github.com/nerobypaul/sigscore.git
 cd headless-crm
 
 # Install dependencies (all workspaces)
@@ -41,7 +41,7 @@ npm run dev --workspace=frontend
 ```
 backend/          Express API + Prisma + BullMQ workers
 frontend/         React 18 + Vite + TailwindCSS
-packages/sdk/     @devsignal/node SDK (zero dependencies)
+packages/sdk/     @sigscore/node SDK (zero dependencies)
 e2e/              Playwright end-to-end tests
 ```
 
@@ -106,9 +106,9 @@ npx playwright test
 
 ## Reporting Issues
 
-- Use [GitHub Issues](https://github.com/nerobypaul/headless-crm/issues)
+- Use [GitHub Issues](https://github.com/nerobypaul/sigscore/issues)
 - Include steps to reproduce, expected vs actual behavior
-- For security issues, email paul@devsignal.dev directly
+- For security issues, email paul@sigscore.dev directly
 
 ## License
 

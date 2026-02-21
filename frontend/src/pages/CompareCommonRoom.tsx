@@ -53,30 +53,30 @@ function GitHubIcon({ className = 'w-4.5 h-4.5' }: { className?: string }) {
 
 interface ComparisonRow {
   feature: string;
-  devSignal: string;
+  sigscore: string;
   competitor: string;
-  devSignalWins: boolean;
+  sigscoreWins: boolean;
 }
 
 const comparisonRows: ComparisonRow[] = [
-  { feature: 'Starting Price', devSignal: '$0/mo (free tier)', competitor: '$1,000+/mo', devSignalWins: true },
-  { feature: 'Self-hostable', devSignal: 'Yes (MIT license)', competitor: 'No', devSignalWins: true },
-  { feature: 'Setup time', devSignal: '2 minutes', competitor: '6+ weeks', devSignalWins: true },
-  { feature: 'Signal sources', devSignal: '16 built-in', competitor: '10+ (varies by plan)', devSignalWins: true },
-  { feature: 'AI account briefs', devSignal: 'BYOK (your API key)', competitor: 'Included (opaque pricing)', devSignalWins: true },
-  { feature: 'Identity resolution', devSignal: 'Built-in', competitor: 'Built-in', devSignalWins: false },
-  { feature: 'PQA scoring', devSignal: 'Customizable 0-100', competitor: 'Their own scoring', devSignalWins: true },
-  { feature: 'CRM sync', devSignal: 'HubSpot + Salesforce', competitor: 'HubSpot + Salesforce + more', devSignalWins: false },
-  { feature: 'Open source', devSignal: 'Yes (MIT)', competitor: 'No', devSignalWins: true },
-  { feature: 'API / SDK', devSignal: 'Full REST + GraphQL + Node SDK', competitor: 'REST API', devSignalWins: true },
-  { feature: 'Target market', devSignal: 'Series A-C devtools', competitor: 'Enterprise', devSignalWins: false },
+  { feature: 'Starting Price', sigscore: '$0/mo (free tier)', competitor: '$1,000+/mo', sigscoreWins: true },
+  { feature: 'Self-hostable', sigscore: 'Yes (MIT license)', competitor: 'No', sigscoreWins: true },
+  { feature: 'Setup time', sigscore: '2 minutes', competitor: '6+ weeks', sigscoreWins: true },
+  { feature: 'Signal sources', sigscore: '16 built-in', competitor: '10+ (varies by plan)', sigscoreWins: true },
+  { feature: 'AI account briefs', sigscore: 'BYOK (your API key)', competitor: 'Included (opaque pricing)', sigscoreWins: true },
+  { feature: 'Identity resolution', sigscore: 'Built-in', competitor: 'Built-in', sigscoreWins: false },
+  { feature: 'PQA scoring', sigscore: 'Customizable 0-100', competitor: 'Their own scoring', sigscoreWins: true },
+  { feature: 'CRM sync', sigscore: 'HubSpot + Salesforce', competitor: 'HubSpot + Salesforce + more', sigscoreWins: false },
+  { feature: 'Open source', sigscore: 'Yes (MIT)', competitor: 'No', sigscoreWins: true },
+  { feature: 'API / SDK', sigscore: 'Full REST + GraphQL + Node SDK', competitor: 'REST API', sigscoreWins: true },
+  { feature: 'Target market', sigscore: 'Series A-C devtools', competitor: 'Enterprise', sigscoreWins: false },
 ];
 
 const whyChoose = [
   {
     title: '12x cheaper than Common Room',
     description:
-      'Common Room starts at $1,000+/mo and requires a sales call. DevSignal starts at $0/mo with self-serve onboarding. Even our Scale plan at $299/mo is a fraction of the cost.',
+      'Common Room starts at $1,000+/mo and requires a sales call. Sigscore starts at $0/mo with self-serve onboarding. Even our Scale plan at $299/mo is a fraction of the cost.',
   },
   {
     title: 'Self-serve in 2 minutes, not 6 weeks',
@@ -91,7 +91,7 @@ const whyChoose = [
   {
     title: 'Built for Series A-C devtools, not enterprises',
     description:
-      'Common Room sells to large enterprises with dedicated teams. DevSignal is purpose-built for growing devtool companies who need signal intelligence without the enterprise overhead.',
+      'Common Room sells to large enterprises with dedicated teams. Sigscore is purpose-built for growing devtool companies who need signal intelligence without the enterprise overhead.',
   },
 ];
 
@@ -101,7 +101,7 @@ const whyChoose = [
 
 export default function CompareCommonRoom() {
   useEffect(() => {
-    document.title = 'DevSignal vs Common Room — Developer Signal Intelligence';
+    document.title = 'Sigscore vs Common Room — Developer Signal Intelligence';
   }, []);
 
   return (
@@ -133,14 +133,14 @@ export default function CompareCommonRoom() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
-              DevSignal vs{' '}
+              Sigscore vs{' '}
               <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 Common Room
               </span>
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-              Common Room is great for large enterprises. DevSignal is built for
+              Common Room is great for large enterprises. Sigscore is built for
               Series A-C devtool companies who need signal intelligence without the
               enterprise price tag.
             </p>
@@ -148,7 +148,7 @@ export default function CompareCommonRoom() {
             <div className="mt-10 flex items-center justify-center gap-6 sm:gap-10">
               <div className="text-center">
                 <div className="text-3xl font-extrabold text-white">$0</div>
-                <div className="text-sm text-gray-500 mt-1">DevSignal starts at</div>
+                <div className="text-sm text-gray-500 mt-1">Sigscore starts at</div>
               </div>
               <div className="text-2xl font-bold text-gray-600">vs</div>
               <div className="text-center">
@@ -168,7 +168,7 @@ export default function CompareCommonRoom() {
               Feature-by-feature comparison
             </h2>
             <p className="mt-4 text-lg text-gray-500">
-              See exactly where DevSignal and Common Room differ.
+              See exactly where Sigscore and Common Room differ.
             </p>
           </div>
 
@@ -184,7 +184,7 @@ export default function CompareCommonRoom() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
                         </svg>
                       </div>
-                      DevSignal
+                      Sigscore
                     </div>
                   </th>
                   <th className="py-4 px-6 text-sm font-semibold text-gray-500">Common Room</th>
@@ -196,19 +196,19 @@ export default function CompareCommonRoom() {
                     <td className="py-4 pr-6 text-sm font-medium text-gray-700">{row.feature}</td>
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-2">
-                        {row.devSignalWins ? (
+                        {row.sigscoreWins ? (
                           <CheckIcon className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                         ) : (
                           <span className="w-4 h-4 flex-shrink-0" />
                         )}
-                        <span className={`text-sm ${row.devSignalWins ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
-                          {row.devSignal}
+                        <span className={`text-sm ${row.sigscoreWins ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                          {row.sigscore}
                         </span>
                       </div>
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-2">
-                        {!row.devSignalWins && row.competitor !== 'No' ? (
+                        {!row.sigscoreWins && row.competitor !== 'No' ? (
                           <CheckIcon className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                         ) : row.competitor === 'No' ? (
                           <XMarkIcon className="w-4 h-4 text-red-400 flex-shrink-0" />
@@ -226,12 +226,12 @@ export default function CompareCommonRoom() {
         </div>
       </section>
 
-      {/* Why Choose DevSignal */}
+      {/* Why Choose Sigscore */}
       <section className="bg-white text-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
           <div className="max-w-2xl mx-auto text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Why choose DevSignal over Common Room?
+              Why choose Sigscore over Common Room?
             </h2>
           </div>
 
@@ -312,11 +312,11 @@ export default function CompareCommonRoom() {
                   to="/register"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-indigo-700 font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-indigo-50 transition-colors"
                 >
-                  Try DevSignal Free
+                  Try Sigscore Free
                   <ArrowRightIcon />
                 </Link>
                 <a
-                  href="https://github.com/nerobypaul/headless-crm"
+                  href="https://github.com/nerobypaul/sigscore"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/30 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-white/10 transition-colors"

@@ -67,7 +67,7 @@ function makeSource(config: Record<string, unknown> = {}, overrides: Record<stri
     name: 'Reddit: test',
     status: 'ACTIVE',
     config: {
-      keywords: ['devsignal'],
+      keywords: ['sigscore'],
       subreddits: ['webdev'],
       lastSyncAt: null,
       lastSyncResult: null,
@@ -94,14 +94,14 @@ function makePost(overrides: Record<string, unknown> = {}) {
   return {
     id: 'abc123',
     name: 't3_abc123',
-    title: 'Check out DevSignal',
+    title: 'Check out Sigscore',
     selftext: 'Great tool for developer signals.',
     author: 'testuser',
     subreddit: 'webdev',
     score: 42,
     num_comments: 5,
-    permalink: '/r/webdev/comments/abc123/check_out_devsignal/',
-    url: 'https://devsignal.dev',
+    permalink: '/r/webdev/comments/abc123/check_out_sigscore/',
+    url: 'https://sigscore.dev',
     created_utc: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
     is_self: true,
     link_flair_text: null,
@@ -141,7 +141,7 @@ describe('Reddit Connector', () => {
       mockSignalSource.create.mockResolvedValue(makeSource());
 
       await configureReddit(ORG_ID, {
-        keywords: ['devsignal', 'developer signals'],
+        keywords: ['sigscore', 'developer signals'],
         subreddits: ['r/webdev', 'startups'],
       });
 
@@ -153,10 +153,10 @@ describe('Reddit Connector', () => {
         data: expect.objectContaining({
           organizationId: ORG_ID,
           type: 'REDDIT',
-          name: 'Reddit: devsignal, developer signals',
+          name: 'Reddit: sigscore, developer signals',
           status: 'ACTIVE',
           config: expect.objectContaining({
-            keywords: ['devsignal', 'developer signals'],
+            keywords: ['sigscore', 'developer signals'],
             subreddits: ['webdev', 'startups'],
           }),
         }),
@@ -250,7 +250,7 @@ describe('Reddit Connector', () => {
   describe('getRedditStatus', () => {
     it('should return connected status with config details when source exists', async () => {
       const source = makeSource({
-        keywords: ['devsignal'],
+        keywords: ['sigscore'],
         subreddits: ['webdev'],
         lastSyncAt: '2025-01-01T00:00:00Z',
         lastSyncResult: { postsProcessed: 10, signalsCreated: 5 },
@@ -261,7 +261,7 @@ describe('Reddit Connector', () => {
 
       expect(result).toEqual({
         connected: true,
-        keywords: ['devsignal'],
+        keywords: ['sigscore'],
         subreddits: ['webdev'],
         lastSyncAt: '2025-01-01T00:00:00Z',
         lastSyncResult: { postsProcessed: 10, signalsCreated: 5 },
@@ -335,7 +335,7 @@ describe('Reddit Connector', () => {
 
     it('should process keyword search results and create signals', async () => {
       const post = makePost();
-      const source = makeSource({ keywords: ['devsignal'], subreddits: [] });
+      const source = makeSource({ keywords: ['sigscore'], subreddits: [] });
       mockSignalSource.findFirst.mockResolvedValue(source);
 
       // Mock the Reddit search API call
@@ -374,7 +374,7 @@ describe('Reddit Connector', () => {
 
     it('should skip duplicate signals (idempotency check)', async () => {
       const post = makePost();
-      const source = makeSource({ keywords: ['devsignal'], subreddits: [] });
+      const source = makeSource({ keywords: ['sigscore'], subreddits: [] });
       mockSignalSource.findFirst.mockResolvedValue(source);
 
       mockFetchSuccess(makeRedditListing([post]));
@@ -455,9 +455,9 @@ describe('Reddit Connector', () => {
     });
 
     it('should classify question posts correctly', async () => {
-      const questionPost = makePost({ title: 'How do I use DevSignal?' });
+      const questionPost = makePost({ title: 'How do I use Sigscore?' });
 
-      const source = makeSource({ keywords: ['devsignal'], subreddits: [] });
+      const source = makeSource({ keywords: ['sigscore'], subreddits: [] });
       mockSignalSource.findFirst.mockResolvedValue(source);
 
       mockFetchSuccess(makeRedditListing([questionPost]));
@@ -587,10 +587,10 @@ describe('Reddit Connector', () => {
     });
 
     it('should sync subreddit posts that match keywords', async () => {
-      const matchingPost = makePost({ id: 'match1', title: 'Using devsignal for monitoring', subreddit: 'programming' });
+      const matchingPost = makePost({ id: 'match1', title: 'Using sigscore for monitoring', subreddit: 'programming' });
       const nonMatchingPost = makePost({ id: 'nomatch', title: 'Random post about cats', selftext: 'meow', subreddit: 'programming' });
 
-      const source = makeSource({ keywords: ['devsignal'], subreddits: ['programming'] });
+      const source = makeSource({ keywords: ['sigscore'], subreddits: ['programming'] });
       mockSignalSource.findFirst.mockResolvedValue(source);
 
       // First call for keyword search, second for subreddit

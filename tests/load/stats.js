@@ -170,7 +170,7 @@ class StatsCollector {
     const r = this.report();
 
     console.log('\n' + '='.repeat(78));
-    console.log('  DEVSIGNAL LOAD TEST REPORT — Show HN Traffic Simulation');
+    console.log('  SIGSCORE LOAD TEST REPORT — Show HN Traffic Simulation');
     console.log('='.repeat(78));
 
     console.log('\n  SUMMARY');

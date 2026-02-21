@@ -227,9 +227,9 @@ export default function WebhookTestPanel({ subscription, onClose }: WebhookTestP
               </label>
               <div className="bg-gray-900 rounded-lg p-3 text-xs font-mono text-gray-100 space-y-0.5 overflow-x-auto">
                 <div><span className="text-indigo-400">Content-Type</span>: application/json</div>
-                <div><span className="text-indigo-400">X-DevSignal-Event</span>: {subscription.event}</div>
+                <div><span className="text-indigo-400">X-Sigscore-Event</span>: {subscription.event}</div>
                 <div>
-                  <span className="text-indigo-400">X-DevSignal-Signature</span>:{' '}
+                  <span className="text-indigo-400">X-Sigscore-Signature</span>:{' '}
                   <span className="text-gray-400">sha256=&lt;hmac-sha256-of-body&gt;</span>
                 </div>
               </div>

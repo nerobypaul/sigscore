@@ -100,7 +100,7 @@ async function respondToSlack(
 }
 
 /**
- * Resolve a Slack user ID to a DevSignal user ID via the org's slackUserMap.
+ * Resolve a Slack user ID to a Sigscore user ID via the org's slackUserMap.
  */
 async function resolveSlackUser(
   slackUserId: string,
@@ -341,7 +341,7 @@ router.post('/interactions', async (req: Request, res: Response): Promise<void> 
     // Resolve the organization from the Slack team
     const organizationId = await findOrgBySlackTeam(slackTeamId);
     if (!organizationId) {
-      await respondToSlack(responseUrl, 'Could not find a DevSignal organization linked to this Slack workspace.');
+      await respondToSlack(responseUrl, 'Could not find a Sigscore organization linked to this Slack workspace.');
       return;
     }
 

@@ -1,7 +1,7 @@
 /**
  * Identity Resolution Engine
  *
- * The core technical moat of DevSignal. Maps anonymous GitHub stars, npm downloads,
+ * The core technical moat of Sigscore. Maps anonymous GitHub stars, npm downloads,
  * and other signals to unified contact + company profiles. Turns noise into pipeline.
  *
  * Resolution chain (priority order):

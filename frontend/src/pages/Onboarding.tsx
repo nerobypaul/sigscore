@@ -50,7 +50,7 @@ interface CrawlProgress {
 // ---- Main component ----
 
 export default function Onboarding() {
-  useEffect(() => { document.title = 'Get Started — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Get Started — Sigscore'; }, []);
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
@@ -248,7 +248,7 @@ export default function Onboarding() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="py-6 px-4 text-center">
-        <h1 className="text-xl font-bold text-gray-900">DevSignal</h1>
+        <h1 className="text-xl font-bold text-gray-900">Sigscore</h1>
       </div>
 
       {/* Step indicator */}
@@ -333,7 +333,7 @@ export default function Onboarding() {
                     Slug
                   </label>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">devsignal.dev/</span>
+                    <span className="text-sm text-gray-400">sigscore.dev/</span>
                     <input
                       id="orgSlug"
                       type="text"
@@ -422,7 +422,7 @@ export default function Onboarding() {
                         Needs <code className="bg-gray-100 px-1 rounded">read:user</code> and{' '}
                         <code className="bg-gray-100 px-1 rounded">repo</code> scopes.{' '}
                         <a
-                          href="https://github.com/settings/tokens/new?scopes=repo,read:user&description=DevSignal%20Onboarding"
+                          href="https://github.com/settings/tokens/new?scopes=repo,read:user&description=Sigscore%20Onboarding"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-indigo-600 hover:text-indigo-700 underline"
@@ -627,7 +627,7 @@ export default function Onboarding() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-green-800">
-                    You're all set! DevSignal found {summary.companiesFound} {summary.companiesFound === 1 ? 'company' : 'companies'} and {summary.developersFound} developers.
+                    You're all set! Sigscore found {summary.companiesFound} {summary.companiesFound === 1 ? 'company' : 'companies'} and {summary.developersFound} developers.
                   </p>
                   <p className="text-xs text-green-700 mt-0.5">
                     Your signal intelligence is ready to use.

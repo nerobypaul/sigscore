@@ -41,7 +41,7 @@ const FORMAT_OPTIONS = [
 // ---------------------------------------------------------------------------
 
 export default function DataExport() {
-  useEffect(() => { document.title = 'Data Export — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Data Export — Sigscore'; }, []);
   const toast = useToast();
 
   // Form state
@@ -163,7 +163,7 @@ export default function DataExport() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = fileName || 'devsignal-export';
+      a.download = fileName || 'sigscore-export';
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

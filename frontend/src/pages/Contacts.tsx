@@ -11,7 +11,7 @@ import BulkActionBar from '../components/BulkActionBar';
 import { CompanyHoverCard } from '../components/HoverCard';
 
 export default function Contacts() {
-  useEffect(() => { document.title = 'Contacts — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Contacts — Sigscore'; }, []);
   const navigate = useNavigate();
   const toast = useToast();
   const [contacts, setContacts] = useState<Contact[]>([]);

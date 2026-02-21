@@ -1,8 +1,8 @@
-# DevSignal Production Runbook
+# Sigscore Production Runbook
 
 **Last updated:** 2026-02-18
-**Maintainer:** engineering@devsignal.dev
-**Security incidents:** security@devsignal.dev
+**Maintainer:** engineering@sigscore.dev
+**Security incidents:** security@sigscore.dev
 
 This document is written for an on-call engineer responding at 3 AM. Every section
 is actionable. Skip the theory and follow the steps.
@@ -46,7 +46,7 @@ Railway watches the `main` branch and auto-deploys on every push.
 
 **Manual redeploy (no code change):**
 
-1. Open Railway dashboard -> select the `devsignal` project
+1. Open Railway dashboard -> select the `sigscore` project
 2. Click the `app` service -> Deployments tab -> Redeploy latest
 
 **Rollback to a previous deploy:**
@@ -79,7 +79,7 @@ railway logs --service worker --tail 200
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/nerobypaul/headless-crm.git
+git clone https://github.com/nerobypaul/sigscore.git
 cd headless-crm
 
 # 2. Create env file
@@ -160,7 +160,7 @@ safe default.
 
 | Variable | Required | Notes |
 |---|---|---|
-| `DATABASE_URL` | REQUIRED | `postgresql://user:pass@host:5432/devsignal` |
+| `DATABASE_URL` | REQUIRED | `postgresql://user:pass@host:5432/sigscore` |
 | `REDIS_HOST` | REQUIRED | Hostname only (no protocol) |
 | `REDIS_PORT` | REQUIRED | Default: 6379 |
 | `REDIS_PASSWORD` | optional | Set if Redis has auth enabled |
@@ -168,7 +168,7 @@ safe default.
 | `JWT_REFRESH_SECRET` | REQUIRED | Min 64 random bytes, different from JWT_SECRET |
 | `JWT_EXPIRES_IN` | optional | Default: `15m` |
 | `JWT_REFRESH_EXPIRES_IN` | optional | Default: `7d` |
-| `CORS_ORIGIN` | REQUIRED | Production domain, e.g. `https://app.devsignal.dev` |
+| `CORS_ORIGIN` | REQUIRED | Production domain, e.g. `https://app.sigscore.dev` |
 | `FRONTEND_URL` | REQUIRED | Same as CORS_ORIGIN |
 | `API_URL` | REQUIRED | Backend URL |
 | `NODE_ENV` | REQUIRED | Must be `production` |
@@ -184,9 +184,9 @@ safe default.
 | `GOOGLE_CLIENT_ID` | optional | Google OAuth |
 | `GOOGLE_CLIENT_SECRET` | optional | Google OAuth |
 | `VITE_API_URL` | build-time | Injected during Docker build for frontend |
-| `POSTGRES_USER` | Docker only | Default: devsignal |
+| `POSTGRES_USER` | Docker only | Default: sigscore |
 | `POSTGRES_PASSWORD` | Docker only | Change from default |
-| `POSTGRES_DB` | Docker only | Default: devsignal |
+| `POSTGRES_DB` | Docker only | Default: sigscore |
 
 ---
 
@@ -204,9 +204,9 @@ const prisma = new PrismaClient();
 "
 
 # OR use the register endpoint directly (it creates the first org)
-curl -X POST https://app.devsignal.dev/api/v1/auth/register \
+curl -X POST https://app.sigscore.dev/api/v1/auth/register \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@yourcompany.com","password":"...","name":"Admin","organizationName":"DevSignal"}'
+  -d '{"email":"admin@yourcompany.com","password":"...","name":"Admin","organizationName":"Sigscore"}'
 ```
 
 ---
@@ -216,7 +216,7 @@ curl -X POST https://app.devsignal.dev/api/v1/auth/register \
 ### 2.1 Health Check
 
 ```bash
-curl https://app.devsignal.dev/health
+curl https://app.sigscore.dev/health
 ```
 
 Expected response (HTTP 200):
@@ -237,7 +237,7 @@ If `database` or `redis` is not `"ok"`, treat it as a P1 incident.
 
 ```bash
 # Add to external uptime monitor (UptimeRobot, Better Uptime, etc.)
-# URL: https://app.devsignal.dev/health
+# URL: https://app.sigscore.dev/health
 # Method: GET
 # Expected status: 200
 # Check interval: 1 minute
@@ -247,8 +247,8 @@ If `database` or `redis` is not `"ok"`, treat it as a P1 incident.
 
 ### 2.2 Sentry
 
-- **Backend errors:** Sentry project `devsignal-backend`
-- **Frontend errors:** Sentry project `devsignal-frontend`
+- **Backend errors:** Sentry project `sigscore-backend`
+- **Frontend errors:** Sentry project `sigscore-frontend`
 - **Performance tracing:** enabled on all API routes
 
 **What to look at during an incident:**
@@ -376,7 +376,7 @@ Access them via: Railway dashboard -> database service -> Backups tab.
 ```bash
 # Create a dump
 docker compose -f docker-compose.prod.yml exec postgres \
-  pg_dump -U devsignal devsignal > backup-$(date +%Y%m%d-%H%M%S).sql
+  pg_dump -U sigscore sigscore > backup-$(date +%Y%m%d-%H%M%S).sql
 
 # Or using pg_dump directly if you have DATABASE_URL
 pg_dump "$DATABASE_URL" -Fc -f backup-$(date +%Y%m%d-%H%M%S).dump
@@ -390,7 +390,7 @@ docker compose -f docker-compose.prod.yml stop app worker
 
 # Restore
 docker compose -f docker-compose.prod.yml exec -T postgres \
-  psql -U devsignal devsignal < backup-TIMESTAMP.sql
+  psql -U sigscore sigscore < backup-TIMESTAMP.sql
 
 # Or using pg_restore for Fc format
 pg_restore -d "$DATABASE_URL" --no-owner backup-TIMESTAMP.dump
@@ -509,7 +509,7 @@ secret have expired. Remove `JWT_SECRET_PREVIOUS`.
 
 ### 3.6 Rotating API Keys
 
-DevSignal API keys are stored hashed in the database. Rotation requires the
+Sigscore API keys are stored hashed in the database. Rotation requires the
 user to generate a new key via the API or dashboard.
 
 **Admin-forced rotation (if a key is compromised):**
@@ -572,7 +572,7 @@ Then notify the customer to generate a new key.
 
 ```bash
 # Is the app responding?
-curl -o /dev/null -s -w "%{http_code}" https://app.devsignal.dev/health
+curl -o /dev/null -s -w "%{http_code}" https://app.sigscore.dev/health
 
 # Are there active Sentry alerts?
 # Check Sentry dashboard
@@ -801,7 +801,7 @@ railway logs --service app | grep -E '"duration":[0-9]{4,}' | tail -50
 ```sql
 -- Connect to Postgres
 -- Railway: railway connect postgres
--- Docker: docker compose exec postgres psql -U devsignal devsignal
+-- Docker: docker compose exec postgres psql -U sigscore sigscore
 
 -- Find queries running longer than 1 second right now
 SELECT pid, now() - pg_stat_activity.query_start AS duration, query, state
@@ -946,7 +946,7 @@ a code change and redeploy.
 ```bash
 # Check container memory usage
 railway metrics --service app  # if available
-docker stats devsignal-app devsignal-worker  # Docker Compose
+docker stats sigscore-app sigscore-worker  # Docker Compose
 
 # Check for connection pool exhaustion
 # In PostgreSQL:
@@ -1025,7 +1025,7 @@ railway link
 railway up
 
 # Docker Compose
-git clone https://github.com/nerobypaul/headless-crm.git
+git clone https://github.com/nerobypaul/sigscore.git
 cd headless-crm
 cp .env.example .env  # restore from secrets manager
 docker compose -f docker-compose.prod.yml up -d --build
@@ -1040,7 +1040,7 @@ railway run --service app npx prisma migrate deploy
 **Step 6: Verify**
 
 ```bash
-curl https://new-domain.devsignal.dev/health
+curl https://new-domain.sigscore.dev/health
 # Expected: 200 {"status":"ok","database":"ok","redis":"ok"}
 ```
 
@@ -1130,7 +1130,7 @@ npm audit fix --workspace=backend
 
 ### 7.3 Vulnerability Disclosure
 
-External vulnerability reports should be sent to **security@devsignal.dev**.
+External vulnerability reports should be sent to **security@sigscore.dev**.
 
 Triage SLA:
 - **Critical / High:** Acknowledge within 24 hours, patch within 72 hours
@@ -1265,7 +1265,7 @@ await redis.quit();
 
 ## Quick Reference Card
 
-**Health check:** `curl https://app.devsignal.dev/health`
+**Health check:** `curl https://app.sigscore.dev/health`
 
 **App logs (Railway):** `railway logs --service app --tail 200`
 
@@ -1281,7 +1281,7 @@ await redis.quit();
 
 **P1 contact:** Post in #incidents Slack channel, page on-call engineer
 
-**Security issues:** security@devsignal.dev
+**Security issues:** security@sigscore.dev
 
 ---
 

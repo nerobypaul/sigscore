@@ -114,7 +114,7 @@ const LINE_COLORS = [
 // ---------------------------------------------------------------------------
 
 export default function Analytics() {
-  useEffect(() => { document.title = 'Analytics — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Analytics — Sigscore'; }, []);
   const [activeTab, setActiveTab] = useState<TabKey>('trends');
   const [loading, setLoading] = useState(true);
 

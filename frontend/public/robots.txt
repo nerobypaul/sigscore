@@ -33,4 +33,4 @@ Disallow: /sso/callback
 Disallow: /oauth/callback
 Disallow: /invitations
 
-Sitemap: https://devsignal.dev/sitemap.xml
+Sitemap: https://sigscore.dev/sitemap.xml

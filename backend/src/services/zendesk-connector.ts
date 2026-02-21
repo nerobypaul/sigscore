@@ -50,7 +50,7 @@ export interface ZendeskStatus {
 }
 
 /**
- * Zendesk webhook topic to DevSignal signal type mapping.
+ * Zendesk webhook topic to Sigscore signal type mapping.
  */
 const TOPIC_MAP: Record<string, ZendeskTrackedEvent> = {
   'ticket.created': 'zendesk_ticket_created',

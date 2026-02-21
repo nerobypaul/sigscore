@@ -18,7 +18,7 @@ const sections: Section[] = [
       <>
         <p>
           The following capitalized terms have the meanings set forth below. Terms not defined here
-          carry the meanings given in the GDPR or in the DevSignal Terms of Service.
+          carry the meanings given in the GDPR or in the Sigscore Terms of Service.
         </p>
         <ul>
           <li>
@@ -30,12 +30,12 @@ const sections: Section[] = [
           <li>
             <strong>"Data Processor"</strong> means a natural or legal person, public authority,
             agency, or other body which processes Personal Data on behalf of the Data Controller.
-            In the context of this DPA, DevSignal is the Data Processor.
+            In the context of this DPA, Sigscore is the Data Processor.
           </li>
           <li>
             <strong>"Personal Data"</strong> means any information relating to an identified or
             identifiable natural person ("Data Subject"), as defined in GDPR Article 4(1), that
-            Customer submits to the Service or that DevSignal processes on behalf of Customer.
+            Customer submits to the Service or that Sigscore processes on behalf of Customer.
           </li>
           <li>
             <strong>"Processing"</strong> means any operation or set of operations which is
@@ -47,7 +47,7 @@ const sections: Section[] = [
           </li>
           <li>
             <strong>"Sub-processors"</strong> means any third-party data processor engaged by
-            DevSignal to assist in fulfilling its obligations with respect to the Service.
+            Sigscore to assist in fulfilling its obligations with respect to the Service.
           </li>
           <li>
             <strong>"Data Subject"</strong> means an identified or identifiable natural person
@@ -66,8 +66,8 @@ const sections: Section[] = [
             2021/914, or any successor instrument.
           </li>
           <li>
-            <strong>"Service"</strong> means the DevSignal developer signal intelligence platform,
-            APIs, SDKs, and related services as described in the DevSignal Terms of Service.
+            <strong>"Service"</strong> means the Sigscore developer signal intelligence platform,
+            APIs, SDKs, and related services as described in the Sigscore Terms of Service.
           </li>
         </ul>
       </>
@@ -79,9 +79,9 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          This Data Processing Agreement ("DPA") is entered into between DevSignal, Inc.
-          ("DevSignal", "Processor") and the Customer ("Controller") and forms part of the
-          DevSignal Terms of Service. This DPA governs the processing of Personal Data by DevSignal
+          This Data Processing Agreement ("DPA") is entered into between Sigscore, Inc.
+          ("Sigscore", "Processor") and the Customer ("Controller") and forms part of the
+          Sigscore Terms of Service. This DPA governs the processing of Personal Data by Sigscore
           on behalf of Customer in connection with the Service.
         </p>
         <p>
@@ -95,19 +95,19 @@ const sections: Section[] = [
             contacts and signals to track, enrich, and analyze.
           </li>
           <li>
-            <strong>DevSignal is the Data Processor:</strong> DevSignal processes Personal Data
+            <strong>Sigscore is the Data Processor:</strong> Sigscore processes Personal Data
             only on behalf of and under the documented instructions of the Customer, solely for
             the purpose of providing the Service.
           </li>
         </ul>
         <p>
-          DevSignal will not process Personal Data for any purpose other than those specified in
+          Sigscore will not process Personal Data for any purpose other than those specified in
           this DPA and the Terms of Service, unless required to do so by applicable law. In such
-          cases, DevSignal will inform Customer of the legal requirement prior to processing, unless
+          cases, Sigscore will inform Customer of the legal requirement prior to processing, unless
           the law prohibits such disclosure.
         </p>
         <p>
-          This DPA applies to the extent that DevSignal processes Personal Data that is subject to
+          This DPA applies to the extent that Sigscore processes Personal Data that is subject to
           the GDPR, the UK GDPR, the California Consumer Privacy Act (CCPA), or other applicable
           data protection laws.
         </p>
@@ -121,10 +121,10 @@ const sections: Section[] = [
       <>
         <p>
           The following describes the nature and purpose of the Personal Data processing carried
-          out by DevSignal under this DPA.
+          out by Sigscore under this DPA.
         </p>
         <p>
-          <strong>Nature and Purpose of Processing:</strong> DevSignal processes Personal Data to
+          <strong>Nature and Purpose of Processing:</strong> Sigscore processes Personal Data to
           provide the Service, including ingesting developer signals, scoring and enriching contact
           and company profiles, generating AI-powered account briefs, delivering notifications, and
           facilitating CRM workflows. Processing includes collection, storage, analysis,
@@ -152,7 +152,7 @@ const sections: Section[] = [
           </li>
           <li>
             <strong>Usage Analytics:</strong> End-user interaction data submitted through the
-            DevSignal SDK or Segment integration, including feature usage events and product
+            Sigscore SDK or Segment integration, including feature usage events and product
             engagement metrics.
           </li>
           <li>
@@ -166,9 +166,9 @@ const sections: Section[] = [
           Customer submits to or integrates with the Service.
         </p>
         <p>
-          <strong>Duration of Processing:</strong> DevSignal will process Personal Data for the
+          <strong>Duration of Processing:</strong> Sigscore will process Personal Data for the
           duration of the Service subscription term. Upon expiry or termination of the agreement,
-          DevSignal will cease processing and will delete or return Personal Data as described in
+          Sigscore will cease processing and will delete or return Personal Data as described in
           Section 10 (Term and Termination).
         </p>
       </>
@@ -180,58 +180,58 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          DevSignal agrees to the following obligations in its capacity as Data Processor, in
+          Sigscore agrees to the following obligations in its capacity as Data Processor, in
           accordance with GDPR Article 28:
         </p>
         <ul>
           <li>
-            <strong>Process Only on Documented Instructions:</strong> DevSignal will process
+            <strong>Process Only on Documented Instructions:</strong> Sigscore will process
             Personal Data only on documented instructions from Customer, including with regard to
             transfers of Personal Data to a third country or international organisation, unless
             required to do so by applicable law (GDPR Art. 28(3)(a)).
           </li>
           <li>
-            <strong>Confidentiality:</strong> DevSignal will ensure that persons authorised to
+            <strong>Confidentiality:</strong> Sigscore will ensure that persons authorised to
             process Personal Data have committed themselves to confidentiality or are under an
             appropriate statutory obligation of confidentiality (GDPR Art. 28(3)(b)).
           </li>
           <li>
-            <strong>Security Measures:</strong> DevSignal will implement appropriate technical and
+            <strong>Security Measures:</strong> Sigscore will implement appropriate technical and
             organisational measures to ensure a level of security appropriate to the risk, as
             described in Section 7 of this DPA (GDPR Art. 28(3)(c), Art. 32).
           </li>
           <li>
-            <strong>Sub-processor Controls:</strong> DevSignal will not engage a Sub-processor
-            without Customer's prior general written authorisation. DevSignal will impose data
+            <strong>Sub-processor Controls:</strong> Sigscore will not engage a Sub-processor
+            without Customer's prior general written authorisation. Sigscore will impose data
             protection obligations on any Sub-processor, at least equivalent to those set out in
             this DPA, and will remain fully liable to Customer for any failure by Sub-processors to
             fulfil their data protection obligations (GDPR Art. 28(2), Art. 28(4)).
           </li>
           <li>
             <strong>Assistance with Data Subject Rights:</strong> Taking into account the nature of
-            the processing, DevSignal will assist Customer by appropriate technical and
+            the processing, Sigscore will assist Customer by appropriate technical and
             organisational measures, insofar as possible, to fulfil Customer's obligation to
             respond to requests for exercising Data Subject rights under Chapter III of the GDPR
             (GDPR Art. 28(3)(e)).
           </li>
           <li>
-            <strong>Assistance with Compliance Obligations:</strong> DevSignal will assist Customer
+            <strong>Assistance with Compliance Obligations:</strong> Sigscore will assist Customer
             in ensuring compliance with obligations under GDPR Articles 32 through 36 (security,
             breach notification, data protection impact assessments, and prior consultation), taking
-            into account the nature of processing and the information available to DevSignal
+            into account the nature of processing and the information available to Sigscore
             (GDPR Art. 28(3)(f)).
           </li>
           <li>
-            <strong>Deletion or Return of Data:</strong> At Customer's choice, DevSignal will
+            <strong>Deletion or Return of Data:</strong> At Customer's choice, Sigscore will
             delete or return all Personal Data upon termination of the service agreement, and
             delete existing copies unless applicable law requires storage of the Personal Data
             (GDPR Art. 28(3)(g)).
           </li>
           <li>
-            <strong>Audit Cooperation:</strong> DevSignal will make available to Customer all
+            <strong>Audit Cooperation:</strong> Sigscore will make available to Customer all
             information necessary to demonstrate compliance with the obligations laid down in GDPR
             Article 28, and will allow for and contribute to audits, including inspections,
-            conducted by Customer or an auditor mandated by Customer. DevSignal will inform
+            conducted by Customer or an auditor mandated by Customer. Sigscore will inform
             Customer if, in its opinion, any instruction infringes GDPR or applicable data
             protection law (GDPR Art. 28(3)(h)).
           </li>
@@ -245,8 +245,8 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          Customer provides general authorisation for DevSignal to engage the following
-          Sub-processors in connection with the Service. DevSignal will ensure that each
+          Customer provides general authorisation for Sigscore to engage the following
+          Sub-processors in connection with the Service. Sigscore will ensure that each
           Sub-processor is bound by data protection obligations at least equivalent to those
           set out in this DPA.
         </p>
@@ -298,7 +298,7 @@ const sections: Section[] = [
           </li>
         </ul>
         <p>
-          <strong>Changes to Sub-processors:</strong> DevSignal will notify Customer of any
+          <strong>Changes to Sub-processors:</strong> Sigscore will notify Customer of any
           intended addition or replacement of Sub-processors at least <strong>30 days</strong>{' '}
           in advance by sending an email to the Customer's registered account email address and
           by updating this page. Customer may object to the change within 14 days of notice. If
@@ -307,7 +307,7 @@ const sections: Section[] = [
         </p>
         <p>
           The current Sub-processor list is maintained at{' '}
-          <a href="https://devsignal.dev/dpa">devsignal.dev/dpa</a> and updated whenever changes
+          <a href="https://sigscore.dev/dpa">sigscore.dev/dpa</a> and updated whenever changes
           are made.
         </p>
       </>
@@ -321,7 +321,7 @@ const sections: Section[] = [
         <p>
           Customer acknowledges that the Service is operated from the United States. Personal Data
           submitted to the Service may be transferred to, stored, and processed in the United
-          States or other countries where DevSignal and its Sub-processors maintain operations.
+          States or other countries where Sigscore and its Sub-processors maintain operations.
         </p>
         <p>
           <strong>Transfers from the EEA, UK, or Switzerland:</strong> Where Personal Data
@@ -332,30 +332,30 @@ const sections: Section[] = [
         </p>
         <ul>
           <li>
-            <strong>Standard Contractual Clauses (SCCs):</strong> DevSignal relies on the
+            <strong>Standard Contractual Clauses (SCCs):</strong> Sigscore relies on the
             Standard Contractual Clauses adopted by the European Commission under Decision
             2021/914 (Module Two: Controller-to-Processor) as the primary transfer mechanism for
             transfers of Personal Data from the EEA to the United States. For UK transfers,
-            DevSignal relies on the UK International Data Transfer Agreement (IDTA) or the
+            Sigscore relies on the UK International Data Transfer Agreement (IDTA) or the
             UK Addendum to the EU SCCs. To receive a signed copy of the applicable SCCs, contact{' '}
-            <a href="mailto:dpa@devsignal.dev">dpa@devsignal.dev</a>.
+            <a href="mailto:dpa@sigscore.dev">dpa@sigscore.dev</a>.
           </li>
           <li>
-            <strong>Schrems II Compliance:</strong> DevSignal has conducted a Transfer Impact
+            <strong>Schrems II Compliance:</strong> Sigscore has conducted a Transfer Impact
             Assessment (TIA) to assess the laws and practices of the United States and has
             implemented supplementary technical measures (including encryption in transit and
             at rest) to ensure that Personal Data transferred under the SCCs is afforded a
             level of protection essentially equivalent to that guaranteed within the EEA.
           </li>
           <li>
-            <strong>Sub-processor Transfers:</strong> DevSignal requires all Sub-processors to
+            <strong>Sub-processor Transfers:</strong> Sigscore requires all Sub-processors to
             implement appropriate transfer mechanisms for any onward transfers of Personal Data
             outside the EEA or UK, consistent with the requirements of Chapter V of the GDPR.
           </li>
         </ul>
         <p>
           If the European Commission, the UK ICO, or a competent supervisory authority invalidates
-          a transfer mechanism relied upon by DevSignal, DevSignal will promptly notify Customer
+          a transfer mechanism relied upon by Sigscore, Sigscore will promptly notify Customer
           and will cooperate in good faith to implement an alternative compliant transfer mechanism
           with minimum disruption to the Service.
         </p>
@@ -368,7 +368,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          DevSignal implements appropriate technical and organisational security measures
+          Sigscore implements appropriate technical and organisational security measures
           to protect Personal Data against accidental or unlawful destruction, loss,
           alteration, unauthorised disclosure, or access, in accordance with GDPR Article 32.
           The following measures are currently in place:
@@ -377,7 +377,7 @@ const sections: Section[] = [
         <ul>
           <li>
             <strong>Encryption in Transit:</strong> All data transmitted between clients and
-            DevSignal servers is encrypted using TLS 1.2 or higher. Webhook payloads are
+            Sigscore servers is encrypted using TLS 1.2 or higher. Webhook payloads are
             signed using HMAC-SHA256 for integrity verification.
           </li>
           <li>
@@ -414,7 +414,7 @@ const sections: Section[] = [
         <p><strong>Organisational Measures:</strong></p>
         <ul>
           <li>
-            DevSignal personnel with access to Customer Personal Data are subject to
+            Sigscore personnel with access to Customer Personal Data are subject to
             confidentiality obligations and receive training on data protection requirements.
           </li>
           <li>
@@ -422,7 +422,7 @@ const sections: Section[] = [
             authorised personnel on a least-privilege basis and reviewed periodically.
           </li>
           <li>
-            DevSignal conducts regular security reviews and vulnerability assessments of
+            Sigscore conducts regular security reviews and vulnerability assessments of
             the infrastructure and codebase.
           </li>
           <li>
@@ -431,7 +431,7 @@ const sections: Section[] = [
           </li>
         </ul>
         <p>
-          The security measures described above represent a minimum baseline. DevSignal may
+          The security measures described above represent a minimum baseline. Sigscore may
           implement additional or updated measures over time to address evolving threats, provided
           that such updates do not materially reduce the overall level of protection.
         </p>
@@ -444,13 +444,13 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          DevSignal maintains incident response procedures to detect, investigate, and respond to
+          Sigscore maintains incident response procedures to detect, investigate, and respond to
           Personal Data breaches. In the event of a confirmed Personal Data breach affecting
-          Customer's data, DevSignal will:
+          Customer's data, Sigscore will:
         </p>
         <ul>
           <li>
-            <strong>Notify Customer Without Undue Delay:</strong> DevSignal will notify Customer
+            <strong>Notify Customer Without Undue Delay:</strong> Sigscore will notify Customer
             of a confirmed Personal Data breach within <strong>72 hours</strong> of becoming
             aware of the breach, in accordance with GDPR Article 33. Notification will be sent
             to the Customer's registered account email address and, where available, to the
@@ -473,7 +473,7 @@ const sections: Section[] = [
                 The likely consequences of the Personal Data breach (GDPR Art. 33(3)(c)).
               </li>
               <li>
-                The measures taken or proposed to be taken by DevSignal to address the Personal
+                The measures taken or proposed to be taken by Sigscore to address the Personal
                 Data breach, including, where appropriate, measures to mitigate its possible
                 adverse effects (GDPR Art. 33(3)(d)).
               </li>
@@ -481,17 +481,17 @@ const sections: Section[] = [
           </li>
           <li>
             <strong>Phased Notification:</strong> Where all required information is not available
-            at the time of the initial notification, DevSignal will provide information in phases
+            at the time of the initial notification, Sigscore will provide information in phases
             as it becomes available, without undue further delay.
           </li>
           <li>
-            <strong>Take Immediate Remedial Action:</strong> DevSignal will take all reasonable
+            <strong>Take Immediate Remedial Action:</strong> Sigscore will take all reasonable
             steps to contain the breach, mitigate its impact, and prevent recurrence, including
             isolating affected systems, revoking compromised credentials, and patching
             vulnerabilities.
           </li>
           <li>
-            <strong>Assist with Regulatory Notifications:</strong> DevSignal will provide
+            <strong>Assist with Regulatory Notifications:</strong> Sigscore will provide
             Customer with reasonable assistance in meeting Customer's own notification
             obligations to supervisory authorities and to affected Data Subjects under GDPR
             Articles 33 and 34.
@@ -499,7 +499,7 @@ const sections: Section[] = [
         </ul>
         <p>
           To report a suspected security incident, contact{' '}
-          <a href="mailto:security@devsignal.dev">security@devsignal.dev</a>.
+          <a href="mailto:security@sigscore.dev">security@sigscore.dev</a>.
         </p>
       </>
     ),
@@ -510,48 +510,48 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          DevSignal will assist Customer in fulfilling its obligations to respond to Data Subject
+          Sigscore will assist Customer in fulfilling its obligations to respond to Data Subject
           rights requests under Chapter III of the GDPR, including the following rights, taking
-          into account the nature of the processing and the information available to DevSignal:
+          into account the nature of the processing and the information available to Sigscore:
         </p>
         <ul>
           <li>
-            <strong>Right of Access (Art. 15):</strong> DevSignal will provide Customer with
+            <strong>Right of Access (Art. 15):</strong> Sigscore will provide Customer with
             copies of the Personal Data it processes on behalf of Customer upon request, in a
             commonly used machine-readable format, to allow Customer to fulfil Data Subject
             access requests.
           </li>
           <li>
-            <strong>Right to Rectification (Art. 16):</strong> DevSignal will update or correct
+            <strong>Right to Rectification (Art. 16):</strong> Sigscore will update or correct
             Personal Data upon receiving documented instructions from Customer, within the
             timeframes specified below.
           </li>
           <li>
-            <strong>Right to Erasure / Right to be Forgotten (Art. 17):</strong> DevSignal will
+            <strong>Right to Erasure / Right to be Forgotten (Art. 17):</strong> Sigscore will
             delete specified Personal Data upon receiving documented instructions from Customer,
             subject to any legal retention obligations or technical limitations (e.g., encrypted
             backups that will be purged on their normal retention schedule).
           </li>
           <li>
-            <strong>Right to Restriction of Processing (Art. 18):</strong> DevSignal will
+            <strong>Right to Restriction of Processing (Art. 18):</strong> Sigscore will
             restrict the processing of identified Personal Data upon receiving documented
             instructions from Customer, and will not process restricted data beyond storage
             until the restriction is lifted.
           </li>
           <li>
-            <strong>Right to Data Portability (Art. 20):</strong> DevSignal will provide
+            <strong>Right to Data Portability (Art. 20):</strong> Sigscore will provide
             Customer with an export of Personal Data in a structured, commonly used,
             machine-readable format (JSON or CSV) upon request. Customers may also use
-            DevSignal's built-in bulk export APIs at any time.
+            Sigscore's built-in bulk export APIs at any time.
           </li>
           <li>
-            <strong>Right to Object (Art. 21):</strong> DevSignal will assist Customer in
+            <strong>Right to Object (Art. 21):</strong> Sigscore will assist Customer in
             implementing objections to specific processing activities upon receiving documented
             instructions.
           </li>
         </ul>
         <p>
-          DevSignal will use commercially reasonable efforts to respond to, and fulfill, data
+          Sigscore will use commercially reasonable efforts to respond to, and fulfill, data
           subject rights requests forwarded by Customer within <strong>30 days</strong> of
           receiving Customer's documented instruction. Where a request is particularly complex
           or numerous, this period may be extended by a further 30 days with prior notice and
@@ -559,7 +559,7 @@ const sections: Section[] = [
         </p>
         <p>
           To submit a Data Subject rights request or instruction, contact{' '}
-          <a href="mailto:dpa@devsignal.dev">dpa@devsignal.dev</a> with the subject line
+          <a href="mailto:dpa@sigscore.dev">dpa@sigscore.dev</a> with the subject line
           "Data Subject Rights Request."
         </p>
       </>
@@ -572,35 +572,35 @@ const sections: Section[] = [
       <>
         <p>
           <strong>Effective Date:</strong> This DPA is effective from the date Customer first
-          accepts the DevSignal Terms of Service and remains in force for the duration of the
+          accepts the Sigscore Terms of Service and remains in force for the duration of the
           Service subscription.
         </p>
         <p>
           <strong>Termination:</strong> This DPA terminates automatically upon expiry or
-          termination of the DevSignal Terms of Service for any reason.
+          termination of the Sigscore Terms of Service for any reason.
         </p>
         <p>
           <strong>Obligations upon Termination:</strong> Upon expiry or termination of the
-          Service, DevSignal will, at Customer's election:
+          Service, Sigscore will, at Customer's election:
         </p>
         <ul>
           <li>
             <strong>Delete Personal Data:</strong> Securely delete all Personal Data processed
             under this DPA within <strong>30 days</strong> following the termination date,
-            including deleting existing copies held by DevSignal and instructing Sub-processors
-            to do the same. DevSignal will provide written confirmation of deletion upon request.
+            including deleting existing copies held by Sigscore and instructing Sub-processors
+            to do the same. Sigscore will provide written confirmation of deletion upon request.
           </li>
           <li>
             <strong>Return Personal Data:</strong> Provide Customer with a complete export of all
             Personal Data in a machine-readable format (JSON or CSV) within 30 days of the
-            termination date, after which DevSignal will delete its copies.
+            termination date, after which Sigscore will delete its copies.
           </li>
         </ul>
         <p>
-          <strong>Legal Retention Exceptions:</strong> DevSignal may retain certain Personal
+          <strong>Legal Retention Exceptions:</strong> Sigscore may retain certain Personal
           Data beyond the 30-day deletion period to the extent and for the period required by
           applicable law (for example, billing records required for tax compliance, or data
-          subject to a legal hold). DevSignal will notify Customer of any such retention and
+          subject to a legal hold). Sigscore will notify Customer of any such retention and
           will continue to protect retained data in accordance with this DPA.
         </p>
         <p>
@@ -617,13 +617,13 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          This DPA is incorporated by reference into the DevSignal Terms of Service and applies
+          This DPA is incorporated by reference into the Sigscore Terms of Service and applies
           automatically to all Customers who use the Service. No separate written signature is
           required for the DPA to take effect.
         </p>
         <p>
           Enterprise Customers requiring a countersigned DPA for their legal or procurement
-          processes may request a signed copy by contacting us. DevSignal will endeavour to
+          processes may request a signed copy by contacting us. Sigscore will endeavour to
           respond within 5 business days.
         </p>
         <p>
@@ -632,18 +632,18 @@ const sections: Section[] = [
         <ul>
           <li>
             <strong>DPA and Data Subject Rights:</strong>{' '}
-            <a href="mailto:dpa@devsignal.dev">dpa@devsignal.dev</a>
+            <a href="mailto:dpa@sigscore.dev">dpa@sigscore.dev</a>
           </li>
           <li>
             <strong>Legal and Compliance:</strong>{' '}
-            <a href="mailto:legal@devsignal.dev">legal@devsignal.dev</a>
+            <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a>
           </li>
           <li>
             <strong>Security Incidents:</strong>{' '}
-            <a href="mailto:security@devsignal.dev">security@devsignal.dev</a>
+            <a href="mailto:security@sigscore.dev">security@sigscore.dev</a>
           </li>
           <li>
-            <strong>Company:</strong> DevSignal, Inc.
+            <strong>Company:</strong> Sigscore, Inc.
           </li>
         </ul>
         <p>
@@ -659,7 +659,7 @@ const sections: Section[] = [
 export default function Dpa() {
   const [activeSection, setActiveSection] = useState(sections[0].id);
 
-  useEffect(() => { document.title = 'Data Processing Agreement — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Data Processing Agreement — Sigscore'; }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -697,10 +697,10 @@ export default function Dpa() {
           </h1>
           <p className="mt-2 text-sm text-gray-500">Last updated: {LAST_UPDATED}</p>
           <p className="mt-4 text-gray-400 max-w-3xl">
-            This Data Processing Agreement ("DPA") governs how DevSignal processes personal data
+            This Data Processing Agreement ("DPA") governs how Sigscore processes personal data
             on behalf of customers in its capacity as a Data Processor under the GDPR and other
             applicable data protection laws. It applies automatically to all customers and
-            supplements the DevSignal{' '}
+            supplements the Sigscore{' '}
             <a href="/terms" className="text-indigo-400 hover:text-indigo-300 underline">
               Terms of Service
             </a>

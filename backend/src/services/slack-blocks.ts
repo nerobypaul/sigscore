@@ -1,7 +1,7 @@
 /**
  * Slack Block Kit Message Builders
  *
- * Rich, interactive message templates for different DevSignal notification types.
+ * Rich, interactive message templates for different Sigscore notification types.
  * Each builder returns a Block Kit payload with action buttons whose `action_id`
  * values are handled by the interactions route.
  */
@@ -130,7 +130,7 @@ export function buildAccountHotAlert(data: {
         elements: [
           {
             type: 'mrkdwn',
-            text: `DevSignal \u2022 ${new Date().toISOString().split('T')[0]}`,
+            text: `Sigscore \u2022 ${new Date().toISOString().split('T')[0]}`,
           },
         ],
       },
@@ -192,7 +192,7 @@ export function buildSignupAlert(data: {
         elements: [
           {
             type: 'mrkdwn',
-            text: `DevSignal \u2022 ${new Date().toLocaleString()}`,
+            text: `Sigscore \u2022 ${new Date().toLocaleString()}`,
           },
         ],
       },
@@ -264,7 +264,7 @@ export function buildDealStageChange(data: {
         elements: [
           {
             type: 'mrkdwn',
-            text: `DevSignal \u2022 ${new Date().toLocaleString()}`,
+            text: `Sigscore \u2022 ${new Date().toLocaleString()}`,
           },
         ],
       },
@@ -332,7 +332,7 @@ export function buildWorkflowFailed(data: {
         elements: [
           {
             type: 'mrkdwn',
-            text: `DevSignal \u2022 ${new Date().toLocaleString()}`,
+            text: `Sigscore \u2022 ${new Date().toLocaleString()}`,
           },
         ],
       },
@@ -360,7 +360,7 @@ export function buildWeeklyDigest(data: {
     .join('\n');
 
   return {
-    text: `\uD83D\uDCCA DevSignal Weekly Digest \u2014 ${data.periodLabel}`,
+    text: `\uD83D\uDCCA Sigscore Weekly Digest \u2014 ${data.periodLabel}`,
     blocks: [
       {
         type: 'header',
@@ -421,7 +421,7 @@ export function buildWeeklyDigest(data: {
         elements: [
           {
             type: 'mrkdwn',
-            text: `DevSignal \u2022 Sent ${new Date().toISOString().split('T')[0]}`,
+            text: `Sigscore \u2022 Sent ${new Date().toISOString().split('T')[0]}`,
           },
         ],
       },

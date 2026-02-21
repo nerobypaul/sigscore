@@ -351,7 +351,7 @@ function FeedSignalCard({
 // ---------------------------------------------------------------------------
 
 export default function SignalFeed() {
-  useEffect(() => { document.title = 'Signal Feed — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Signal Feed — Sigscore'; }, []);
   const toast = useToast();
 
   // Data state

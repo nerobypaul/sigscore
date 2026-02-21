@@ -100,7 +100,7 @@ async function ghFetch<T>(token: string, path: string): Promise<T> {
     headers: {
       Authorization: `token ${token}`,
       Accept: 'application/vnd.github.v3+json',
-      'User-Agent': 'DevSignal-Onboarding/1.0',
+      'User-Agent': 'Sigscore-Onboarding/1.0',
     },
   });
 

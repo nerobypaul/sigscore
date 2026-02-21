@@ -106,7 +106,7 @@ function StatusBadge({ status }: { status: string }) {
 // ---------------------------------------------------------------------------
 
 export default function EnrichmentQueue() {
-  useEffect(() => { document.title = 'Enrichment Queue — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Enrichment Queue — Sigscore'; }, []);
   const toast = useToast();
 
   // Stats

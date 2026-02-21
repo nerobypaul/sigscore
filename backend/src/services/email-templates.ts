@@ -237,7 +237,7 @@ export function renderWeeklyDigestEmail(
       <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
         <tr>
           <td>
-            <div style="font-size:22px;font-weight:700;color:${COLORS.white};letter-spacing:-0.3px;">DevSignal</div>
+            <div style="font-size:22px;font-weight:700;color:${COLORS.white};letter-spacing:-0.3px;">Sigscore</div>
             <div style="font-size:13px;color:rgba(255,255,255,0.75);margin-top:2px;">Developer Signal Intelligence</div>
           </td>
           <td align="right" style="vertical-align:top;">
@@ -374,7 +374,7 @@ export function renderWeeklyDigestEmail(
 
       <!-- CTA Button -->
       <div style="padding:8px 24px 32px;text-align:center;">
-        <a href="${appUrl}/dashboard" style="display:inline-block;background:${COLORS.primary};color:${COLORS.white};padding:14px 32px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:600;letter-spacing:0.2px;">View in DevSignal</a>
+        <a href="${appUrl}/dashboard" style="display:inline-block;background:${COLORS.primary};color:${COLORS.white};padding:14px 32px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:600;letter-spacing:0.2px;">View in Sigscore</a>
       </div>
 
     </td>
@@ -387,7 +387,7 @@ export function renderWeeklyDigestEmail(
         <tr>
           <td>
             <div style="font-size:12px;color:${COLORS.gray500};line-height:1.6;">
-              You are receiving this because you are a member of <strong>${escapeHtml(data.organizationName)}</strong> on DevSignal.
+              You are receiving this because you are a member of <strong>${escapeHtml(data.organizationName)}</strong> on Sigscore.
             </div>
             <div style="font-size:12px;color:${COLORS.gray500};margin-top:8px;">
               <a href="${unsub}" style="color:${COLORS.primary};text-decoration:underline;">Unsubscribe from weekly digests</a>
@@ -398,7 +398,7 @@ export function renderWeeklyDigestEmail(
         </tr>
         <tr>
           <td style="padding-top:16px;">
-            <div style="font-size:11px;color:${COLORS.gray300};">DevSignal - Developer Signal Intelligence</div>
+            <div style="font-size:11px;color:${COLORS.gray300};">Sigscore - Developer Signal Intelligence</div>
           </td>
         </tr>
       </table>
@@ -436,7 +436,7 @@ export function renderWeeklyDigestSubject(data: WeeklyDigestData): string {
   }
 
   if (parts.length === 0) {
-    return `Your DevSignal Weekly Digest`;
+    return `Your Sigscore Weekly Digest`;
   }
 
   return `Weekly Digest: ${parts.join(', ')}`;

@@ -99,7 +99,7 @@ export default function Layout() {
 
   // Demo mode detection — hide irrelevant nav items
   const isDemo = user?.organizations?.some(
-    (uo: { organization?: { name?: string } }) => uo.organization?.name?.startsWith('DevSignal Demo'),
+    (uo: { organization?: { name?: string } }) => uo.organization?.name?.startsWith('Sigscore Demo'),
   ) ?? false;
 
   // UpgradeModal state — triggered by 402 responses from the API
@@ -120,8 +120,8 @@ export default function Layout() {
         tier: detail?.tier,
       });
     };
-    window.addEventListener('devsignal:plan-limit', handler);
-    return () => window.removeEventListener('devsignal:plan-limit', handler);
+    window.addEventListener('sigscore:plan-limit', handler);
+    return () => window.removeEventListener('sigscore:plan-limit', handler);
   }, []);
 
   // Rate limit toast — debounced to avoid flooding with toasts
@@ -136,8 +136,8 @@ export default function Layout() {
       toast.info(detail?.message ?? 'Too many requests. Please wait a moment.');
       setTimeout(() => { rateLimitShownRef.current = false; }, 10_000);
     };
-    window.addEventListener('devsignal:rate-limited', handler);
-    return () => window.removeEventListener('devsignal:rate-limited', handler);
+    window.addEventListener('sigscore:rate-limited', handler);
+    return () => window.removeEventListener('sigscore:rate-limited', handler);
   }, [toast]);
 
   // Auto-expand settings if the user is on a settings page
@@ -175,7 +175,7 @@ export default function Layout() {
         }
       }
     }
-    return 'DevSignal';
+    return 'Sigscore';
   };
 
   return (
@@ -199,7 +199,7 @@ export default function Layout() {
       >
         {/* Logo + Notifications */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-gray-800">
-          <span className="text-xl font-bold tracking-tight">DevSignal</span>
+          <span className="text-xl font-bold tracking-tight">Sigscore</span>
           <div className="flex items-center gap-1">
             <NotificationBell />
             {/* Close button (mobile only) */}

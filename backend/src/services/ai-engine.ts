@@ -156,7 +156,7 @@ function buildBriefPrompt(ctx: AccountContext): string {
     ? `PQA Score: ${score.score}/100 (${score.tier}), Trend: ${score.trend}, Signals: ${score.signalCount}, Users: ${score.userCount}`
     : 'No PQA score computed yet.';
 
-  return `You are an AI assistant for a developer-tool CRM called DevSignal.
+  return `You are an AI assistant for a developer-tool CRM called Sigscore.
 Generate a concise account intelligence brief in markdown for the following account.
 
 ## Account Data
@@ -217,7 +217,7 @@ function buildActionsPrompt(ctx: AccountContext): string {
 
   const dealStages = deals.map((d) => `${d.title}: ${d.stage}`).join(', ');
 
-  return `You are an AI assistant for a developer-tool CRM called DevSignal.
+  return `You are an AI assistant for a developer-tool CRM called Sigscore.
 Based on the following account data, suggest 3-5 concrete next-best-actions for the sales/DevRel team.
 
 **Account:** ${company.name} (${company.domain || 'N/A'})
@@ -243,7 +243,7 @@ function buildEnrichPrompt(
     (s) => `- [${s.timestamp.toISOString().slice(0, 10)}] ${s.type}: ${JSON.stringify(s.metadata)}`
   ).join('\n');
 
-  return `You are an AI assistant for a developer-tool CRM called DevSignal.
+  return `You are an AI assistant for a developer-tool CRM called Sigscore.
 Analyze the following contact's signal activity and infer additional profile information.
 
 **Contact:** ${contact.firstName} ${contact.lastName}

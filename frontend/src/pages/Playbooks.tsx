@@ -62,7 +62,7 @@ const FILTER_TABS: { value: FilterTab; label: string }[] = [
 // ---------------------------------------------------------------------------
 
 export default function Playbooks() {
-  useEffect(() => { document.title = 'Playbooks — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Playbooks — Sigscore'; }, []);
   const toast = useToast();
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
   const [loading, setLoading] = useState(true);

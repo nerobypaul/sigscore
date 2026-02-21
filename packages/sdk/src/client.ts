@@ -1,7 +1,7 @@
-import { DevSignalError } from './errors.js';
-import type { DevSignalOptions } from './types.js';
+import { SigscoreError } from './errors.js';
+import type { SigscoreOptions } from './types.js';
 
-const DEFAULT_BASE_URL = 'https://api.devsignal.dev';
+const DEFAULT_BASE_URL = 'https://api.sigscore.dev';
 
 /**
  * Low-level HTTP client used internally by every resource class.
@@ -12,9 +12,9 @@ export class HttpClient {
   private readonly baseUrl: string;
   private readonly apiKey: string;
 
-  constructor(options: DevSignalOptions) {
+  constructor(options: SigscoreOptions) {
     if (!options.apiKey) {
-      throw new DevSignalError('apiKey is required', 0, 'MISSING_API_KEY');
+      throw new SigscoreError('apiKey is required', 0, 'MISSING_API_KEY');
     }
 
     this.apiKey = options.apiKey;
@@ -81,7 +81,7 @@ export class HttpClient {
 
     if (!response.ok) {
       const body = await response.text();
-      let message = `DevSignal API error: ${response.status} ${response.statusText}`;
+      let message = `Sigscore API error: ${response.status} ${response.statusText}`;
       let code: string | undefined;
 
       try {
@@ -92,7 +92,7 @@ export class HttpClient {
         // body is not JSON — use the default message
       }
 
-      throw new DevSignalError(message, response.status, code);
+      throw new SigscoreError(message, response.status, code);
     }
 
     // 204 No Content — nothing to parse

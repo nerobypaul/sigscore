@@ -143,7 +143,7 @@ const integrations = [
 
 const valueProps = [
   {
-    text: '5 engineers at one company star your repo, open issues, and download your package — all in one week. DevSignal surfaces that pattern automatically and scores the account.',
+    text: '5 engineers at one company star your repo, open issues, and download your package — all in one week. Sigscore surfaces that pattern automatically and scores the account.',
     label: 'Instant Discovery',
     icon: 'signal',
   },
@@ -153,7 +153,7 @@ const valueProps = [
     icon: 'price',
   },
   {
-    text: 'Not a CRM. DevSignal is a signal intelligence layer — it scores accounts, resolves identities, and pushes results to HubSpot, Salesforce, Slack, or your own systems via API.',
+    text: 'Not a CRM. Sigscore is a signal intelligence layer — it scores accounts, resolves identities, and pushes results to HubSpot, Salesforce, Slack, or your own systems via API.',
     label: 'Fits Your Stack',
     icon: 'why',
   },
@@ -256,7 +256,7 @@ function ProductMockup() {
         <span className="w-3 h-3 rounded-full bg-red-400" />
         <span className="w-3 h-3 rounded-full bg-yellow-400" />
         <span className="w-3 h-3 rounded-full bg-green-400" />
-        <span className="ml-3 text-xs text-gray-400 font-medium">DevSignal - Account Intelligence</span>
+        <span className="ml-3 text-xs text-gray-400 font-medium">Sigscore - Account Intelligence</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5">
@@ -351,7 +351,7 @@ export default function Landing() {
   const [demoStep, setDemoStep] = useState(0);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  useEffect(() => { document.title = 'DevSignal — Developer Signal Intelligence'; }, []);
+  useEffect(() => { document.title = 'Sigscore — Developer Signal Intelligence'; }, []);
 
   // Animate through demo steps while loading
   useEffect(() => {
@@ -397,7 +397,7 @@ export default function Landing() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
                 </svg>
               </div>
-              <span className="text-xl font-bold tracking-tight">DevSignal</span>
+              <span className="text-xl font-bold tracking-tight">Sigscore</span>
             </div>
             <div className="hidden sm:flex items-center gap-6 text-sm text-gray-400">
               <a href="#features" className="hover:text-white transition-colors">Features</a>
@@ -743,7 +743,7 @@ export default function Landing() {
               Everything you need for developer signal intelligence
             </h2>
             <p className="mt-4 text-lg text-gray-500">
-              From signal ingestion to AI-powered account scoring, DevSignal
+              From signal ingestion to AI-powered account scoring, Sigscore
               gives your growth team the full picture — without the bloat of
               legacy sales tools.
             </p>
@@ -887,7 +887,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
           <div className="max-w-2xl mx-auto text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Why devtool teams choose DevSignal
+              Why devtool teams choose Sigscore
             </h2>
           </div>
 
@@ -936,7 +936,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
           <div className="max-w-2xl mx-auto text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Why DevSignal over the alternatives?
+              Why Sigscore over the alternatives?
             </h2>
             <p className="mt-4 text-lg text-gray-500">
               Purpose-built developer GTM — not a generic sales tool with a plugin bolted on.
@@ -955,7 +955,7 @@ export default function Landing() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
                         </svg>
                       </div>
-                      DevSignal
+                      Sigscore
                     </div>
                   </th>
                   <th className="py-4 px-6 text-sm font-semibold text-gray-500">Common Room</th>
@@ -998,13 +998,13 @@ export default function Landing() {
       </section>
 
       {/* ----------------------------------------------------------------- */}
-      {/* Why DevSignal — Build vs Buy vs DevSignal */}
+      {/* Why Sigscore — Build vs Buy vs Sigscore */}
       {/* ----------------------------------------------------------------- */}
       <section className="bg-gray-50 text-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
           <div className="max-w-2xl mx-auto text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Why DevSignal?
+              Why Sigscore?
             </h2>
             <p className="mt-4 text-lg text-gray-500">
               You have three choices. Only one gets you live in 2 minutes.
@@ -1086,14 +1086,14 @@ export default function Landing() {
               </ul>
             </div>
 
-            {/* DevSignal */}
+            {/* Sigscore */}
             <div className="rounded-2xl border-2 border-indigo-300 bg-indigo-50/60 p-7 shadow-lg shadow-indigo-100">
               <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center mb-4">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">DevSignal</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">Sigscore</h3>
               <p className="text-sm text-indigo-600 font-medium mb-4">Purpose-built for devtools</p>
               <ul className="space-y-3">
                 <li className="flex items-start gap-2.5 text-sm text-gray-700 font-medium">
@@ -1128,11 +1128,11 @@ export default function Landing() {
               Built by developers, for developer tool companies
             </h2>
             <p className="mt-5 text-base sm:text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
-              We've been in the PLG trenches. Every PLG CRM startup died — Calixa, Koala, Toplyne, Endgame, Pocus. DevSignal is different: we're signal intelligence, not another CRM.
+              We've been in the PLG trenches. Every PLG CRM startup died — Calixa, Koala, Toplyne, Endgame, Pocus. Sigscore is different: we're signal intelligence, not another CRM.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <a
-                href="https://github.com/nerobypaul/headless-crm"
+                href="https://github.com/nerobypaul/sigscore"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
@@ -1164,7 +1164,7 @@ export default function Landing() {
               Frequently asked questions
             </h2>
             <p className="mt-4 text-lg text-gray-500">
-              Everything you need to know about DevSignal.
+              Everything you need to know about Sigscore.
             </p>
           </div>
 
@@ -1215,7 +1215,7 @@ export default function Landing() {
               </div>
               <p className="mt-6 text-sm text-indigo-200">
                 Or{' '}
-                <a href="mailto:paul@devsignal.dev" className="underline hover:text-white transition-colors">
+                <a href="mailto:paul@sigscore.dev" className="underline hover:text-white transition-colors">
                   schedule a 15-min demo
                 </a>
               </p>

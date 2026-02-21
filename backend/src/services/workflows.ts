@@ -286,7 +286,7 @@ export const executeAction = async (
     }
 
     case 'send_slack': {
-      const message = (action.params.message as string) || 'Workflow notification from DevSignal';
+      const message = (action.params.message as string) || 'Workflow notification from Sigscore';
       const webhookUrl = await getSlackWebhookUrl(organizationId);
       if (!webhookUrl) {
         logger.warn('Workflow action: send_slack skipped — no Slack webhook configured');
@@ -306,7 +306,7 @@ export const executeAction = async (
               {
                 type: 'context',
                 elements: [
-                  { type: 'mrkdwn', text: `DevSignal Workflow \u2022 ${new Date().toISOString().split('T')[0]}` },
+                  { type: 'mrkdwn', text: `Sigscore Workflow \u2022 ${new Date().toISOString().split('T')[0]}` },
                 ],
               },
             ],

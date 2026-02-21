@@ -282,7 +282,7 @@ const API_CATEGORIES: EndpointCategory[] = [
     id: 'signals',
     label: 'Signals',
     description:
-      'Ingest product usage signals, query signal history, view account timelines, and compute PQA scores. The core of DevSignal\'s PLG intelligence.',
+      'Ingest product usage signals, query signal history, view account timelines, and compute PQA scores. The core of Sigscore\'s PLG intelligence.',
     endpoints: [
       {
         method: 'POST',
@@ -445,8 +445,8 @@ const API_CATEGORIES: EndpointCategory[] = [
         body: `{
   "name": "Onboarding Drip",
   "triggerType": "contact_created",
-  "fromName": "DevSignal",
-  "fromEmail": "hello@devsignal.dev"
+  "fromName": "Sigscore",
+  "fromEmail": "hello@sigscore.dev"
 }`,
       },
       { method: 'PUT', path: '/sequences/:id', description: 'Update sequence name, status, or trigger', auth: 'Bearer JWT (Admin)' },
@@ -457,7 +457,7 @@ const API_CATEGORIES: EndpointCategory[] = [
         description: 'Add an email step to a sequence',
         auth: 'Bearer JWT (Admin)',
         body: `{
-  "subject": "Welcome to DevSignal",
+  "subject": "Welcome to Sigscore",
   "body": "<p>Hi {{firstName}}, ...</p>",
   "delayDays": 0
 }`,
@@ -520,7 +520,7 @@ const API_CATEGORIES: EndpointCategory[] = [
         description: 'Register a new webhook endpoint (HTTPS only)',
         auth: 'Bearer JWT / API Key',
         body: `{
-  "url": "https://your-app.com/webhooks/devsignal",
+  "url": "https://your-app.com/webhooks/sigscore",
   "events": ["signal.created", "deal.stage_changed"]
 }`,
       },
@@ -1050,7 +1050,7 @@ export default function ApiDocs() {
   const mainRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { document.title = 'API Documentation — DevSignal'; }, []);
+  useEffect(() => { document.title = 'API Documentation — Sigscore'; }, []);
 
   // Filter categories by search
   const filteredCategories = useMemo(() => {
@@ -1160,7 +1160,7 @@ export default function ApiDocs() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
                 </svg>
               </div>
-              <span className="text-lg font-bold tracking-tight text-white">DevSignal</span>
+              <span className="text-lg font-bold tracking-tight text-white">Sigscore</span>
             </Link>
 
             <nav className="hidden md:flex items-center gap-1">
@@ -1347,7 +1347,7 @@ export default function ApiDocs() {
             <Section id="overview">
               <h1 className="text-4xl font-bold tracking-tight text-white">API Reference</h1>
               <p className="mt-4 text-lg text-gray-400 leading-relaxed">
-                DevSignal provides a REST API for managing your developer signal data, ingesting product usage
+                Sigscore provides a REST API for managing your developer signal data, ingesting product usage
                 signals, computing PQA scores, and automating your PLG sales motion. All endpoints
                 return JSON and follow standard HTTP semantics.
               </p>
@@ -1356,7 +1356,7 @@ export default function ApiDocs() {
                 <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-5">
                   <h3 className="text-sm font-semibold text-gray-300">Base URL</h3>
                   <code className="mt-2 block text-sm text-indigo-400 font-mono">
-                    https://api.devsignal.dev/api/v1
+                    https://api.sigscore.dev/api/v1
                   </code>
                 </div>
                 <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-5">
@@ -1383,7 +1383,7 @@ export default function ApiDocs() {
               <div className="mt-4 rounded-lg border border-gray-800 bg-gray-900/50 p-5">
                 <h3 className="text-sm font-semibold text-gray-300 mb-3">GraphQL</h3>
                 <p className="text-sm text-gray-400 leading-relaxed">
-                  In addition to REST, DevSignal provides a full GraphQL API at{' '}
+                  In addition to REST, Sigscore provides a full GraphQL API at{' '}
                   <code className="text-indigo-400 text-xs bg-gray-800 px-1.5 py-0.5 rounded">/api/v1/graphql</code>{' '}
                   with Apollo Server and 11 DataLoaders for efficient nested queries.
                 </p>
@@ -1397,7 +1397,7 @@ export default function ApiDocs() {
               <div className="mt-16 border-t border-gray-800 pt-10">
                 <h2 className="text-2xl font-bold text-white">Authentication</h2>
                 <p className="mt-3 text-gray-400 leading-relaxed">
-                  DevSignal supports two authentication methods. Use JWT Bearer tokens for
+                  Sigscore supports two authentication methods. Use JWT Bearer tokens for
                   user-facing sessions, and API keys for server-to-server integrations and CI/CD.
                 </p>
 
@@ -1546,7 +1546,7 @@ Retry-After: 42
                 {/* Step 1 -- Install */}
                 <div className="mt-8">
                   <h3 className="text-sm font-semibold text-gray-300 mb-3">1. Install the SDK</h3>
-                  <CodeBlock language="bash" code="npm install @devsignal/node" />
+                  <CodeBlock language="bash" code="npm install @sigscore/node" />
                 </div>
 
                 {/* Step 2 -- Initialize */}
@@ -1554,11 +1554,11 @@ Retry-After: 42
                   <h3 className="text-sm font-semibold text-gray-300 mb-3">2. Initialize and send a signal</h3>
                   <CodeBlock
                     language="typescript"
-                    code={`<span class="text-blue-400">import</span> { DevSignal } <span class="text-blue-400">from</span> <span class="text-emerald-400">'@devsignal/node'</span>;
+                    code={`<span class="text-blue-400">import</span> { Sigscore } <span class="text-blue-400">from</span> <span class="text-emerald-400">'@sigscore/node'</span>;
 
-<span class="text-blue-400">const</span> ds = <span class="text-blue-400">new</span> <span class="text-yellow-300">DevSignal</span>({
-  <span class="text-gray-300">apiKey</span>: process.env.<span class="text-gray-100">DEVSIGNAL_API_KEY</span>,
-  <span class="text-gray-300">orgId</span>:  process.env.<span class="text-gray-100">DEVSIGNAL_ORG_ID</span>,
+<span class="text-blue-400">const</span> ds = <span class="text-blue-400">new</span> <span class="text-yellow-300">Sigscore</span>({
+  <span class="text-gray-300">apiKey</span>: process.env.<span class="text-gray-100">SIGSCORE_API_KEY</span>,
+  <span class="text-gray-300">orgId</span>:  process.env.<span class="text-gray-100">SIGSCORE_ORG_ID</span>,
 });
 
 <span class="text-gray-500">// Track a product usage event</span>
@@ -1579,7 +1579,7 @@ Retry-After: 42
                   <h3 className="text-sm font-semibold text-gray-300 mb-3">3. Or use curl directly</h3>
                   <CodeBlock
                     language="bash"
-                    code={`curl -X POST https://api.devsignal.dev/api/v1/signals \\
+                    code={`curl -X POST https://api.sigscore.dev/api/v1/signals \\
   -H "Authorization: Bearer ds_live_YOUR_KEY" \\
   -H "x-organization-id: YOUR_ORG_ID" \\
   -H "Content-Type: application/json" \\
@@ -1610,7 +1610,7 @@ Retry-After: 42
                   <h3 className="text-sm font-semibold text-gray-300 mb-3">5. Verify your signal was received</h3>
                   <CodeBlock
                     language="bash"
-                    code={`curl "https://api.devsignal.dev/api/v1/signals?type=repo_clone&limit=5" \\
+                    code={`curl "https://api.sigscore.dev/api/v1/signals?type=repo_clone&limit=5" \\
   -H "Authorization: Bearer ds_live_YOUR_KEY" \\
   -H "x-organization-id: YOUR_ORG_ID"`}
                   />
@@ -1685,7 +1685,7 @@ Retry-After: 42
               <div className="mt-16 border-t border-gray-800 pt-10">
                 <h2 className="text-xl font-bold text-white mb-3">PLG Pipeline Stages</h2>
                 <p className="text-sm text-gray-400 mb-4">
-                  DevSignal uses a PLG-native pipeline with these stages, from anonymous usage through closed deal:
+                  Sigscore uses a PLG-native pipeline with these stages, from anonymous usage through closed deal:
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {[
@@ -1850,7 +1850,7 @@ Retry-After: 42
               </div>
 
               <div className="mt-10 flex items-center justify-between text-sm text-gray-600">
-                <span>DevSignal -- Built for devtool PLG teams</span>
+                <span>Sigscore -- Built for devtool PLG teams</span>
                 <div className="flex items-center gap-4">
                   <Link to="/login" className="hover:text-gray-400 transition-colors">
                     Sign In

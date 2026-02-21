@@ -90,7 +90,7 @@ function identityTypeLabel(type: string): string {
 // ---------------------------------------------------------------------------
 
 export default function ContactDuplicates() {
-  useEffect(() => { document.title = 'Duplicate Contacts — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Duplicate Contacts — Sigscore'; }, []);
   const toast = useToast();
   const [groups, setGroups] = useState<DuplicateGroup[]>([]);
   const [loading, setLoading] = useState(true);

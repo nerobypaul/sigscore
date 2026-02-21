@@ -13,7 +13,7 @@ export default function DemoModeBanner() {
 
   // Check if the current org is the demo org
   const isDemo = user?.organizations?.some(
-    (uo) => uo.organization?.name?.startsWith('DevSignal Demo'),
+    (uo) => uo.organization?.name?.startsWith('Sigscore Demo'),
   );
 
   if (!isDemo || dismissed) return null;

@@ -92,7 +92,7 @@ interface CompanyData {
 // ---------------------------------------------------------------------------
 
 export default function CompanyCompare() {
-  useEffect(() => { document.title = 'Compare Companies — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Compare Companies — Sigscore'; }, []);
   const [searchParams] = useSearchParams();
   const ids = useMemo(() => {
     const raw = searchParams.get('ids') || '';

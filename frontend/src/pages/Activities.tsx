@@ -28,7 +28,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 export default function Activities() {
-  useEffect(() => { document.title = 'Activity Feed — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Activity Feed — Sigscore'; }, []);
   const toast = useToast();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);

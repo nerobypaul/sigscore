@@ -41,7 +41,7 @@ export default function PublicNav() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
               </svg>
             </div>
-            <span className="text-xl font-bold tracking-tight">DevSignal</span>
+            <span className="text-xl font-bold tracking-tight">Sigscore</span>
           </Link>
           <div className="hidden sm:flex items-center gap-6 text-sm text-gray-400">
             {navLinks.map((link) => (

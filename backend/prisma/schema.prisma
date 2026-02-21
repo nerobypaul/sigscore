@@ -1,4 +1,4 @@
-// Prisma Schema for DevSignal — AI-First Headless CRM for DevTool Companies
+// Prisma Schema for Sigscore — AI-First Headless CRM for DevTool Companies
 
 generator client {
   provider      = "prisma-client-js"

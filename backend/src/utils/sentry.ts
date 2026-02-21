@@ -15,14 +15,14 @@ export function initSentry(): void {
   }
 
   // Read version from package.json at build time
-  let release = process.env.DEVSIGNAL_VERSION;
+  let release = process.env.SIGSCORE_VERSION;
   if (!release) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const pkg = require('../../package.json');
-      release = `devsignal-backend@${pkg.version}`;
+      release = `sigscore-backend@${pkg.version}`;
     } catch (_e) {
-      release = 'devsignal-backend@unknown';
+      release = 'sigscore-backend@unknown';
     }
   }
 

@@ -75,20 +75,20 @@ interface HubSpotSearchResponse {
 const HUBSPOT_API_BASE = 'https://api.hubapi.com';
 const BATCH_SIZE = 100;
 
-const DEVSIGNAL_CONTACT_PROPERTIES = [
+const SIGSCORE_CONTACT_PROPERTIES = [
   {
-    name: 'devsignal_pqa_score',
-    label: 'DevSignal PQA Score',
+    name: 'sigscore_pqa_score',
+    label: 'Sigscore PQA Score',
     type: 'number',
     fieldType: 'number',
-    description: 'Product-Qualified Account score from DevSignal (0-100)',
+    description: 'Product-Qualified Account score from Sigscore (0-100)',
   },
   {
-    name: 'devsignal_pqa_tier',
-    label: 'DevSignal PQA Tier',
+    name: 'sigscore_pqa_tier',
+    label: 'Sigscore PQA Tier',
     type: 'enumeration',
     fieldType: 'select',
-    description: 'PQA tier classification from DevSignal',
+    description: 'PQA tier classification from Sigscore',
     options: [
       { label: 'Hot', value: 'HOT' },
       { label: 'Warm', value: 'WARM' },
@@ -97,70 +97,70 @@ const DEVSIGNAL_CONTACT_PROPERTIES = [
     ],
   },
   {
-    name: 'devsignal_signal_count',
-    label: 'DevSignal Signal Count',
+    name: 'sigscore_signal_count',
+    label: 'Sigscore Signal Count',
     type: 'number',
     fieldType: 'number',
-    description: 'Total number of signals tracked by DevSignal',
+    description: 'Total number of signals tracked by Sigscore',
   },
   {
-    name: 'devsignal_last_signal_date',
-    label: 'DevSignal Last Signal Date',
+    name: 'sigscore_last_signal_date',
+    label: 'Sigscore Last Signal Date',
     type: 'date',
     fieldType: 'date',
-    description: 'Date of the most recent signal from DevSignal',
+    description: 'Date of the most recent signal from Sigscore',
   },
 ];
 
-const DEVSIGNAL_COMPANY_PROPERTIES = [
+const SIGSCORE_COMPANY_PROPERTIES = [
   {
-    name: 'devsignal_pqa_score',
-    label: 'DevSignal PQA Score',
+    name: 'sigscore_pqa_score',
+    label: 'Sigscore PQA Score',
     type: 'number',
     fieldType: 'number',
-    description: 'Product-Qualified Account score from DevSignal (0-100)',
+    description: 'Product-Qualified Account score from Sigscore (0-100)',
   },
   {
-    name: 'devsignal_developer_count',
-    label: 'DevSignal Developer Count',
+    name: 'sigscore_developer_count',
+    label: 'Sigscore Developer Count',
     type: 'number',
     fieldType: 'number',
-    description: 'Number of developers identified by DevSignal',
+    description: 'Number of developers identified by Sigscore',
   },
   {
-    name: 'devsignal_top_signal_type',
-    label: 'DevSignal Top Signal Type',
+    name: 'sigscore_top_signal_type',
+    label: 'Sigscore Top Signal Type',
     type: 'string',
     fieldType: 'text',
-    description: 'Most common signal type from DevSignal',
+    description: 'Most common signal type from Sigscore',
   },
   {
-    name: 'devsignal_last_signal_date',
-    label: 'DevSignal Last Signal Date',
+    name: 'sigscore_last_signal_date',
+    label: 'Sigscore Last Signal Date',
     type: 'date',
     fieldType: 'date',
-    description: 'Date of the most recent signal from DevSignal',
+    description: 'Date of the most recent signal from Sigscore',
   },
 ];
 
-const DEVSIGNAL_DEAL_PROPERTIES = [
+const SIGSCORE_DEAL_PROPERTIES = [
   {
-    name: 'devsignal_deal_id',
-    label: 'DevSignal Deal ID',
+    name: 'sigscore_deal_id',
+    label: 'Sigscore Deal ID',
     type: 'string',
     fieldType: 'text',
-    description: 'Internal DevSignal deal identifier for sync',
+    description: 'Internal Sigscore deal identifier for sync',
   },
   {
-    name: 'devsignal_stage',
-    label: 'DevSignal PLG Stage',
+    name: 'sigscore_stage',
+    label: 'Sigscore PLG Stage',
     type: 'string',
     fieldType: 'text',
-    description: 'DevSignal PLG pipeline stage',
+    description: 'Sigscore PLG pipeline stage',
   },
 ];
 
-// Reverse map: DevSignal DealStage -> HubSpot stage label
+// Reverse map: Sigscore DealStage -> HubSpot stage label
 const DEAL_STAGE_LABELS: Record<string, string> = {
   [DealStage.ANONYMOUS_USAGE]: 'Anonymous Usage',
   [DealStage.IDENTIFIED]: 'Identified',
@@ -357,13 +357,13 @@ async function getValidAccessToken(organizationId: string): Promise<string> {
 // ---------------------------------------------------------------------------
 
 /**
- * Ensure the "DevSignal" property group exists for a given object type.
+ * Ensure the "Sigscore" property group exists for a given object type.
  */
 async function ensurePropertyGroup(
   accessToken: string,
   objectType: string,
 ): Promise<void> {
-  const groupName = 'devsignal';
+  const groupName = 'sigscore';
 
   try {
     await hubspotFetch(
@@ -381,12 +381,12 @@ async function ensurePropertyGroup(
           method: 'POST',
           body: {
             name: groupName,
-            label: 'DevSignal',
+            label: 'Sigscore',
             displayOrder: 1,
           },
         },
       );
-      logger.info(`Created DevSignal property group for ${objectType}`);
+      logger.info(`Created Sigscore property group for ${objectType}`);
     } catch (createErr) {
       // Ignore if already exists (race condition)
       logger.warn(`Could not create property group for ${objectType}`, {
@@ -426,7 +426,7 @@ async function ensureProperty(
         type: property.type,
         fieldType: property.fieldType,
         description: property.description,
-        groupName: 'devsignal',
+        groupName: 'sigscore',
       };
 
       if (property.options) {
@@ -452,7 +452,7 @@ async function ensureProperty(
 }
 
 /**
- * Register all DevSignal custom properties in HubSpot.
+ * Register all Sigscore custom properties in HubSpot.
  */
 export async function registerCustomProperties(
   organizationId: string,
@@ -465,21 +465,21 @@ export async function registerCustomProperties(
   await ensurePropertyGroup(accessToken, 'deals');
 
   // Create contact properties
-  for (const prop of DEVSIGNAL_CONTACT_PROPERTIES) {
+  for (const prop of SIGSCORE_CONTACT_PROPERTIES) {
     await ensureProperty(accessToken, 'contacts', prop);
   }
 
   // Create company properties
-  for (const prop of DEVSIGNAL_COMPANY_PROPERTIES) {
+  for (const prop of SIGSCORE_COMPANY_PROPERTIES) {
     await ensureProperty(accessToken, 'companies', prop);
   }
 
   // Create deal properties
-  for (const prop of DEVSIGNAL_DEAL_PROPERTIES) {
+  for (const prop of SIGSCORE_DEAL_PROPERTIES) {
     await ensureProperty(accessToken, 'deals', prop);
   }
 
-  logger.info('All DevSignal custom properties registered in HubSpot', {
+  logger.info('All Sigscore custom properties registered in HubSpot', {
     organizationId,
   });
 }
@@ -521,7 +521,7 @@ async function findHubSpotContactByEmail(
 }
 
 /**
- * Sync contacts from DevSignal to HubSpot using batch upsert.
+ * Sync contacts from Sigscore to HubSpot using batch upsert.
  */
 async function syncContacts(
   organizationId: string,
@@ -580,15 +580,15 @@ async function syncContacts(
         if (contact.phone) properties.phone = contact.phone;
         if (contact.title) properties.jobtitle = contact.title;
 
-        // DevSignal custom properties
+        // Sigscore custom properties
         if (contact.company?.score) {
-          properties.devsignal_pqa_score = String(contact.company.score.score);
-          properties.devsignal_pqa_tier = contact.company.score.tier;
-          properties.devsignal_signal_count = String(
+          properties.sigscore_pqa_score = String(contact.company.score.score);
+          properties.sigscore_pqa_tier = contact.company.score.tier;
+          properties.sigscore_signal_count = String(
             contact.company.score.signalCount,
           );
           if (contact.company.score.lastSignalAt) {
-            properties.devsignal_last_signal_date = contact.company.score.lastSignalAt
+            properties.sigscore_last_signal_date = contact.company.score.lastSignalAt
               .toISOString()
               .split('T')[0];
           }
@@ -703,7 +703,7 @@ async function getTopSignalType(
 }
 
 /**
- * Sync companies from DevSignal to HubSpot.
+ * Sync companies from Sigscore to HubSpot.
  */
 async function syncCompanies(
   organizationId: string,
@@ -759,22 +759,22 @@ async function syncCompanies(
         if (company.website) properties.website = company.website;
         if (company.phone) properties.phone = company.phone;
 
-        // DevSignal custom properties
+        // Sigscore custom properties
         if (company.score) {
-          properties.devsignal_pqa_score = String(company.score.score);
+          properties.sigscore_pqa_score = String(company.score.score);
         }
-        properties.devsignal_developer_count = String(company._count.contacts);
+        properties.sigscore_developer_count = String(company._count.contacts);
 
         const topSignalType = await getTopSignalType(
           organizationId,
           company.id,
         );
         if (topSignalType) {
-          properties.devsignal_top_signal_type = topSignalType;
+          properties.sigscore_top_signal_type = topSignalType;
         }
 
         if (company.score?.lastSignalAt) {
-          properties.devsignal_last_signal_date = company.score.lastSignalAt
+          properties.sigscore_last_signal_date = company.score.lastSignalAt
             .toISOString()
             .split('T')[0];
         }
@@ -838,9 +838,9 @@ async function syncCompanies(
 // ---------------------------------------------------------------------------
 
 /**
- * Search for a HubSpot deal by the custom devsignal_deal_id property.
+ * Search for a HubSpot deal by the custom sigscore_deal_id property.
  */
-async function findHubSpotDealByDevSignalId(
+async function findHubSpotDealBySigscoreId(
   accessToken: string,
   dealId: string,
 ): Promise<string | null> {
@@ -854,7 +854,7 @@ async function findHubSpotDealByDevSignalId(
           {
             filters: [
               {
-                propertyName: 'devsignal_deal_id',
+                propertyName: 'sigscore_deal_id',
                 operator: 'EQ',
                 value: dealId,
               },
@@ -870,7 +870,7 @@ async function findHubSpotDealByDevSignalId(
 }
 
 /**
- * Sync deals from DevSignal to HubSpot.
+ * Sync deals from Sigscore to HubSpot.
  */
 async function syncDeals(
   organizationId: string,
@@ -905,15 +905,15 @@ async function syncDeals(
 
     for (const deal of batch) {
       try {
-        const hubspotId = await findHubSpotDealByDevSignalId(
+        const hubspotId = await findHubSpotDealBySigscoreId(
           accessToken,
           deal.id,
         );
 
         const properties: Record<string, string> = {
           dealname: deal.title,
-          devsignal_deal_id: deal.id,
-          devsignal_stage: DEAL_STAGE_LABELS[deal.stage] || deal.stage,
+          sigscore_deal_id: deal.id,
+          sigscore_stage: DEAL_STAGE_LABELS[deal.stage] || deal.stage,
         };
 
         if (deal.amount !== null) {
@@ -1031,7 +1031,7 @@ async function syncSignalNotes(
       const metadata = signal.metadata as Record<string, unknown>;
       const packageName = (metadata?.packageName as string) || '';
       const noteBody = [
-        `DevSignal: ${signal.type}`,
+        `Sigscore: ${signal.type}`,
         packageName ? `Package: ${packageName}` : '',
         `Company: ${companyName}`,
         `Date: ${signal.timestamp.toISOString().split('T')[0]}`,

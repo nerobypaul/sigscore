@@ -5,12 +5,12 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.3',
     info: {
-      title: 'DevSignal API',
+      title: 'Sigscore API',
       version: '0.2.0',
       description:
         'Developer Pipeline Intelligence platform for DevTool companies. Provides core operations (contacts, companies, deals, activities), a signal engine for product-led growth analytics, PQA scoring, webhook delivery, and API key management.',
       contact: {
-        name: 'DevSignal Team',
+        name: 'Sigscore Team',
       },
       license: {
         name: 'MIT',

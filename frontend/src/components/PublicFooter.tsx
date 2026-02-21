@@ -15,7 +15,7 @@ export default function PublicFooter() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
               </svg>
             </div>
-            <span className="text-sm font-semibold text-gray-400">DevSignal</span>
+            <span className="text-sm font-semibold text-gray-400">Sigscore</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
             <Link to="/" className="hover:text-gray-300 transition-colors">Home</Link>
@@ -33,7 +33,7 @@ export default function PublicFooter() {
             <Link to="/acceptable-use" className="hover:text-gray-400 transition-colors">Acceptable Use</Link>
           </div>
           <p className="text-xs text-gray-600">
-            &copy; {new Date().getFullYear()} DevSignal. All rights reserved.
+            &copy; {new Date().getFullYear()} Sigscore. All rights reserved.
           </p>
         </div>
       </div>

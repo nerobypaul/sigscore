@@ -155,7 +155,7 @@ router.get(
       }
 
       const ext = status.format === 'csv' ? 'csv' : 'json';
-      const downloadName = status.fileName || `devsignal-export.${ext}`;
+      const downloadName = status.fileName || `sigscore-export.${ext}`;
       const contentType = status.format === 'csv' ? 'text/csv' : 'application/json';
 
       res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);

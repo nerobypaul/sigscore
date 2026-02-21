@@ -13,6 +13,6 @@ export async function initSentry(): Promise<void> {
     dsn,
     environment: import.meta.env.MODE,
     tracesSampleRate: 0.1,
-    release: `devsignal-frontend@${import.meta.env.VITE_APP_VERSION || '1.0.0'}`,
+    release: `sigscore-frontend@${import.meta.env.VITE_APP_VERSION || '1.0.0'}`,
   });
 }

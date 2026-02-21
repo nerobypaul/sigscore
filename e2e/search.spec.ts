@@ -50,7 +50,7 @@ test.describe('Global search', () => {
       data: {
         firstName: uniqueName,
         lastName: 'Searchable',
-        email: `${uniqueName.toLowerCase()}@test.devsignal.io`,
+        email: `${uniqueName.toLowerCase()}@test.sigscore.dev`,
       },
     });
     expect(createRes.ok()).toBeTruthy();

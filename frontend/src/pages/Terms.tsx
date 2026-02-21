@@ -18,13 +18,13 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          By accessing or using the DevSignal platform ("Service"), including our website, APIs,
+          By accessing or using the Sigscore platform ("Service"), including our website, APIs,
           SDKs, and any related services, you agree to be bound by these Terms of Service ("Terms").
           If you do not agree to these Terms, you may not access or use the Service.
         </p>
         <p>
           These Terms constitute a legally binding agreement between you (whether personally or on
-          behalf of an entity, "you") and DevSignal, Inc. ("DevSignal", "we", "us", or "our").
+          behalf of an entity, "you") and Sigscore, Inc. ("Sigscore", "we", "us", or "our").
         </p>
         <p>
           By creating an account, you represent that you are at least 18 years old and have the
@@ -49,7 +49,7 @@ const sections: Section[] = [
           <li>You must not share your account credentials with any third party.</li>
           <li>
             You must notify us immediately at{' '}
-            <a href="mailto:legal@devsignal.dev">legal@devsignal.dev</a> if you become aware of any
+            <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a> if you become aware of any
             unauthorized use of your account.
           </li>
           <li>
@@ -70,7 +70,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          DevSignal provides REST, GraphQL, and WebSocket APIs for programmatic access to the
+          Sigscore provides REST, GraphQL, and WebSocket APIs for programmatic access to the
           Service. Your use of our APIs is subject to the following conditions:
         </p>
         <ul>
@@ -85,7 +85,7 @@ const sections: Section[] = [
             account suspension.
           </li>
           <li>
-            <strong>SDK Usage:</strong> Our official SDKs (@devsignal/node) are provided "as is".
+            <strong>SDK Usage:</strong> Our official SDKs (@sigscore/node) are provided "as is".
             You may use them in your applications subject to these Terms.
           </li>
           <li>
@@ -147,7 +147,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          DevSignal processes data from publicly available sources (such as GitHub repositories,
+          Sigscore processes data from publicly available sources (such as GitHub repositories,
           npm registries, and community forums) as well as data you explicitly provide through
           our APIs, SDKs, and integrations.
         </p>
@@ -188,7 +188,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          DevSignal offers both free and paid subscription plans. The current pricing is available
+          Sigscore offers both free and paid subscription plans. The current pricing is available
           on our{' '}
           <Link to="/pricing" className="text-indigo-400 hover:text-indigo-300 underline">
             Pricing page
@@ -232,13 +232,13 @@ const sections: Section[] = [
       <>
         <p>
           The Service, including its original content, features, and functionality, is and will
-          remain the exclusive property of DevSignal and its licensors. The Service is protected
+          remain the exclusive property of Sigscore and its licensors. The Service is protected
           by copyright, trademark, and other laws.
         </p>
         <ul>
           <li>
-            <strong>Our IP:</strong> DevSignal, the DevSignal logo, PQA scoring methodology, and
-            all related names, logos, and slogans are trademarks of DevSignal, Inc. You may not
+            <strong>Our IP:</strong> Sigscore, the Sigscore logo, PQA scoring methodology, and
+            all related names, logos, and slogans are trademarks of Sigscore, Inc. You may not
             use these marks without our prior written permission.
           </li>
           <li>
@@ -261,7 +261,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          TO THE MAXIMUM EXTENT PERMITTED BY LAW, DEVSIGNAL SHALL NOT BE LIABLE FOR ANY INDIRECT,
+          TO THE MAXIMUM EXTENT PERMITTED BY LAW, SIGSCORE SHALL NOT BE LIABLE FOR ANY INDIRECT,
           INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO
           LOSS OF PROFITS, DATA, USE, OR GOODWILL, ARISING OUT OF OR IN CONNECTION WITH YOUR USE
           OF THE SERVICE.
@@ -289,7 +289,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          You agree to indemnify, defend, and hold harmless DevSignal, its officers, directors,
+          You agree to indemnify, defend, and hold harmless Sigscore, its officers, directors,
           employees, agents, and affiliates from and against any claims, liabilities, damages, losses,
           costs, and expenses (including reasonable attorneys' fees) arising out of or relating to:
         </p>
@@ -303,8 +303,8 @@ const sections: Section[] = [
           <li>Your negligence or willful misconduct.</li>
         </ul>
         <p>
-          DevSignal will promptly notify you of any such claim and will reasonably cooperate with
-          you (at your expense) in the defense of such claim. DevSignal reserves the right, at its
+          Sigscore will promptly notify you of any such claim and will reasonably cooperate with
+          you (at your expense) in the defense of such claim. Sigscore reserves the right, at its
           own expense, to assume the exclusive defense and control of any matter subject to
           indemnification by you.
         </p>
@@ -319,7 +319,7 @@ const sections: Section[] = [
         <p>
           Either party may terminate this agreement at any time. You may close your account
           through the account settings or by contacting us at{' '}
-          <a href="mailto:legal@devsignal.dev">legal@devsignal.dev</a>.
+          <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a>.
         </p>
         <ul>
           <li>
@@ -431,10 +431,10 @@ const sections: Section[] = [
         <ul>
           <li>
             <strong>Email:</strong>{' '}
-            <a href="mailto:legal@devsignal.dev">legal@devsignal.dev</a>
+            <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a>
           </li>
           <li>
-            <strong>Company:</strong> DevSignal, Inc.
+            <strong>Company:</strong> Sigscore, Inc.
           </li>
         </ul>
       </>
@@ -445,7 +445,7 @@ const sections: Section[] = [
 export default function Terms() {
   const [activeSection, setActiveSection] = useState(sections[0].id);
 
-  useEffect(() => { document.title = 'Terms of Service — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Terms of Service — Sigscore'; }, []);
 
   useEffect(() => {
     const handleScroll = () => {

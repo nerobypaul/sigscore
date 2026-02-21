@@ -1,6 +1,6 @@
-# DevSignal — Frontend
+# Sigscore — Frontend
 
-React-based dashboard for DevSignal developer signal intelligence.
+React-based dashboard for Sigscore developer signal intelligence.
 
 ## Setup
 

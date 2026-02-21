@@ -153,7 +153,7 @@ router.put(
 
 // ---------------------------------------------------------------------------
 // PUT /api/v1/settings/slack/user-map
-// Update the Slack user ID to DevSignal user ID mapping
+// Update the Slack user ID to Sigscore user ID mapping
 // ---------------------------------------------------------------------------
 
 router.put(

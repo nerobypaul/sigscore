@@ -160,7 +160,7 @@ function SignalFlowExpansion() {
         <div className="text-xs text-gray-500 mb-2">Slack Alert</div>
         <div className="font-mono text-sm">
           <span className="text-yellow-400">#sales</span>{' '}
-          <span className="text-gray-400">| DevSignal Bot:</span>{' '}
+          <span className="text-gray-400">| Sigscore Bot:</span>{' '}
           <span className="text-emerald-400">Acme Corp</span>{' '}
           <span className="text-gray-300">ready for enterprise tier. API usage up 300%, 9 new team members onboarding this week. Current plan: Pro ($79/mo).</span>
         </div>
@@ -341,7 +341,7 @@ function UseCaseCard({ useCase }: { useCase: UseCase }) {
 // ---------------------------------------------------------------------------
 
 export default function UseCases() {
-  useEffect(() => { document.title = 'Use Cases — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Use Cases — Sigscore'; }, []);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -360,7 +360,7 @@ export default function UseCases() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1]">
-              See how DevSignal{' '}
+              See how Sigscore{' '}
               <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 turns signals into deals
               </span>
@@ -368,7 +368,7 @@ export default function UseCases() {
 
             <p className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
               Real scenarios from devtool companies. Click each use case to see
-              the full signal-to-action flow that DevSignal automates.
+              the full signal-to-action flow that Sigscore automates.
             </p>
           </div>
         </div>
@@ -388,7 +388,7 @@ export default function UseCases() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              The DevSignal pipeline
+              The Sigscore pipeline
             </h2>
             <p className="mt-4 text-lg text-gray-400">
               Every signal feeds into a single, scored view of your developer pipeline.

@@ -22,7 +22,7 @@ import { logger } from './utils/logger';
 const HEALTH_PORT = parseInt(process.env.WORKER_HEALTH_PORT || '3001', 10);
 
 (async () => {
-  logger.info('DevSignal worker process starting...');
+  logger.info('Sigscore worker process starting...');
 
   // Start all BullMQ workers and the repeatable-job scheduler.
   startWorkers();

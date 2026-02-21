@@ -190,8 +190,8 @@ export const deliverToSubscription = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-DevSignal-Signature': `sha256=${signature}`,
-        'X-DevSignal-Event': event,
+        'X-Sigscore-Signature': `sha256=${signature}`,
+        'X-Sigscore-Event': event,
       },
       body,
       signal: AbortSignal.timeout(10000),
@@ -445,8 +445,8 @@ export const sendTestWebhook = async (
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'X-DevSignal-Signature': `sha256=${signature}`,
-    'X-DevSignal-Event': subscription.event,
+    'X-Sigscore-Signature': `sha256=${signature}`,
+    'X-Sigscore-Event': subscription.event,
   };
 
   let success = false;

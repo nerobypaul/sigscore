@@ -33,7 +33,7 @@ interface AlertInfo {
 const WARNING_THRESHOLD = 80;
 const CRITICAL_THRESHOLD = 100;
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // re-check every 5 minutes
-const DISMISS_KEY = 'devsignal_usage_banner_dismissed';
+const DISMISS_KEY = 'sigscore_usage_banner_dismissed';
 
 // ---------------------------------------------------------------------------
 // Component

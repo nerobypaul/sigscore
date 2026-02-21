@@ -53,44 +53,44 @@ function GitHubIcon({ className = 'w-4.5 h-4.5' }: { className?: string }) {
 
 interface ComparisonRow {
   feature: string;
-  devSignal: string;
+  sigscore: string;
   competitor: string;
-  devSignalWins: boolean;
+  sigscoreWins: boolean;
 }
 
 const comparisonRows: ComparisonRow[] = [
-  { feature: 'Starting Price', devSignal: '$0/mo (free tier)', competitor: '$500+/mo', devSignalWins: true },
-  { feature: 'Self-hostable', devSignal: 'Yes (MIT license)', competitor: 'No', devSignalWins: true },
-  { feature: 'Signal sources', devSignal: '16 built-in', competitor: 'Website + GitHub + limited', devSignalWins: true },
-  { feature: 'Focus', devSignal: 'Multi-source signal intelligence', competitor: 'Developer identity from web traffic', devSignalWins: true },
-  { feature: 'AI features', devSignal: 'BYOK account briefs + enrichment', competitor: 'Basic enrichment', devSignalWins: true },
-  { feature: 'Workflow automation', devSignal: 'Custom workflows + playbooks', competitor: 'Limited', devSignalWins: true },
-  { feature: 'Email sequences', devSignal: 'Built-in multi-step', competitor: 'No', devSignalWins: true },
-  { feature: 'CRM sync', devSignal: 'HubSpot + Salesforce bidirectional', competitor: 'HubSpot + Salesforce', devSignalWins: true },
-  { feature: 'Open source', devSignal: 'Yes (MIT)', competitor: 'No', devSignalWins: true },
-  { feature: 'API / SDK', devSignal: 'Full REST + GraphQL + Node SDK', competitor: 'REST API', devSignalWins: true },
+  { feature: 'Starting Price', sigscore: '$0/mo (free tier)', competitor: '$500+/mo', sigscoreWins: true },
+  { feature: 'Self-hostable', sigscore: 'Yes (MIT license)', competitor: 'No', sigscoreWins: true },
+  { feature: 'Signal sources', sigscore: '16 built-in', competitor: 'Website + GitHub + limited', sigscoreWins: true },
+  { feature: 'Focus', sigscore: 'Multi-source signal intelligence', competitor: 'Developer identity from web traffic', sigscoreWins: true },
+  { feature: 'AI features', sigscore: 'BYOK account briefs + enrichment', competitor: 'Basic enrichment', sigscoreWins: true },
+  { feature: 'Workflow automation', sigscore: 'Custom workflows + playbooks', competitor: 'Limited', sigscoreWins: true },
+  { feature: 'Email sequences', sigscore: 'Built-in multi-step', competitor: 'No', sigscoreWins: true },
+  { feature: 'CRM sync', sigscore: 'HubSpot + Salesforce bidirectional', competitor: 'HubSpot + Salesforce', sigscoreWins: true },
+  { feature: 'Open source', sigscore: 'Yes (MIT)', competitor: 'No', sigscoreWins: true },
+  { feature: 'API / SDK', sigscore: 'Full REST + GraphQL + Node SDK', competitor: 'REST API', sigscoreWins: true },
 ];
 
 const whyChoose = [
   {
     title: '16 signal sources vs limited web tracking',
     description:
-      'Reo.dev focuses on identifying developers who visit your website. DevSignal aggregates signals from 16 sources including GitHub, npm, PyPI, Discord, Reddit, Stack Overflow, and more to build a complete picture.',
+      'Reo.dev focuses on identifying developers who visit your website. Sigscore aggregates signals from 16 sources including GitHub, npm, PyPI, Discord, Reddit, Stack Overflow, and more to build a complete picture.',
   },
   {
     title: 'Full workflow automation built-in',
     description:
-      'DevSignal includes custom workflow automation, playbooks, email sequences, Slack notifications, and Zapier/Make integration. Reo.dev offers limited automation capabilities.',
+      'Sigscore includes custom workflow automation, playbooks, email sequences, Slack notifications, and Zapier/Make integration. Reo.dev offers limited automation capabilities.',
   },
   {
     title: 'Open source with MIT license',
     description:
-      'Run DevSignal on your own infrastructure. Full transparency into the codebase, no vendor lock-in, and the security of knowing exactly how your data is processed.',
+      'Run Sigscore on your own infrastructure. Full transparency into the codebase, no vendor lock-in, and the security of knowing exactly how your data is processed.',
   },
   {
     title: 'AI-powered account intelligence',
     description:
-      'DevSignal uses Claude AI to generate account briefs, contact enrichment, and next-best-action recommendations. Bring your own API key for full control over costs and data.',
+      'Sigscore uses Claude AI to generate account briefs, contact enrichment, and next-best-action recommendations. Bring your own API key for full control over costs and data.',
   },
 ];
 
@@ -100,7 +100,7 @@ const whyChoose = [
 
 export default function CompareReodev() {
   useEffect(() => {
-    document.title = 'DevSignal vs Reo.dev — Developer Signal Intelligence';
+    document.title = 'Sigscore vs Reo.dev — Developer Signal Intelligence';
   }, []);
 
   return (
@@ -132,14 +132,14 @@ export default function CompareReodev() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
-              DevSignal vs{' '}
+              Sigscore vs{' '}
               <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 Reo.dev
               </span>
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-              Reo.dev is great for identifying anonymous developer traffic. DevSignal
+              Reo.dev is great for identifying anonymous developer traffic. Sigscore
               goes deeper — aggregating signals from 16 sources to score and surface
               your most engaged developers.
             </p>
@@ -147,7 +147,7 @@ export default function CompareReodev() {
             <div className="mt-10 flex items-center justify-center gap-6 sm:gap-10">
               <div className="text-center">
                 <div className="text-3xl font-extrabold text-white">$0</div>
-                <div className="text-sm text-gray-500 mt-1">DevSignal starts at</div>
+                <div className="text-sm text-gray-500 mt-1">Sigscore starts at</div>
               </div>
               <div className="text-2xl font-bold text-gray-600">vs</div>
               <div className="text-center">
@@ -167,7 +167,7 @@ export default function CompareReodev() {
               Feature-by-feature comparison
             </h2>
             <p className="mt-4 text-lg text-gray-500">
-              See exactly where DevSignal and Reo.dev differ.
+              See exactly where Sigscore and Reo.dev differ.
             </p>
           </div>
 
@@ -183,7 +183,7 @@ export default function CompareReodev() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
                         </svg>
                       </div>
-                      DevSignal
+                      Sigscore
                     </div>
                   </th>
                   <th className="py-4 px-6 text-sm font-semibold text-gray-500">Reo.dev</th>
@@ -195,13 +195,13 @@ export default function CompareReodev() {
                     <td className="py-4 pr-6 text-sm font-medium text-gray-700">{row.feature}</td>
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-2">
-                        {row.devSignalWins ? (
+                        {row.sigscoreWins ? (
                           <CheckIcon className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                         ) : (
                           <span className="w-4 h-4 flex-shrink-0" />
                         )}
-                        <span className={`text-sm ${row.devSignalWins ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
-                          {row.devSignal}
+                        <span className={`text-sm ${row.sigscoreWins ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                          {row.sigscore}
                         </span>
                       </div>
                     </td>
@@ -223,12 +223,12 @@ export default function CompareReodev() {
         </div>
       </section>
 
-      {/* Why Choose DevSignal */}
+      {/* Why Choose Sigscore */}
       <section className="bg-white text-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
           <div className="max-w-2xl mx-auto text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Why choose DevSignal over Reo.dev?
+              Why choose Sigscore over Reo.dev?
             </h2>
           </div>
 
@@ -310,11 +310,11 @@ export default function CompareReodev() {
                   to="/register"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-indigo-700 font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-indigo-50 transition-colors"
                 >
-                  Try DevSignal Free
+                  Try Sigscore Free
                   <ArrowRightIcon />
                 </Link>
                 <a
-                  href="https://github.com/nerobypaul/headless-crm"
+                  href="https://github.com/nerobypaul/sigscore"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/30 text-white font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-white/10 transition-colors"

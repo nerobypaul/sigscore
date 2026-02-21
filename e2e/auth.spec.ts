@@ -6,7 +6,7 @@ import { loginViaUI, injectAuth } from './helpers/auth';
  * Generate a unique email address for each test to avoid collisions.
  */
 function uniqueEmail(): string {
-  return `e2e-auth-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.devsignal.io`;
+  return `e2e-auth-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.sigscore.dev`;
 }
 
 test.describe('Authentication flows', () => {
@@ -74,7 +74,7 @@ test.describe('Authentication flows', () => {
     test('should show an error message for invalid email/password', async ({ page }) => {
       await page.goto('/login');
 
-      await page.getByLabel('Email').fill('nonexistent@test.devsignal.io');
+      await page.getByLabel('Email').fill('nonexistent@test.sigscore.dev');
       await page.getByLabel('Password').fill('WrongPassword999!');
       await page.getByRole('button', { name: /sign in/i }).click();
 

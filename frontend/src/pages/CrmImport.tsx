@@ -37,7 +37,7 @@ const ENTITY_LABELS: Record<EntityKey, string> = {
 };
 
 export default function CrmImport() {
-  useEffect(() => { document.title = 'CRM Import — DevSignal'; }, []);
+  useEffect(() => { document.title = 'CRM Import — Sigscore'; }, []);
   const toast = useToast();
   const [step, setStep] = useState(1);
   const [source, setSource] = useState<CrmSource | null>(null);
@@ -122,7 +122,7 @@ export default function CrmImport() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">CRM Import</h1>
-        <p className="mt-1 text-sm text-gray-500">Migrate data from HubSpot or Salesforce into DevSignal</p>
+        <p className="mt-1 text-sm text-gray-500">Migrate data from HubSpot or Salesforce into Sigscore</p>
       </div>
 
       {/* Progress bar */}

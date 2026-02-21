@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import api from '../lib/api';
 
-const DISMISSED_KEY = 'devsignal_onboarding_dismissed';
+const DISMISSED_KEY = 'sigscore_onboarding_dismissed';
 
 interface ChecklistItem {
   id: string;

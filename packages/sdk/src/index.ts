@@ -4,16 +4,16 @@ import { ContactsResource } from './resources/contacts.js';
 import { CompaniesResource } from './resources/companies.js';
 import { DealsResource } from './resources/deals.js';
 import { ScoresResource } from './resources/scores.js';
-import type { DevSignalOptions } from './types.js';
+import type { SigscoreOptions } from './types.js';
 
 /**
- * DevSignal Node.js SDK client.
+ * Sigscore Node.js SDK client.
  *
  * @example
  * ```ts
- * import { DevSignal } from '@devsignal/node';
+ * import { Sigscore } from '@sigscore/node';
  *
- * const ds = new DevSignal({ apiKey: 'ds_live_xxxxxxxxxxxx' });
+ * const ds = new Sigscore({ apiKey: 'ds_live_xxxxxxxxxxxx' });
  *
  * // Ingest a signal
  * await ds.signals.ingest({
@@ -26,14 +26,14 @@ import type { DevSignalOptions } from './types.js';
  * const top = await ds.scores.topAccounts({ limit: 10, tier: 'HOT' });
  * ```
  */
-export class DevSignal {
+export class Sigscore {
   public readonly signals: SignalsResource;
   public readonly contacts: ContactsResource;
   public readonly companies: CompaniesResource;
   public readonly deals: DealsResource;
   public readonly scores: ScoresResource;
 
-  constructor(options: DevSignalOptions) {
+  constructor(options: SigscoreOptions) {
     const client = new HttpClient(options);
 
     this.signals = new SignalsResource(client);
@@ -46,4 +46,4 @@ export class DevSignal {
 
 // Re-export everything consumers might need
 export * from './types.js';
-export { DevSignalError } from './errors.js';
+export { SigscoreError } from './errors.js';

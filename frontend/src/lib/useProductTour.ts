@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 
-const STORAGE_KEY = 'devsignal_tour_completed';
+const STORAGE_KEY = 'sigscore_tour_completed';
 const TOUR_VERSION = '1'; // Bump to re-show tour after major UI changes
 
 export interface TourStep {
@@ -18,9 +18,9 @@ export interface TourStep {
 export const TOUR_STEPS: TourStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to DevSignal',
+    title: 'Welcome to Sigscore',
     description:
-      'DevSignal tracks developer signals across GitHub, npm, and more to show you which companies are evaluating your tool. Let us show you around.',
+      'Sigscore tracks developer signals across GitHub, npm, and more to show you which companies are evaluating your tool. Let us show you around.',
     target: '[data-tour="dashboard-title"]',
     placement: 'bottom',
     action: 'Next',
@@ -56,7 +56,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'scores',
     title: 'Score Accounts',
     description:
-      'DevSignal automatically scores every company with a PQA (Product-Qualified Account) score. Hot accounts surface to the top so your team knows who to reach out to.',
+      'Sigscore automatically scores every company with a PQA (Product-Qualified Account) score. Hot accounts surface to the top so your team knows who to reach out to.',
     target: '[data-tour="nav-scores"]',
     placement: 'right',
     action: 'Next',

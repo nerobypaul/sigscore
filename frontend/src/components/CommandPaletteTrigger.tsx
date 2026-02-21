@@ -5,7 +5,7 @@
  */
 export default function CommandPaletteTrigger() {
   const handleClick = () => {
-    window.dispatchEvent(new CustomEvent('devsignal:open-command-palette'));
+    window.dispatchEvent(new CustomEvent('sigscore:open-command-palette'));
   };
 
   return (

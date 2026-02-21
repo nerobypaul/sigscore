@@ -2,19 +2,19 @@
 
 ## Post Title (76 chars)
 ```
-Show HN: DevSignal – Developer signal intelligence for devtool companies
+Show HN: Sigscore – Developer signal intelligence for devtool companies
 ```
 
 ## Post Body
 ```
 Hey HN,
 
-I built DevSignal because I worked at a devtool company and had no idea who was
+I built Sigscore because I worked at a devtool company and had no idea who was
 actually using our tool. The only options were Common Room ($1K+/mo) and Reo.dev
 ($500+/mo) — both sales-led, slow to onboard, and way too expensive for a
 Series A team.
 
-DevSignal ingests signals from 16 sources — GitHub stars, npm downloads, PyPI
+Sigscore ingests signals from 16 sources — GitHub stars, npm downloads, PyPI
 installs, Discord messages, Stack Overflow questions, Reddit mentions, Twitter/X,
 PostHog product events, Segment, LinkedIn, Intercom, Zendesk, and more — and uses identity resolution to tie
 anonymous developer activity to real company accounts. Every account gets a PQA
@@ -41,8 +41,8 @@ Outbound webhooks for Zapier/Make (HMAC-signed, 8 event types).
 Pricing starts at $0/mo (1,000 contacts, 5,000 signals). Pro is $79/mo. Docker
 compose file included for self-hosting.
 
-Live at: https://devsignal.dev
-GitHub: https://github.com/nerobypaul/devsignal
+Live at: https://sigscore.dev
+GitHub: https://github.com/nerobypaul/sigscore
 
 Would love feedback from anyone building devtools or running PLG growth.
 ```
@@ -58,7 +58,7 @@ our CLI tool and no idea which companies they came from. Common Room wanted $1K+
 and a 4-week onboarding. We ended up cobbling together GitHub API scripts, npm
 download trackers, and a massive spreadsheet. It was terrible.
 
-DevSignal is the tool I wished existed: connect GitHub, see results in 2 minutes.
+Sigscore is the tool I wished existed: connect GitHub, see results in 2 minutes.
 
 **Technical decisions and trade-offs**
 
@@ -95,7 +95,7 @@ Happy to answer questions about architecture, devtool GTM, or anything else.
 
 ## Pre-launch Checklist
 - [ ] Make GitHub repo public (Paul)
-- [ ] Rename repo from headless-crm to devsignal (Paul)
+- [ ] Rename repo from headless-crm to sigscore (Paul)
 - [x] Add LICENSE file (MIT)
 - [x] Add README.md with architecture, quickstart, screenshots
 - [x] Remove fake social proof from landing page
@@ -106,9 +106,9 @@ Happy to answer questions about architecture, devtool GTM, or anything else.
 - [x] Prepare Reddit cross-posts (r/SaaS, r/devtools, r/selfhosted)
 - [x] SEO: robots.txt, sitemap.xml, per-page document.title (16 pages)
 - [x] Production hardening: gzip compression, Redis rate limiting, connection pooling
-- [x] Domain consistency: all URLs point to devsignal.dev
+- [x] Domain consistency: all URLs point to sigscore.dev
 - [x] Form validation: inline errors, password strength meter
-- [ ] Register devsignal.dev domain (Paul)
+- [ ] Register sigscore.dev domain (Paul)
 - [ ] Set up Stripe products + webhook (Paul)
 - [ ] Create GitHub/Google OAuth apps (Paul)
 - [ ] Configure Resend for transactional email (Paul)

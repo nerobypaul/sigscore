@@ -110,7 +110,7 @@ interface AIAction {
 // ---------------------------------------------------------------------------
 
 export default function CompanyDetail() {
-  useEffect(() => { document.title = 'Company Detail — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Company Detail — Sigscore'; }, []);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const toast = useToast();
@@ -556,7 +556,7 @@ function ContactsTab({ contacts }: { contacts: Contact[] }) {
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
 
   const isDemo = user?.organizations?.some(
-    (uo: { organization?: { name?: string } }) => uo.organization?.name?.startsWith('DevSignal Demo'),
+    (uo: { organization?: { name?: string } }) => uo.organization?.name?.startsWith('Sigscore Demo'),
   );
 
   const handleEnrich = async (contactId: string) => {
@@ -753,7 +753,7 @@ function NextBestActions({ accountId }: { accountId: string }) {
   const [error, setError] = useState('');
 
   const isDemo = user?.organizations?.some(
-    (uo: { organization?: { name?: string } }) => uo.organization?.name?.startsWith('DevSignal Demo'),
+    (uo: { organization?: { name?: string } }) => uo.organization?.name?.startsWith('Sigscore Demo'),
   );
 
   const fetchActions = useCallback(async () => {

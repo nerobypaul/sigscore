@@ -107,7 +107,7 @@ const RUN_STATUS_COLORS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export default function Workflows() {
-  useEffect(() => { document.title = 'Workflows — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Workflows — Sigscore'; }, []);
 
   const toast = useToast();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);

@@ -18,7 +18,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          This Acceptable Use Policy ("AUP") governs your use of the DevSignal platform, including
+          This Acceptable Use Policy ("AUP") governs your use of the Sigscore platform, including
           our website, APIs, SDKs, webhooks, and all related services (collectively, the "Service").
           This AUP is incorporated by reference into our{' '}
           <Link to="/terms" className="text-indigo-400 hover:text-indigo-300 underline">
@@ -70,7 +70,7 @@ const sections: Section[] = [
             Attempting to exploit security vulnerabilities in the Service or its infrastructure.
           </li>
           <li>
-            <strong>Spam &amp; Unsolicited Communications:</strong> Using DevSignal contact data
+            <strong>Spam &amp; Unsolicited Communications:</strong> Using Sigscore contact data
             or outbound webhook sequences to send unsolicited commercial email (spam), harassment
             campaigns, or any communications that violate CAN-SPAM, CASL, or other applicable
             anti-spam laws.
@@ -82,7 +82,7 @@ const sections: Section[] = [
           </li>
           <li>
             <strong>Impersonation:</strong> Impersonating another person, organization, or
-            DevSignal itself, or misrepresenting your affiliation with any entity when using the
+            Sigscore itself, or misrepresenting your affiliation with any entity when using the
             Service.
           </li>
           <li>
@@ -105,8 +105,8 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          DevSignal exposes REST, GraphQL, and WebSocket APIs, as well as the{' '}
-          <code>@devsignal/node</code> SDK. Your use of these interfaces is subject to the
+          Sigscore exposes REST, GraphQL, and WebSocket APIs, as well as the{' '}
+          <code>@sigscore/node</code> SDK. Your use of these interfaces is subject to the
           following rules:
         </p>
         <ul>
@@ -134,7 +134,7 @@ const sections: Section[] = [
           </li>
           <li>
             <strong>Webhook Signature Verification:</strong> All outbound webhook payloads from
-            DevSignal are signed with HMAC-SHA256. You are required to verify webhook signatures
+            Sigscore are signed with HMAC-SHA256. You are required to verify webhook signatures
             on your receiving endpoint before processing any payload. Do not process payloads
             from unsigned or unverified requests.
           </li>
@@ -142,7 +142,7 @@ const sections: Section[] = [
             <strong>Permitted Use Only:</strong> APIs and SDKs may only be used to access and
             interact with the Service in ways consistent with your subscription plan and this AUP.
             Reselling or sublicensing API access to third parties is prohibited without prior
-            written consent from DevSignal.
+            written consent from Sigscore.
           </li>
         </ul>
       </>
@@ -164,29 +164,29 @@ const sections: Section[] = [
             obligations, or that constitutes stolen or unlawfully obtained information.
           </li>
           <li>
-            <strong>PII Consent Requirements:</strong> When using DevSignal to collect, store, or
+            <strong>PII Consent Requirements:</strong> When using Sigscore to collect, store, or
             process personal information about individuals (contacts, leads, developers), you must
             have obtained appropriate consent or have a valid legal basis under applicable law for
-            that processing. You may not use DevSignal to build contact databases without proper
+            that processing. You may not use Sigscore to build contact databases without proper
             authorization.
           </li>
           <li>
-            <strong>GDPR &amp; CCPA Compliance:</strong> When you use DevSignal to process personal
+            <strong>GDPR &amp; CCPA Compliance:</strong> When you use Sigscore to process personal
             data of individuals in the European Economic Area or California, you are the data
             controller and are responsible for ensuring your use of the Service complies with GDPR,
             CCPA, and other applicable data protection regulations. Contact{' '}
-            <a href="mailto:legal@devsignal.dev">legal@devsignal.dev</a> to request a Data
+            <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a> to request a Data
             Processing Agreement (DPA).
           </li>
           <li>
-            <strong>No Sensitive Financial or Health Data:</strong> DevSignal is not designed or
+            <strong>No Sensitive Financial or Health Data:</strong> Sigscore is not designed or
             certified for the storage or processing of payment card data (PCI-DSS scope), protected
             health information (HIPAA), or other categories of sensitive regulated data. Do not
             upload or sync such data into the Service.
           </li>
           <li>
             <strong>Data Accuracy:</strong> You are responsible for the accuracy of data you import
-            into DevSignal. Do not knowingly populate the Service with incorrect, deceptive, or
+            into Sigscore. Do not knowingly populate the Service with incorrect, deceptive, or
             fabricated contact or company records.
           </li>
         </ul>
@@ -199,7 +199,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          DevSignal supports integrations with 16 external sources, including HubSpot, Salesforce,
+          Sigscore supports integrations with 16 external sources, including HubSpot, Salesforce,
           GitHub, Segment, Slack, Discord, PostHog, Intercom, Zendesk, and others. When connecting
           third-party accounts and data sources, you must adhere to the following:
         </p>
@@ -224,13 +224,13 @@ const sections: Section[] = [
           </li>
           <li>
             <strong>Outbound Webhooks (Zapier/Make):</strong> Webhook subscriptions must only
-            forward DevSignal event data to systems and workflows that are authorized within your
+            forward Sigscore event data to systems and workflows that are authorized within your
             organization. Do not route webhook data to unauthorized third parties.
           </li>
           <li>
             <strong>Integration Compliance:</strong> Your use of any connected third-party
             platform must remain compliant with that platform's own acceptable use policies.
-            DevSignal is not liable for violations you commit on connected platforms.
+            Sigscore is not liable for violations you commit on connected platforms.
           </li>
         </ul>
       </>
@@ -242,7 +242,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          Each DevSignal subscription plan includes defined resource allocations. You must stay
+          Each Sigscore subscription plan includes defined resource allocations. You must stay
           within the limits of your plan and may not attempt to circumvent usage metering:
         </p>
         <ul>
@@ -281,19 +281,19 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          If you become aware of any use of the DevSignal platform that violates this AUP —
+          If you become aware of any use of the Sigscore platform that violates this AUP —
           including abuse by other users, API misuse, data exfiltration, or spam campaigns
-          originating from DevSignal data — please report it to us immediately.
+          originating from Sigscore data — please report it to us immediately.
         </p>
         <ul>
           <li>
             <strong>Abuse Reports:</strong>{' '}
-            <a href="mailto:abuse@devsignal.dev">abuse@devsignal.dev</a> — for suspected
+            <a href="mailto:abuse@sigscore.dev">abuse@sigscore.dev</a> — for suspected
             misuse, spam, scraping abuse, or unauthorized access incidents.
           </li>
           <li>
             <strong>Security Vulnerabilities:</strong>{' '}
-            <a href="mailto:security@devsignal.dev">security@devsignal.dev</a> — for responsible
+            <a href="mailto:security@sigscore.dev">security@sigscore.dev</a> — for responsible
             disclosure of security issues. Please do not publicly disclose vulnerabilities before
             we have had an opportunity to address them.
           </li>
@@ -317,7 +317,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          DevSignal enforces this AUP through a graduated response process, calibrated to the
+          Sigscore enforces this AUP through a graduated response process, calibrated to the
           nature and severity of the violation:
         </p>
         <ul>
@@ -343,14 +343,14 @@ const sections: Section[] = [
           </li>
           <li>
             <strong>Legal Action:</strong> Where violations constitute criminal activity or cause
-            material harm to DevSignal or its users, we reserve the right to pursue civil remedies
+            material harm to Sigscore or its users, we reserve the right to pursue civil remedies
             or refer matters to law enforcement.
           </li>
         </ul>
         <p>
           <strong>Appeals:</strong> If you believe an enforcement action was taken in error, you
           may appeal to{' '}
-          <a href="mailto:legal@devsignal.dev">legal@devsignal.dev</a> within 14 days of the
+          <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a> within 14 days of the
           action. Include your account details and a description of why you believe the action was
           unwarranted. We will review appeals and respond within 10 business days.
         </p>
@@ -369,18 +369,18 @@ const sections: Section[] = [
         <ul>
           <li>
             <strong>Abuse &amp; Violations:</strong>{' '}
-            <a href="mailto:abuse@devsignal.dev">abuse@devsignal.dev</a>
+            <a href="mailto:abuse@sigscore.dev">abuse@sigscore.dev</a>
           </li>
           <li>
             <strong>Legal &amp; Appeals:</strong>{' '}
-            <a href="mailto:legal@devsignal.dev">legal@devsignal.dev</a>
+            <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a>
           </li>
           <li>
             <strong>Security Disclosures:</strong>{' '}
-            <a href="mailto:security@devsignal.dev">security@devsignal.dev</a>
+            <a href="mailto:security@sigscore.dev">security@sigscore.dev</a>
           </li>
           <li>
-            <strong>Company:</strong> DevSignal, Inc.
+            <strong>Company:</strong> Sigscore, Inc.
           </li>
         </ul>
         <p>
@@ -402,7 +402,7 @@ const sections: Section[] = [
 export default function AcceptableUse() {
   const [activeSection, setActiveSection] = useState(sections[0].id);
 
-  useEffect(() => { document.title = 'Acceptable Use Policy — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Acceptable Use Policy — Sigscore'; }, []);
 
   useEffect(() => {
     const handleScroll = () => {

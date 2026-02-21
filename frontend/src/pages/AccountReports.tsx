@@ -47,7 +47,7 @@ interface CompanyOption {
 // ---------------------------------------------------------------------------
 
 export default function AccountReports() {
-  useEffect(() => { document.title = 'Account Reports — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Account Reports — Sigscore'; }, []);
   const toast = useToast();
 
   const [reports, setReports] = useState<AccountReport[]>([]);

@@ -85,7 +85,7 @@ const TIER_COLORS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export default function ScoringBuilder() {
-  useEffect(() => { document.title = 'Scoring Rules — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Scoring Rules — Sigscore'; }, []);
   const [config, setConfig] = useState<ScoringConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

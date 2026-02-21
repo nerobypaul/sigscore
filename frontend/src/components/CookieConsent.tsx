@@ -5,12 +5,12 @@ export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const consent = localStorage.getItem('devsignal-cookie-consent');
+    const consent = localStorage.getItem('sigscore-cookie-consent');
     if (!consent) setVisible(true);
   }, []);
 
   const accept = (level: 'all' | 'essential') => {
-    localStorage.setItem('devsignal-cookie-consent', level);
+    localStorage.setItem('sigscore-cookie-consent', level);
     setVisible(false);
   };
 

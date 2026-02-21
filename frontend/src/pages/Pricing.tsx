@@ -207,7 +207,7 @@ const comparisonData: ComparisonCategory[] = [
     name: 'Integrations',
     features: [
       { name: 'REST + GraphQL API', free: true, pro: true, growth: true, scale: true },
-      { name: '@devsignal/node SDK', free: true, pro: true, growth: true, scale: true },
+      { name: '@sigscore/node SDK', free: true, pro: true, growth: true, scale: true },
       { name: 'Slack integration', free: false, pro: true, growth: true, scale: true },
       { name: 'HubSpot sync', free: false, pro: false, growth: true, scale: true },
       { name: 'Salesforce sync', free: false, pro: false, growth: true, scale: true },
@@ -279,7 +279,7 @@ const faqs: FAQItem[] = [
   {
     question: 'Can I self-host?',
     answer:
-      "Yes. DevSignal ships with a Docker Compose configuration for self-hosting on your own infrastructure. The Scale plan includes priority support for self-hosted deployments.",
+      "Yes. Sigscore ships with a Docker Compose configuration for self-hosting on your own infrastructure. The Scale plan includes priority support for self-hosted deployments.",
   },
   {
     question: 'How does billing work?',
@@ -719,7 +719,7 @@ function FAQItemComponent({ item }: { item: FAQItem }) {
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
 
-  useEffect(() => { document.title = 'Pricing — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Pricing — Sigscore'; }, []);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -763,7 +763,7 @@ export default function Pricing() {
         <div className="mt-12 text-center">
           <p className="text-sm text-gray-500">
             All plans include REST + GraphQL API, WebSocket real-time updates,
-            and the @devsignal/node SDK.
+            and the @sigscore/node SDK.
           </p>
         </div>
       </section>
@@ -808,7 +808,7 @@ export default function Pricing() {
               Frequently asked questions
             </h2>
             <p className="mt-4 text-lg text-gray-400">
-              Everything you need to know about DevSignal pricing.
+              Everything you need to know about Sigscore pricing.
             </p>
           </div>
 
@@ -895,7 +895,7 @@ export default function Pricing() {
                   <ArrowRightIcon />
                 </Link>
                 <a
-                  href="mailto:sales@devsignal.dev?subject=Demo%20request"
+                  href="mailto:sales@sigscore.dev?subject=Demo%20request"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/30 text-white font-semibold px-5 py-3 sm:px-8 sm:py-3.5 rounded-xl text-base hover:bg-white/10 transition-colors"
                 >
                   Schedule a Demo

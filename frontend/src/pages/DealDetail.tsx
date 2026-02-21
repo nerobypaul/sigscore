@@ -250,7 +250,7 @@ function InlineEdit({
 // ---------- Main component ----------
 
 export default function DealDetailPage() {
-  useEffect(() => { document.title = 'Deal Detail — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Deal Detail — Sigscore'; }, []);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const toast = useToast();

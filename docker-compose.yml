@@ -1,5 +1,5 @@
 # ============================================================
-# DevSignal CRM — Docker Compose (Production)
+# Sigscore CRM — Docker Compose (Production)
 # ============================================================
 # Usage:
 #   cp .env.example .env   # fill in real secrets
@@ -10,20 +10,20 @@ services:
   # ---- PostgreSQL 16 ----
   postgres:
     image: postgres:16-alpine
-    container_name: devsignal-postgres
+    container_name: sigscore-postgres
     restart: unless-stopped
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-devsignal}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devsignal_dev_pw}
-      POSTGRES_DB: ${POSTGRES_DB:-devsignal}
+      POSTGRES_USER: ${POSTGRES_USER:-sigscore}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sigscore_dev_pw}
+      POSTGRES_DB: ${POSTGRES_DB:-sigscore}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - devsignal
+      - sigscore
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-devsignal} -d ${POSTGRES_DB:-devsignal}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sigscore} -d ${POSTGRES_DB:-sigscore}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,7 +32,7 @@ services:
   # ---- Redis 7 (BullMQ, caching) ----
   redis:
     image: redis:7-alpine
-    container_name: devsignal-redis
+    container_name: sigscore-redis
     restart: unless-stopped
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -40,7 +40,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - devsignal
+      - sigscore
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -53,7 +53,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    container_name: devsignal-backend
+    container_name: sigscore-backend
     restart: unless-stopped
     depends_on:
       postgres:
@@ -65,7 +65,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-devsignal}:${POSTGRES_PASSWORD:-devsignal_dev_pw}@postgres:5432/${POSTGRES_DB:-devsignal}?schema=public"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-sigscore}:${POSTGRES_PASSWORD:-sigscore_dev_pw}@postgres:5432/${POSTGRES_DB:-sigscore}?schema=public"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
@@ -85,7 +85,7 @@ services:
       OAUTH_GITHUB_CLIENT_SECRET: ${OAUTH_GITHUB_CLIENT_SECRET:-}
       OAUTH_GITHUB_CALLBACK_URL: ${OAUTH_GITHUB_CALLBACK_URL:-}
     networks:
-      - devsignal
+      - sigscore
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -100,7 +100,7 @@ services:
       dockerfile: frontend/Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:3001}
-    container_name: devsignal-frontend
+    container_name: sigscore-frontend
     restart: unless-stopped
     depends_on:
       backend:
@@ -108,7 +108,7 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:80"
     networks:
-      - devsignal
+      - sigscore
 
 volumes:
   postgres_data:
@@ -117,5 +117,5 @@ volumes:
     driver: local
 
 networks:
-  devsignal:
+  sigscore:
     driver: bridge

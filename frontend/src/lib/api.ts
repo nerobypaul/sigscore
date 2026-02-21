@@ -75,7 +75,7 @@ api.interceptors.response.use(
     if (error.response?.status === 429) {
       const detail = error.response.data as Record<string, unknown> | undefined;
       window.dispatchEvent(
-        new CustomEvent('devsignal:rate-limited', {
+        new CustomEvent('sigscore:rate-limited', {
           detail: {
             message: detail?.error ?? 'Too many requests. Please wait a moment and try again.',
           },
@@ -87,7 +87,7 @@ api.interceptors.response.use(
     if (error.response?.status === 402) {
       const detail = error.response.data as Record<string, unknown> | undefined;
       window.dispatchEvent(
-        new CustomEvent('devsignal:plan-limit', {
+        new CustomEvent('sigscore:plan-limit', {
           detail: {
             error: detail?.error ?? 'Plan limit reached',
             current: detail?.current,

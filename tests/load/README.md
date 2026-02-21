@@ -1,4 +1,4 @@
-# DevSignal Load Test — Show HN Traffic Simulator
+# Sigscore Load Test — Show HN Traffic Simulator
 
 Pure Node.js load testing setup (zero external dependencies) that simulates
 the traffic pattern of a Hacker News front-page post.
@@ -19,7 +19,7 @@ npm run test:load
 node tests/load/run.js --duration 10
 
 # Against a deployed target
-LOAD_TEST_URL=https://app.devsignal.dev npm run test:load:quick
+LOAD_TEST_URL=https://app.sigscore.dev npm run test:load:quick
 ```
 
 ## What it simulates

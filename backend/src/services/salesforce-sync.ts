@@ -66,7 +66,7 @@ interface SalesforceCompositeResponse {
 const SF_API_VERSION = 'v59.0';
 const BATCH_SIZE = 200; // Salesforce Composite API max per call
 
-// DevSignal -> Salesforce Opportunity stage mapping
+// Sigscore -> Salesforce Opportunity stage mapping
 const DEAL_STAGE_TO_SF: Record<string, string> = {
   [DealStage.ANONYMOUS_USAGE]: 'Prospecting',
   [DealStage.IDENTIFIED]: 'Prospecting',
@@ -91,20 +91,20 @@ interface CustomFieldDef {
 
 const CUSTOM_FIELDS: Record<string, CustomFieldDef[]> = {
   Contact: [
-    { fullName: 'Contact.PQA_Score__c', label: 'DevSignal PQA Score', type: 'Number', length: 18, scale: 0, precision: 3 },
-    { fullName: 'Contact.Signal_Count__c', label: 'DevSignal Signal Count', type: 'Number', length: 18, scale: 0, precision: 8 },
-    { fullName: 'Contact.Last_Signal_Date__c', label: 'DevSignal Last Signal Date', type: 'Date' },
-    { fullName: 'Contact.DevSignal_Source__c', label: 'DevSignal Source', type: 'Text', length: 255 },
+    { fullName: 'Contact.PQA_Score__c', label: 'Sigscore PQA Score', type: 'Number', length: 18, scale: 0, precision: 3 },
+    { fullName: 'Contact.Signal_Count__c', label: 'Sigscore Signal Count', type: 'Number', length: 18, scale: 0, precision: 8 },
+    { fullName: 'Contact.Last_Signal_Date__c', label: 'Sigscore Last Signal Date', type: 'Date' },
+    { fullName: 'Contact.Sigscore_Source__c', label: 'Sigscore Source', type: 'Text', length: 255 },
   ],
   Account: [
-    { fullName: 'Account.PQA_Score__c', label: 'DevSignal PQA Score', type: 'Number', length: 18, scale: 0, precision: 3 },
-    { fullName: 'Account.Signal_Count__c', label: 'DevSignal Signal Count', type: 'Number', length: 18, scale: 0, precision: 8 },
-    { fullName: 'Account.Last_Signal_Date__c', label: 'DevSignal Last Signal Date', type: 'Date' },
-    { fullName: 'Account.DevSignal_Source__c', label: 'DevSignal Source', type: 'Text', length: 255 },
+    { fullName: 'Account.PQA_Score__c', label: 'Sigscore PQA Score', type: 'Number', length: 18, scale: 0, precision: 3 },
+    { fullName: 'Account.Signal_Count__c', label: 'Sigscore Signal Count', type: 'Number', length: 18, scale: 0, precision: 8 },
+    { fullName: 'Account.Last_Signal_Date__c', label: 'Sigscore Last Signal Date', type: 'Date' },
+    { fullName: 'Account.Sigscore_Source__c', label: 'Sigscore Source', type: 'Text', length: 255 },
   ],
   Opportunity: [
-    { fullName: 'Opportunity.DevSignal_Deal_Id__c', label: 'DevSignal Deal ID', type: 'Text', length: 255 },
-    { fullName: 'Opportunity.DevSignal_Source__c', label: 'DevSignal Source', type: 'Text', length: 255 },
+    { fullName: 'Opportunity.Sigscore_Deal_Id__c', label: 'Sigscore Deal ID', type: 'Text', length: 255 },
+    { fullName: 'Opportunity.Sigscore_Source__c', label: 'Sigscore Source', type: 'Text', length: 255 },
   ],
 };
 
@@ -367,7 +367,7 @@ async function getValidCredentials(organizationId: string): Promise<{
 // ---------------------------------------------------------------------------
 
 /**
- * Register DevSignal custom fields on Salesforce objects using the Tooling API.
+ * Register Sigscore custom fields on Salesforce objects using the Tooling API.
  * Fields that already exist are silently skipped.
  */
 export async function registerCustomFields(
@@ -427,8 +427,8 @@ export async function registerCustomFields(
 // ---------------------------------------------------------------------------
 
 /**
- * Query Salesforce contacts modified since last sync and upsert into DevSignal,
- * then push DevSignal contacts back to Salesforce.
+ * Query Salesforce contacts modified since last sync and upsert into Sigscore,
+ * then push Sigscore contacts back to Salesforce.
  */
 async function syncContacts(
   organizationId: string,
@@ -503,7 +503,7 @@ async function syncContacts(
     logger.error('Salesforce contact pull failed', { organizationId, error: msg });
   }
 
-  // --- Push DevSignal contacts to Salesforce ---
+  // --- Push Sigscore contacts to Salesforce ---
   const dsWhere: Record<string, unknown> = {
     organizationId,
     email: { not: null },
@@ -540,7 +540,7 @@ async function syncContacts(
         if (contact.title) rec.Title = contact.title;
         if (contact.phone) rec.Phone = contact.phone;
 
-        // DevSignal custom fields
+        // Sigscore custom fields
         if (contact.company?.score) {
           rec.PQA_Score__c = contact.company.score.score;
           rec.Signal_Count__c = contact.company.score.signalCount;
@@ -550,7 +550,7 @@ async function syncContacts(
               .split('T')[0];
           }
         }
-        rec.DevSignal_Source__c = 'DevSignal';
+        rec.Sigscore_Source__c = 'Sigscore';
 
         return rec;
       });
@@ -600,7 +600,7 @@ async function syncContacts(
 // ---------------------------------------------------------------------------
 
 /**
- * Sync companies (DevSignal) <-> accounts (Salesforce) bidirectionally.
+ * Sync companies (Sigscore) <-> accounts (Salesforce) bidirectionally.
  */
 async function syncAccounts(
   organizationId: string,
@@ -690,7 +690,7 @@ async function syncAccounts(
     logger.error('Salesforce account pull failed', { organizationId, error: msg });
   }
 
-  // --- Push DevSignal companies to Salesforce ---
+  // --- Push Sigscore companies to Salesforce ---
   const dsWhere: Record<string, unknown> = {
     organizationId,
     domain: { not: null },
@@ -732,7 +732,7 @@ async function syncAccounts(
             .split('T')[0];
         }
       }
-      rec.DevSignal_Source__c = 'DevSignal';
+      rec.Sigscore_Source__c = 'Sigscore';
 
       return rec;
     });
@@ -777,7 +777,7 @@ async function syncAccounts(
 // ---------------------------------------------------------------------------
 
 /**
- * Map DevSignal deals to Salesforce Opportunities.
+ * Map Sigscore deals to Salesforce Opportunities.
  */
 async function syncOpportunities(
   organizationId: string,
@@ -804,8 +804,8 @@ async function syncOpportunities(
 
   for (const deal of deals) {
     try {
-      // Check if opportunity already exists by DevSignal_Deal_Id__c
-      const searchSoql = `SELECT Id FROM Opportunity WHERE DevSignal_Deal_Id__c = '${deal.id}' LIMIT 1`;
+      // Check if opportunity already exists by Sigscore_Deal_Id__c
+      const searchSoql = `SELECT Id FROM Opportunity WHERE Sigscore_Deal_Id__c = '${deal.id}' LIMIT 1`;
       const existingResult = (await salesforceApi(
         organizationId,
         instanceUrl,
@@ -822,8 +822,8 @@ async function syncOpportunities(
         Name: deal.title,
         StageName: sfStage,
         CloseDate: closeDate,
-        DevSignal_Deal_Id__c: deal.id,
-        DevSignal_Source__c: 'DevSignal',
+        Sigscore_Deal_Id__c: deal.id,
+        Sigscore_Source__c: 'Sigscore',
       };
 
       if (deal.amount !== null) {
@@ -925,7 +925,7 @@ async function syncSignalTasks(
       const companyName = signal.account?.name || 'Unknown Company';
 
       const taskData: Record<string, unknown> = {
-        Subject: `DevSignal: ${signal.type}`,
+        Subject: `Sigscore: ${signal.type}`,
         Description: [
           `Signal Type: ${signal.type}`,
           packageName ? `Package: ${packageName}` : '',

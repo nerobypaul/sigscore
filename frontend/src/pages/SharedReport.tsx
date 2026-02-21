@@ -156,7 +156,7 @@ function sizeLabel(size: string | null): string {
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export default function SharedReport() {
-  useEffect(() => { document.title = 'Account Report — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Account Report — Sigscore'; }, []);
 
   const { shareToken } = useParams<{ shareToken: string }>();
   const [report, setReport] = useState<SharedReportData | null>(null);
@@ -237,7 +237,7 @@ export default function SharedReport() {
             to="/"
             className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
           >
-            Learn about DevSignal
+            Learn about Sigscore
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
@@ -270,7 +270,7 @@ export default function SharedReport() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-gray-900 tracking-tight">DevSignal</span>
+            <span className="text-lg font-bold text-gray-900 tracking-tight">Sigscore</span>
           </div>
           <span className="text-xs text-gray-400">
             {report.viewCount} view{report.viewCount !== 1 ? 's' : ''}
@@ -607,13 +607,13 @@ export default function SharedReport() {
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
             </svg>
-            Powered by DevSignal
+            Powered by Sigscore
           </div>
           <Link
             to="/"
             className="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
           >
-            Try DevSignal free
+            Try Sigscore free
           </Link>
         </div>
       </footer>

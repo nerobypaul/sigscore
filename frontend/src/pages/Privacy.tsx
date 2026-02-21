@@ -126,10 +126,10 @@ const sections: Section[] = [
           </li>
         </ul>
         <p>
-          <strong>Data Processing Agreements:</strong> Where DevSignal acts as a data processor on
+          <strong>Data Processing Agreements:</strong> Where Sigscore acts as a data processor on
           behalf of your organization, we will enter into a Data Processing Agreement (DPA) upon
           request. Contact{' '}
-          <a href="mailto:legal@devsignal.dev">legal@devsignal.dev</a> to request a DPA.
+          <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a> to request a DPA.
         </p>
         <p>
           <strong>International Transfers:</strong> Your data may be transferred to and processed
@@ -263,7 +263,7 @@ const sections: Section[] = [
         </ul>
         <p>
           To exercise any of these rights, contact us at{' '}
-          <a href="mailto:legal@devsignal.dev">legal@devsignal.dev</a>. We will respond to
+          <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a>. We will respond to
           requests within 30 days.
         </p>
         <p>
@@ -281,7 +281,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          DevSignal uses a minimal set of cookies and local storage for essential functionality:
+          Sigscore uses a minimal set of cookies and local storage for essential functionality:
         </p>
         <ul>
           <li>
@@ -352,7 +352,7 @@ const sections: Section[] = [
         <p>
           While we strive to protect your data, no method of electronic transmission or storage is
           100% secure. If you discover a security vulnerability, please report it to{' '}
-          <a href="mailto:security@devsignal.dev">security@devsignal.dev</a>.
+          <a href="mailto:security@sigscore.dev">security@sigscore.dev</a>.
         </p>
       </>
     ),
@@ -363,7 +363,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          In the event of a data breach that affects your personal information, DevSignal will:
+          In the event of a data breach that affects your personal information, Sigscore will:
         </p>
         <ul>
           <li>
@@ -386,7 +386,7 @@ const sections: Section[] = [
         </ul>
         <p>
           If you believe your data has been compromised, please contact us immediately at{' '}
-          <a href="mailto:security@devsignal.dev">security@devsignal.dev</a>.
+          <a href="mailto:security@sigscore.dev">security@sigscore.dev</a>.
         </p>
       </>
     ),
@@ -400,7 +400,7 @@ const sections: Section[] = [
           The Service is not directed to individuals under the age of 18. We do not knowingly
           collect personal information from children. If you become aware that a child has provided
           us with personal data, please contact us at{' '}
-          <a href="mailto:legal@devsignal.dev">legal@devsignal.dev</a> and we will take steps to
+          <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a> and we will take steps to
           delete such information.
         </p>
       </>
@@ -442,14 +442,14 @@ const sections: Section[] = [
         <ul>
           <li>
             <strong>Email:</strong>{' '}
-            <a href="mailto:legal@devsignal.dev">legal@devsignal.dev</a>
+            <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a>
           </li>
           <li>
             <strong>Security Issues:</strong>{' '}
-            <a href="mailto:security@devsignal.dev">security@devsignal.dev</a>
+            <a href="mailto:security@sigscore.dev">security@sigscore.dev</a>
           </li>
           <li>
-            <strong>Company:</strong> DevSignal, Inc.
+            <strong>Company:</strong> Sigscore, Inc.
           </li>
         </ul>
         <p>
@@ -464,7 +464,7 @@ const sections: Section[] = [
 export default function Privacy() {
   const [activeSection, setActiveSection] = useState(sections[0].id);
 
-  useEffect(() => { document.title = 'Privacy Policy — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Privacy Policy — Sigscore'; }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -502,7 +502,7 @@ export default function Privacy() {
           </h1>
           <p className="mt-2 text-sm text-gray-500">Last updated: {LAST_UPDATED}</p>
           <p className="mt-4 text-gray-400 max-w-3xl">
-            At DevSignal, we take your privacy seriously. This Privacy Policy describes how we
+            At Sigscore, we take your privacy seriously. This Privacy Policy describes how we
             collect, use, share, and protect your personal information when you use our Service.
           </p>
         </div>

@@ -63,7 +63,7 @@ test.describe('Demo Flow', () => {
     await expect(page.locator('aside')).toBeVisible({ timeout: 5000 });
 
     // DemoOnboardingHints should show the welcome step
-    await expect(page.getByText(/welcome to devsignal/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/welcome to sigscore/i)).toBeVisible({ timeout: 5000 });
 
     // Should have Next button to advance steps
     const nextButton = page.getByRole('button', { name: /next/i });
@@ -76,7 +76,7 @@ test.describe('Demo Flow', () => {
     // Skip should dismiss
     const skipButton = page.getByRole('button', { name: /skip/i });
     await skipButton.click();
-    await expect(page.getByText(/welcome to devsignal/i)).not.toBeVisible({ timeout: 3000 });
+    await expect(page.getByText(/welcome to sigscore/i)).not.toBeVisible({ timeout: 3000 });
   });
 
   test('demo nav hides irrelevant items', async ({ page }) => {
@@ -153,7 +153,7 @@ test.describe('Demo Flow', () => {
     await page.goto('/register');
 
     // Check for registration form elements
-    await expect(page.getByRole('heading', { name: /devsignal/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /sigscore/i })).toBeVisible();
     await expect(page.getByLabel('First name')).toBeVisible();
     await expect(page.getByLabel('Last name')).toBeVisible();
     await expect(page.getByLabel('Email')).toBeVisible();
@@ -165,7 +165,7 @@ test.describe('Demo Flow', () => {
     await page.goto('/login');
 
     // Check for login form elements
-    await expect(page.getByRole('heading', { name: /devsignal/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /sigscore/i })).toBeVisible();
     await expect(page.getByLabel('Email')).toBeVisible();
     await expect(page.getByLabel('Password')).toBeVisible();
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
@@ -261,17 +261,17 @@ test.describe('Demo Flow', () => {
     await expect(page.getByText('2 minutes. Connect GitHub, see results.')).toBeVisible();
   });
 
-  test('landing page comparison table shows DevSignal advantages', async ({ page }) => {
+  test('landing page comparison table shows Sigscore advantages', async ({ page }) => {
     await page.goto('/');
 
     // Scroll to comparison section
-    await page.getByText('Why DevSignal over the alternatives?').scrollIntoViewIfNeeded();
+    await page.getByText('Why Sigscore over the alternatives?').scrollIntoViewIfNeeded();
 
     // Check for comparison table elements
     await expect(page.getByText('Common Room')).toBeVisible();
     await expect(page.getByText('Reo.dev')).toBeVisible();
 
-    // Verify DevSignal advantages are shown
+    // Verify Sigscore advantages are shown
     await expect(page.getByText('From $0/mo')).toBeVisible();
     await expect(page.getByText('2 minutes')).toBeVisible();
   });
@@ -316,6 +316,6 @@ test.describe('Demo Flow', () => {
     }
 
     // Check for copyright
-    await expect(page.locator('footer').getByText(/DevSignal. All rights reserved/)).toBeVisible();
+    await expect(page.locator('footer').getByText(/Sigscore. All rights reserved/)).toBeVisible();
   });
 });

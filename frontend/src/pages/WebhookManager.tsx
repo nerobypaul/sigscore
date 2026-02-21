@@ -38,7 +38,7 @@ const EVENT_COLORS: Record<string, string> = {
 };
 
 export default function WebhookManager() {
-  useEffect(() => { document.title = 'Webhooks — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Webhooks — Sigscore'; }, []);
   const toast = useToast();
 
   const [subscriptions, setSubscriptions] = useState<WebhookSubscription[]>([]);
@@ -144,7 +144,7 @@ export default function WebhookManager() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Webhooks</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Subscribe external services like Zapier and Make to DevSignal events
+            Subscribe external services like Zapier and Make to Sigscore events
           </p>
         </div>
         <button
@@ -408,7 +408,7 @@ export default function WebhookManager() {
               <li>Come back here and create a subscription with that URL and your desired event</li>
               <li>Click "Test" to send a sample payload to Zapier</li>
               <li>In Zapier, click "Test trigger" to confirm the payload was received</li>
-              <li>Continue building your Zap with the data from DevSignal</li>
+              <li>Continue building your Zap with the data from Sigscore</li>
             </ol>
           </div>
           <div>
@@ -425,29 +425,29 @@ export default function WebhookManager() {
           <div>
             <h3 className="font-medium text-gray-800 mb-1">Programmatic (API)</h3>
             <p>
-              Use the DevSignal API with your API key to manage subscriptions programmatically:
+              Use the Sigscore API with your API key to manage subscriptions programmatically:
             </p>
             <pre className="mt-2 p-3 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto">
 {`# Subscribe
-curl -X POST https://api.devsignal.dev/api/v1/webhooks/subscribe \\
+curl -X POST https://api.sigscore.dev/api/v1/webhooks/subscribe \\
   -H "x-api-key: ds_live_YOUR_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"targetUrl": "https://your-endpoint.com/hook", "event": "signal.created"}'
 
 # Unsubscribe
-curl -X DELETE https://api.devsignal.dev/api/v1/webhooks/subscribe/SUB_ID \\
+curl -X DELETE https://api.sigscore.dev/api/v1/webhooks/subscribe/SUB_ID \\
   -H "x-api-key: ds_live_YOUR_KEY"`}
             </pre>
           </div>
           <div>
             <h3 className="font-medium text-gray-800 mb-1">Verifying Signatures</h3>
             <p>
-              Each delivery includes an <code className="px-1 py-0.5 bg-gray-100 rounded text-xs">X-DevSignal-Signature</code> header
+              Each delivery includes an <code className="px-1 py-0.5 bg-gray-100 rounded text-xs">X-Sigscore-Signature</code> header
               with an HMAC-SHA256 signature. Verify it using your subscription's secret:
             </p>
             <pre className="mt-2 p-3 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto">
 {`const crypto = require('crypto');
-const signature = req.headers['x-devsignal-signature'];
+const signature = req.headers['x-sigscore-signature'];
 const expected = 'sha256=' + crypto
   .createHmac('sha256', YOUR_SECRET)
   .update(JSON.stringify(req.body))

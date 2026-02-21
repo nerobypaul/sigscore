@@ -369,7 +369,7 @@ export const PLAYBOOK_TEMPLATES: PlaybookTemplate[] = [
         type: 'send_slack',
         params: {
           message:
-            '📊 *Weekly DevSignal Digest*\nHere are your top 10 hottest accounts from the past week. Check your dashboard for full details.',
+            '📊 *Weekly Sigscore Digest*\nHere are your top 10 hottest accounts from the past week. Check your dashboard for full details.',
         },
       },
       {

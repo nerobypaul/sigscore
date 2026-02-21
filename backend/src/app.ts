@@ -303,10 +303,10 @@ app.get('/api/openapi.json', (_req, res) => {
 
 // Swagger UI at /api-docs (primary) and /api/docs (legacy)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: 'DevSignal API Docs',
+  customSiteTitle: 'Sigscore API Docs',
 }));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: 'DevSignal API Docs',
+  customSiteTitle: 'Sigscore API Docs',
 }));
 
 // 404 handler for API routes only.

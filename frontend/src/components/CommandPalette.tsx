@@ -55,7 +55,7 @@ type PaletteItem =
 // Constants
 // ---------------------------------------------------------------------------
 
-const RECENT_SEARCHES_KEY = 'devsignal:recent-searches';
+const RECENT_SEARCHES_KEY = 'sigscore:recent-searches';
 const MAX_RECENT = 5;
 const DEBOUNCE_MS = 300;
 
@@ -252,8 +252,8 @@ export default function CommandPalette() {
     const handler = () => {
       if (!open) openPalette();
     };
-    window.addEventListener('devsignal:open-command-palette', handler);
-    return () => window.removeEventListener('devsignal:open-command-palette', handler);
+    window.addEventListener('sigscore:open-command-palette', handler);
+    return () => window.removeEventListener('sigscore:open-command-palette', handler);
   }, [open, openPalette]);
 
   // ---- Focus input when opening ----

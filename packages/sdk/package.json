@@ -1,7 +1,7 @@
 {
-  "name": "@devsignal/node",
+  "name": "@sigscore/node",
   "version": "1.0.0",
-  "description": "Official Node.js SDK for the DevSignal API",
+  "description": "Official Node.js SDK for the Sigscore API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -21,17 +21,17 @@
     "build": "tsc",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["devsignal", "crm", "plg", "signals", "sdk", "developer-tools", "product-led-growth"],
+  "keywords": ["sigscore", "crm", "plg", "signals", "sdk", "developer-tools", "product-led-growth"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/nerobypaul/headless-crm",
+    "url": "https://github.com/nerobypaul/sigscore",
     "directory": "packages/sdk"
   },
-  "author": "DevSignal <hello@devsignal.dev>",
+  "author": "Sigscore <hello@sigscore.dev>",
   "license": "MIT",
-  "homepage": "https://devsignal.dev/developers",
+  "homepage": "https://sigscore.dev/developers",
   "bugs": {
-    "url": "https://github.com/nerobypaul/headless-crm/issues"
+    "url": "https://github.com/nerobypaul/sigscore/issues"
   },
   "engines": {
     "node": ">=18"

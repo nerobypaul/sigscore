@@ -91,7 +91,7 @@ function buildTierChangeMessage(
       {
         type: 'context',
         elements: [
-          { type: 'mrkdwn', text: `DevSignal \u2022 ${new Date().toISOString().split('T')[0]}` },
+          { type: 'mrkdwn', text: `Sigscore \u2022 ${new Date().toISOString().split('T')[0]}` },
         ],
       },
     ],
@@ -116,7 +116,7 @@ function buildHotAccountMessage(accountName: string, score: number, signalCount:
       {
         type: 'context',
         elements: [
-          { type: 'mrkdwn', text: 'DevSignal \u2022 Take action before they go cold!' },
+          { type: 'mrkdwn', text: 'Sigscore \u2022 Take action before they go cold!' },
         ],
       },
     ],
@@ -281,7 +281,7 @@ export async function notifyHighValueSignal(
       {
         type: 'context',
         elements: [
-          { type: 'mrkdwn', text: `DevSignal \u2022 ${new Date().toLocaleString()}` },
+          { type: 'mrkdwn', text: `Sigscore \u2022 ${new Date().toLocaleString()}` },
         ],
       },
     ],
@@ -296,11 +296,11 @@ export async function notifyHighValueSignal(
 
 export async function sendTestMessage(webhookUrl: string): Promise<boolean> {
   const message: SlackMessage = {
-    text: 'DevSignal test notification - your Slack integration is working!',
+    text: 'Sigscore test notification - your Slack integration is working!',
     blocks: [
       {
         type: 'header',
-        text: { type: 'plain_text', text: '\u2705 DevSignal Connected', emoji: true },
+        text: { type: 'plain_text', text: '\u2705 Sigscore Connected', emoji: true },
       },
       {
         type: 'section',
@@ -312,7 +312,7 @@ export async function sendTestMessage(webhookUrl: string): Promise<boolean> {
       {
         type: 'context',
         elements: [
-          { type: 'mrkdwn', text: `DevSignal \u2022 ${new Date().toISOString().split('T')[0]}` },
+          { type: 'mrkdwn', text: `Sigscore \u2022 ${new Date().toISOString().split('T')[0]}` },
         ],
       },
     ],

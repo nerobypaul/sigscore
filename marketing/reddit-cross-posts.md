@@ -11,19 +11,19 @@ Post these 2-4 hours AFTER the Show HN goes live. Each is tailored to the subred
 
 **Body:**
 
-We just launched DevSignal on Hacker News and wanted to share here too.
+We just launched Sigscore on Hacker News and wanted to share here too.
 
 **The problem:** If you run a devtool company, your best leads are developers who are already using your product. They're starring your repos, installing your packages, asking questions in Discord, and complaining on Reddit. But there's no affordable way to track that activity, tie it to real companies, and know who's ready to buy.
 
 Common Room charges $1K+/mo. Reo.dev charges $500+/mo. For a Series A team with 5 engineers, that's not happening.
 
-**What we built:** DevSignal aggregates signals from 16 sources (GitHub, npm, PyPI, Discord, Stack Overflow, Reddit, Twitter/X, PostHog, and more), resolves identities across them, and scores every account 0-100. The scoring is fully customizable -- you define what "hot" means for your product.
+**What we built:** Sigscore aggregates signals from 16 sources (GitHub, npm, PyPI, Discord, Stack Overflow, Reddit, Twitter/X, PostHog, and more), resolves identities across them, and scores every account 0-100. The scoring is fully customizable -- you define what "hot" means for your product.
 
 Pricing: Free tier (1,000 contacts), Pro at $79/mo, Scale at $299/mo for unlimited everything. Self-hosting is free forever (MIT license, Docker Compose included).
 
 **Why not just build it ourselves?** Because identity resolution across 16 platforms is genuinely hard, and the scoring model needs to be continuously tuned. We've spent months on this so you don't have to.
 
-Try the live demo (no signup): https://devsignal.dev
+Try the live demo (no signup): https://sigscore.dev
 
 HN discussion: [link to HN thread]
 
@@ -41,7 +41,7 @@ Sharing something I've been building for the last few months.
 
 **Context:** I was head of growth at a devtool company. We had thousands of developers using our CLI, and the only way to figure out which companies they came from was GitHub API scripts + npm download trackers + a massive spreadsheet. It was terrible.
 
-**What DevSignal does:**
+**What Sigscore does:**
 
 1. Connects to 16 signal sources (GitHub stars/forks/issues, npm downloads, PyPI installs, Discord messages, Stack Overflow questions, Reddit mentions, Twitter/X, PostHog events, etc.)
 2. Resolves identities across platforms -- matches GitHub usernames to emails to Slack handles to company domains
@@ -59,9 +59,9 @@ Sharing something I've been building for the last few months.
 
 MIT licensed, self-hostable via Docker Compose.
 
-Try it without signing up: https://devsignal.dev
+Try it without signing up: https://sigscore.dev
 
-Source: https://github.com/nerobypaul/headless-crm
+Source: https://github.com/nerobypaul/sigscore
 
 Would love feedback from anyone building devtools -- what signals matter most to you?
 
@@ -69,7 +69,7 @@ Would love feedback from anyone building devtools -- what signals matter most to
 
 ## r/selfhosted
 
-**Title:** DevSignal -- self-hostable developer signal intelligence (Docker Compose, MIT license, PostgreSQL + Redis)
+**Title:** Sigscore -- self-hostable developer signal intelligence (Docker Compose, MIT license, PostgreSQL + Redis)
 
 **Body:**
 
@@ -78,7 +78,7 @@ Built this for devtool companies that want to track developer activity across Gi
 **Self-hosting details:**
 
 ```bash
-git clone https://github.com/nerobypaul/headless-crm.git
+git clone https://github.com/nerobypaul/sigscore.git
 cd headless-crm
 cp .env.example .env
 # Set JWT_SECRET and JWT_REFRESH_SECRET
@@ -101,9 +101,9 @@ That gives you 4 containers:
 
 MIT licensed. PRs welcome.
 
-Source: https://github.com/nerobypaul/headless-crm
+Source: https://github.com/nerobypaul/sigscore
 
-Live demo if you want to see it before self-hosting: https://devsignal.dev
+Live demo if you want to see it before self-hosting: https://sigscore.dev
 
 ---
 

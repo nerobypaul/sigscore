@@ -62,7 +62,7 @@ const ENABLE_WORKERS = process.env.ENABLE_WORKERS === 'true';
 
   // ---- Start HTTP server ----
   const server = app.listen(PORT, () => {
-    logger.info(`DevSignal running on port ${PORT}`);
+    logger.info(`Sigscore running on port ${PORT}`);
     logger.info(`Environment: ${config.nodeEnv}`);
     if (config.nodeEnv !== 'production') {
       logger.info(`API Documentation: http://localhost:${PORT}/api-docs`);

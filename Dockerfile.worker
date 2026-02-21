@@ -1,5 +1,5 @@
 # ============================================================
-# DevSignal — Worker Dockerfile (BullMQ background jobs only)
+# Sigscore — Worker Dockerfile (BullMQ background jobs only)
 # ============================================================
 # Reuses the same build stages as the main Dockerfile but runs
 # the worker entry point instead of the HTTP server.

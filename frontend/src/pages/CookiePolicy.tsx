@@ -22,7 +22,7 @@ const sections: Section[] = [
           display preferences, so you do not have to re-enter information on each page.
         </p>
         <p>
-          DevSignal also uses <strong>local storage</strong> — a browser API similar to cookies
+          Sigscore also uses <strong>local storage</strong> — a browser API similar to cookies
           but with a larger capacity. Local storage data is never transmitted to a server
           automatically; it stays on your device until you clear it.
         </p>
@@ -39,7 +39,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          DevSignal uses a small number of cookies. Every cookie we set falls into one of two
+          Sigscore uses a small number of cookies. Every cookie we set falls into one of two
           categories: <strong>Essential</strong> (required for the service to function) or{' '}
           <strong>Functional</strong> (improves reliability without tracking you for advertising).
         </p>
@@ -96,7 +96,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>
-          In addition to cookies, DevSignal stores certain data in your browser's local storage.
+          In addition to cookies, Sigscore stores certain data in your browser's local storage.
           This data never leaves your device unless you explicitly use a feature that sends it to
           our servers.
         </p>
@@ -115,13 +115,13 @@ const sections: Section[] = [
             or collapsed. Purely a UI preference.
           </li>
           <li>
-            <strong>Cookie consent preference</strong> (<code>devsignal-cookie-consent</code>) —
+            <strong>Cookie consent preference</strong> (<code>sigscore-cookie-consent</code>) —
             records whether you chose "Accept All" or "Essential Only" so we do not ask again.
           </li>
         </ul>
         <p>
-          All local storage entries are prefixed with <code>devsignal-</code> or are otherwise
-          clearly scoped to the DevSignal application.
+          All local storage entries are prefixed with <code>sigscore-</code> or are otherwise
+          clearly scoped to the Sigscore application.
         </p>
       </>
     ),
@@ -189,13 +189,13 @@ const sections: Section[] = [
           </li>
         </ul>
         <p>
-          To clear your DevSignal local storage specifically, open your browser's Developer Tools
+          To clear your Sigscore local storage specifically, open your browser's Developer Tools
           (F12), navigate to the <em>Application</em> tab (Chrome/Edge) or <em>Storage</em> tab
           (Firefox), and delete the entries under <strong>Local Storage</strong> for{' '}
-          <code>app.devsignal.dev</code>.
+          <code>app.sigscore.dev</code>.
         </p>
         <p>
-          <strong>Note:</strong> Clearing cookies or local storage will log you out of DevSignal
+          <strong>Note:</strong> Clearing cookies or local storage will log you out of Sigscore
           and reset your UI preferences. You will need to sign in again.
         </p>
         <p>
@@ -222,7 +222,7 @@ const sections: Section[] = [
           </li>
         </ul>
         <p>
-          Your continued use of DevSignal after the effective date of any update constitutes your
+          Your continued use of Sigscore after the effective date of any update constitutes your
           acceptance of the revised policy. We encourage you to review this page periodically.
         </p>
       </>
@@ -240,10 +240,10 @@ const sections: Section[] = [
         <ul>
           <li>
             <strong>Email:</strong>{' '}
-            <a href="mailto:legal@devsignal.dev">legal@devsignal.dev</a>
+            <a href="mailto:legal@sigscore.dev">legal@sigscore.dev</a>
           </li>
           <li>
-            <strong>Company:</strong> DevSignal, Inc.
+            <strong>Company:</strong> Sigscore, Inc.
           </li>
         </ul>
       </>
@@ -254,7 +254,7 @@ const sections: Section[] = [
 export default function CookiePolicy() {
   const [activeSection, setActiveSection] = useState(sections[0].id);
 
-  useEffect(() => { document.title = 'Cookie Policy — DevSignal'; }, []);
+  useEffect(() => { document.title = 'Cookie Policy — Sigscore'; }, []);
 
   useEffect(() => {
     const handleScroll = () => {

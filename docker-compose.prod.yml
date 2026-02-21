@@ -1,5 +1,5 @@
 # ============================================================
-# DevSignal — Docker Compose (Production)
+# Sigscore — Docker Compose (Production)
 # ============================================================
 # Unified production deployment: single app image serves both
 # the API and the static frontend. Workers run as a separate
@@ -14,20 +14,20 @@ services:
   # ---- PostgreSQL 16 ----
   postgres:
     image: postgres:16-alpine
-    container_name: devsignal-postgres
+    container_name: sigscore-postgres
     restart: unless-stopped
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-devsignal}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devsignal_dev_pw}
-      POSTGRES_DB: ${POSTGRES_DB:-devsignal}
+      POSTGRES_USER: ${POSTGRES_USER:-sigscore}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sigscore_dev_pw}
+      POSTGRES_DB: ${POSTGRES_DB:-sigscore}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - devsignal
+      - sigscore
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-devsignal} -d ${POSTGRES_DB:-devsignal}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sigscore} -d ${POSTGRES_DB:-sigscore}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -36,7 +36,7 @@ services:
   # ---- Redis 7 (BullMQ, caching) ----
   redis:
     image: redis:7-alpine
-    container_name: devsignal-redis
+    container_name: sigscore-redis
     restart: unless-stopped
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -44,7 +44,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - devsignal
+      - sigscore
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -59,7 +59,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-}
-    container_name: devsignal-app
+    container_name: sigscore-app
     restart: unless-stopped
     depends_on:
       postgres:
@@ -74,7 +74,7 @@ services:
       NODE_ENV: production
       PORT: "3000"
       ENABLE_WORKERS: "false"
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-devsignal}:${POSTGRES_PASSWORD:-devsignal_dev_pw}@postgres:5432/${POSTGRES_DB:-devsignal}?schema=public"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-sigscore}:${POSTGRES_PASSWORD:-sigscore_dev_pw}@postgres:5432/${POSTGRES_DB:-sigscore}?schema=public"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
@@ -92,7 +92,7 @@ services:
       SENTRY_DSN: ${SENTRY_DSN:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
     networks:
-      - devsignal
+      - sigscore
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -105,7 +105,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: devsignal-worker
+    container_name: sigscore-worker
     restart: unless-stopped
     depends_on:
       postgres:
@@ -119,7 +119,7 @@ services:
     environment:
       NODE_ENV: production
       ENABLE_WORKERS: "true"
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-devsignal}:${POSTGRES_PASSWORD:-devsignal_dev_pw}@postgres:5432/${POSTGRES_DB:-devsignal}?schema=public"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-sigscore}:${POSTGRES_PASSWORD:-sigscore_dev_pw}@postgres:5432/${POSTGRES_DB:-sigscore}?schema=public"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
@@ -132,7 +132,7 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
     command: ["node", "dist/worker.js"]
     networks:
-      - devsignal
+      - sigscore
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/"]
       interval: 30s
@@ -147,5 +147,5 @@ volumes:
     driver: local
 
 networks:
-  devsignal:
+  sigscore:
     driver: bridge

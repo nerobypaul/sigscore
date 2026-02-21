@@ -1,16 +1,16 @@
 <div align="center">
 
-# DevSignal
+# Sigscore
 
 **Developer Signal Intelligence for devtool companies.**
 
-[![CI](https://github.com/nerobypaul/headless-crm/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nerobypaul/headless-crm/actions/workflows/ci.yml)
+[![CI](https://github.com/nerobypaul/sigscore/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nerobypaul/sigscore/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-288%20unit%20%2B%2056%20E2E-brightgreen)](https://github.com/nerobypaul/headless-crm)
+[![Tests](https://img.shields.io/badge/tests-288%20unit%20%2B%2056%20E2E-brightgreen)](https://github.com/nerobypaul/sigscore)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/nerobypaul/headless-crm/pulls)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/nerobypaul/sigscore/pulls)
 
 Know which developers love your product. Convert them into paying customers.
 
@@ -20,25 +20,25 @@ Know which developers love your product. Convert them into paying customers.
 
 ---
 
-## What is DevSignal?
+## What is Sigscore?
 
-DevSignal aggregates developer activity across 16 signal sources -- GitHub stars, npm downloads, Stack Overflow questions, Discord messages, Reddit mentions, and more -- and ties that activity to real people and real companies. It scores every account on a 0-100 PQA (Product-Qualified Account) scale so your team knows exactly who is ready to buy.
+Sigscore aggregates developer activity across 16 signal sources -- GitHub stars, npm downloads, Stack Overflow questions, Discord messages, Reddit mentions, and more -- and ties that activity to real people and real companies. It scores every account on a 0-100 PQA (Product-Qualified Account) scale so your team knows exactly who is ready to buy.
 
-If you run a devtool company, your best leads are already using your product. They are starring your repos, asking questions in your Discord, importing your SDK in production. DevSignal captures those signals, resolves identities across platforms, and surfaces the accounts that matter -- before they ever fill out a form.
+If you run a devtool company, your best leads are already using your product. They are starring your repos, asking questions in your Discord, importing your SDK in production. Sigscore captures those signals, resolves identities across platforms, and surfaces the accounts that matter -- before they ever fill out a form.
 
 Self-host it for free or use the managed service starting at $0/month. Either way, you get the same intelligence that Common Room charges $1,000+/month for.
 
 ## Live Demo
 
-Try DevSignal now -- no signup required:
+Try Sigscore now -- no signup required:
 
-**[Launch Live Demo](https://devsignal.dev)** -- Click "Explore Live Demo" to get a pre-seeded environment with realistic data. No signup required.
+**[Launch Live Demo](https://sigscore.dev)** -- Click "Explore Live Demo" to get a pre-seeded environment with realistic data. No signup required.
 
 ## Why Not a CRM?
 
 Every PLG CRM startup from the 2021-2023 wave is dead or pivoted. Calixa, Koala, Toplyne, Endgame, Pocus -- they all tried to bolt product data onto a traditional CRM and failed. The problem was never "we need another CRM." The problem was "we have no idea which developers care about our product."
 
-DevSignal is not a CRM. It is a signal intelligence layer. It ingests developer activity, resolves identities, scores accounts, and pushes the results to whatever CRM you already use (HubSpot, Salesforce, or your own systems via API). It does one thing well: tell you who your most engaged developers are and when they are ready for a conversation.
+Sigscore is not a CRM. It is a signal intelligence layer. It ingests developer activity, resolves identities, scores accounts, and pushes the results to whatever CRM you already use (HubSpot, Salesforce, or your own systems via API). It does one thing well: tell you who your most engaged developers are and when they are ready for a conversation.
 
 ## Features
 
@@ -130,7 +130,7 @@ DevSignal is not a CRM. It is a signal intelligence layer. It ingests developer 
 ### Docker (recommended)
 
 ```bash
-git clone https://github.com/nerobypaul/headless-crm.git
+git clone https://github.com/nerobypaul/sigscore.git
 cd headless-crm
 
 cp .env.example .env
@@ -139,7 +139,7 @@ cp .env.example .env
 docker compose -f docker-compose.prod.yml up -d --build
 
 # Or try the live demo instantly:
-# https://devsignal.dev
+# https://sigscore.dev
 ```
 
 This starts four containers: PostgreSQL 16, Redis 7, the API server (serving the static frontend), and BullMQ workers. Migrations run automatically on first boot.
@@ -151,7 +151,7 @@ Open [http://localhost:3000](http://localhost:3000) to get started.
 ```bash
 # Prerequisites: Node >= 18, PostgreSQL 16, Redis 7
 
-git clone https://github.com/nerobypaul/headless-crm.git
+git clone https://github.com/nerobypaul/sigscore.git
 cd headless-crm
 
 npm install
@@ -170,24 +170,24 @@ The frontend dev server runs on port 5173 and proxies `/api` requests to the bac
 
 ## API
 
-DevSignal exposes both REST and GraphQL endpoints, authenticated via JWT or API key.
+Sigscore exposes both REST and GraphQL endpoints, authenticated via JWT or API key.
 
 ### REST
 
 ```bash
 # List top-scoring accounts
 curl -H "Authorization: Bearer $TOKEN" \
-  https://devsignal.dev/api/v1/companies?sort=pqaScore&order=desc&limit=10
+  https://sigscore.dev/api/v1/companies?sort=pqaScore&order=desc&limit=10
 
 # Ingest a signal
 curl -X POST -H "X-API-Key: ds_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"type":"feature_used","sourceId":"app","metadata":{"feature":"api","action":"called"}}' \
-  https://devsignal.dev/api/v1/signals
+  https://sigscore.dev/api/v1/signals
 
 # Get account brief (AI-generated)
 curl -H "Authorization: Bearer $TOKEN" \
-  https://devsignal.dev/api/v1/companies/:id/brief
+  https://sigscore.dev/api/v1/companies/:id/brief
 ```
 
 ### GraphQL
@@ -213,18 +213,18 @@ query TopAccounts {
 }
 ```
 
-The GraphQL playground is available at /api/v1/graphql in development mode. See the [live demo](https://devsignal.dev) to explore.
+The GraphQL playground is available at /api/v1/graphql in development mode. See the [live demo](https://sigscore.dev) to explore.
 
 ## SDK
 
 ```bash
-npm install @devsignal/node
+npm install @sigscore/node
 ```
 
 ```typescript
-import { DevSignal } from '@devsignal/node';
+import { Sigscore } from '@sigscore/node';
 
-const ds = new DevSignal({ apiKey: 'ds_live_xxxxxxxxxxxx' });
+const ds = new Sigscore({ apiKey: 'ds_live_xxxxxxxxxxxx' });
 
 // Ingest a signal
 await ds.signals.ingest({
@@ -266,7 +266,7 @@ Self-host for free, forever. Managed service tiers:
 ## Project Structure
 
 ```
-devsignal/
+sigscore/
   backend/
     src/
       controllers/      # Request handlers
@@ -282,7 +282,7 @@ devsignal/
       components/       # Shared UI components
       lib/              # API client, hooks, utilities
   packages/
-    sdk/                # @devsignal/node SDK (zero deps)
+    sdk/                # @sigscore/node SDK (zero deps)
   e2e/                  # Playwright E2E tests (56 tests, 8 specs)
   Dockerfile            # Multi-stage production build (4 stages)
   docker-compose.prod.yml
@@ -304,7 +304,7 @@ npm run lint --workspace=backend
 npm run lint --workspace=frontend
 ```
 
-See the [API docs page](https://devsignal.dev/api-docs) for endpoint documentation. The GraphQL schema is self-documenting via introspection.
+See the [API docs page](https://sigscore.dev/api-docs) for endpoint documentation. The GraphQL schema is self-documenting via introspection.
 
 ## License
 
@@ -314,8 +314,8 @@ See the [API docs page](https://devsignal.dev/api-docs) for endpoint documentati
 
 <div align="center">
 
-**DevSignal** -- Developer signal intelligence for devtool companies that want to know who loves their product.
+**Sigscore** -- Developer signal intelligence for devtool companies that want to know who loves their product.
 
-[Live Demo](https://devsignal.dev) | [Website](https://devsignal.dev) | [GitHub](https://github.com/nerobypaul/headless-crm)
+[Live Demo](https://sigscore.dev) | [Website](https://sigscore.dev) | [GitHub](https://github.com/nerobypaul/sigscore)
 
 </div>
