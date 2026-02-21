@@ -744,6 +744,11 @@ const PRIORITY_STYLES: Record<string, string> = {
   low: 'bg-green-50 text-green-700 border-green-200',
 };
 
+interface AITokenUsage {
+  promptTokens: number;
+  outputTokens: number;
+}
+
 function NextBestActions({ accountId }: { accountId: string }) {
   const toast = useToast();
   const { user } = useAuth();
@@ -751,6 +756,7 @@ function NextBestActions({ accountId }: { accountId: string }) {
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
   const [error, setError] = useState('');
+  const [tokenUsage, setTokenUsage] = useState<AITokenUsage | null>(null);
 
   const isDemo = user?.organizations?.some(
     (uo: { organization?: { name?: string } }) => uo.organization?.name?.startsWith('Sigscore Demo'),
@@ -768,10 +774,14 @@ function NextBestActions({ accountId }: { accountId: string }) {
     }
     setLoading(true);
     setError('');
+    setTokenUsage(null);
     try {
       const { data } = await api.post(`/ai/suggest/${accountId}`);
       const parsed = Array.isArray(data.actions) ? data.actions : [];
       setActions(parsed as AIAction[]);
+      if (data.usage) {
+        setTokenUsage(data.usage as AITokenUsage);
+      }
       setFetched(true);
     } catch (err) {
       const statusCode = (err as { response?: { status?: number } })?.response?.status;
@@ -840,7 +850,12 @@ function NextBestActions({ accountId }: { accountId: string }) {
                     </div>
                     <p className="text-xs text-gray-600 leading-relaxed">{action.reasoning}</p>
                     {action.contact && (
-                      <p className="text-xs text-gray-400 mt-1">Contact: {action.contact}</p>
+                      <p className="text-xs text-indigo-500 mt-1.5 flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                        </svg>
+                        {action.contact}
+                      </p>
                     )}
                   </div>
                   <button
@@ -852,6 +867,15 @@ function NextBestActions({ accountId }: { accountId: string }) {
                 </div>
               </div>
             ))}
+            {/* Token usage footer */}
+            {tokenUsage && (
+              <div className="flex items-center gap-3 pt-2 text-xs text-gray-400">
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
+                </svg>
+                <span>{tokenUsage.promptTokens.toLocaleString()} prompt + {tokenUsage.outputTokens.toLocaleString()} output tokens</span>
+              </div>
+            )}
           </div>
         )}
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import type { Contact } from '../types';
@@ -16,6 +16,7 @@ export default function ContactDetail() {
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const enrichRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -94,12 +95,23 @@ export default function ContactDetail() {
             )}
           </div>
         </div>
-        <button
-          onClick={handleDelete}
-          className="text-sm text-red-600 hover:text-red-700 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
-        >
-          Delete
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => enrichRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+            className="px-3 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1.5"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+            AI Enrich
+          </button>
+          <button
+            onClick={handleDelete}
+            className="text-sm text-red-600 hover:text-red-700 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+          >
+            Delete
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -145,7 +157,9 @@ export default function ContactDetail() {
           <IdentitySection contactId={id!} />
 
           {/* AI Enrichment */}
-          <AIEnrichment contactId={id!} />
+          <div ref={enrichRef}>
+            <AIEnrichment contactId={id!} />
+          </div>
 
           {/* Timeline */}
           <ActivityTimeline contactId={id!} />
@@ -567,72 +581,270 @@ function IdentitySection({ contactId }: { contactId: string }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// AI Enrichment types
+// ---------------------------------------------------------------------------
+
+interface AIEnrichmentData {
+  inferredRole?: string;
+  inferredSeniority?: string;
+  interests?: string[];
+  engagementLevel?: string;
+  summary?: string;
+}
+
+interface AIEnrichmentResponse {
+  contactId: string;
+  contact: { name: string; email: string | null; title: string | null };
+  enrichment: AIEnrichmentData | string;
+  signalCount: number;
+  usage?: { promptTokens: number; outputTokens: number };
+}
+
+const SENIORITY_STYLES: Record<string, string> = {
+  junior: 'bg-blue-50 text-blue-700 border-blue-200',
+  mid: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+  senior: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  lead: 'bg-violet-50 text-violet-700 border-violet-200',
+  director: 'bg-purple-50 text-purple-700 border-purple-200',
+  executive: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200',
+};
+
+const ENGAGEMENT_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  high: { bg: 'bg-green-50', text: 'text-green-700', label: 'High Engagement' },
+  medium: { bg: 'bg-amber-50', text: 'text-amber-700', label: 'Medium Engagement' },
+  low: { bg: 'bg-gray-50', text: 'text-gray-500', label: 'Low Engagement' },
+};
+
+function formatEnrichTime(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const days = Math.floor(diffHours / 24);
+  if (days < 30) return `${days}d ago`;
+  return date.toLocaleDateString();
+}
+
 function AIEnrichment({ contactId }: { contactId: string }) {
-  const [enrichment, setEnrichment] = useState<string | null>(null);
+  const [enrichment, setEnrichment] = useState<AIEnrichmentData | null>(null);
+  const [rawFallback, setRawFallback] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [enrichedAt, setEnrichedAt] = useState<string | null>(null);
+  const [signalCount, setSignalCount] = useState<number | null>(null);
+  const [tokenUsage, setTokenUsage] = useState<{ promptTokens: number; outputTokens: number } | null>(null);
 
   const handleEnrich = async () => {
     setLoading(true);
     setError('');
     try {
-      const { data } = await api.post(`/ai/enrich/${contactId}`);
-      setEnrichment(data.enrichment || data.content || JSON.stringify(data, null, 2));
+      const { data } = await api.post<AIEnrichmentResponse>(`/ai/enrich/${contactId}`);
+
+      if (data.enrichment && typeof data.enrichment === 'object') {
+        setEnrichment(data.enrichment as AIEnrichmentData);
+        setRawFallback(null);
+      } else {
+        // Fallback: raw text if AI returned unparseable JSON
+        setEnrichment(null);
+        setRawFallback(typeof data.enrichment === 'string' ? data.enrichment : JSON.stringify(data.enrichment, null, 2));
+      }
+
+      setEnrichedAt(new Date().toISOString());
+      setSignalCount(data.signalCount ?? null);
+      if (data.usage) {
+        setTokenUsage(data.usage);
+      }
     } catch (err) {
       const statusCode = (err as { response?: { status?: number } })?.response?.status;
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
       if (statusCode === 402) {
         setError('AI features require an Anthropic API key. Configure it in Settings > AI Configuration.');
+      } else if (msg?.includes('API key not configured')) {
+        setError('AI features require an Anthropic API key. Configure it in Settings > AI Configuration.');
       } else {
-        setError('Enrichment failed. AI service may be unavailable.');
+        setError(msg || 'Enrichment failed. AI service may be unavailable.');
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const hasResults = enrichment || rawFallback;
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">AI Enrichment</h2>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+          </svg>
+          <h3 className="text-sm font-semibold text-gray-900">AI Enrichment</h3>
+          {enrichedAt && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+              Enriched {formatEnrichTime(enrichedAt)}
+            </span>
+          )}
+        </div>
         <button
           onClick={handleEnrich}
           disabled={loading}
-          className="text-sm font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50 flex items-center gap-1.5"
+          className="text-sm font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50 flex items-center gap-1.5 transition-colors"
         >
           {loading ? (
-            <>
-              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              Enriching...
-            </>
+            <Spinner size="sm" />
           ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
-              </svg>
-              Enrich with AI
-            </>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+            </svg>
           )}
+          {hasResults ? 'Re-enrich' : 'Enrich with AI'}
         </button>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm mb-3">
-          {error}
-        </div>
-      )}
+      <div className="px-6 py-5">
+        {/* Loading state */}
+        {loading && !hasResults && (
+          <div className="flex flex-col items-center justify-center py-8 gap-3">
+            <Spinner size="md" />
+            <p className="text-sm text-gray-500">Analyzing contact signals...</p>
+          </div>
+        )}
 
-      {enrichment ? (
-        <div className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 rounded-lg p-4 border border-gray-100">
-          {enrichment}
-        </div>
-      ) : (
-        <p className="text-sm text-gray-400">
-          Click "Enrich with AI" to gather additional intelligence about this contact from public sources.
-        </p>
-      )}
+        {/* Error state */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm mb-3">
+            {error}
+            {error.includes('Settings') && (
+              <Link
+                to="/settings"
+                className="ml-2 text-red-800 underline hover:text-red-900 font-medium"
+              >
+                Go to Settings
+              </Link>
+            )}
+          </div>
+        )}
+
+        {/* Structured enrichment display */}
+        {enrichment && !loading && (
+          <div className="space-y-4">
+            {/* Role + Seniority + Engagement row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Inferred Role */}
+              <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
+                <dt className="text-xs text-gray-500 mb-1">Inferred Role</dt>
+                <dd className="text-sm font-medium text-gray-900">{enrichment.inferredRole || 'Unknown'}</dd>
+              </div>
+
+              {/* Seniority */}
+              <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
+                <dt className="text-xs text-gray-500 mb-1">Seniority</dt>
+                <dd>
+                  {enrichment.inferredSeniority ? (
+                    <span className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full border ${SENIORITY_STYLES[enrichment.inferredSeniority] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                      {enrichment.inferredSeniority.charAt(0).toUpperCase() + enrichment.inferredSeniority.slice(1)}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-400">Unknown</span>
+                  )}
+                </dd>
+              </div>
+
+              {/* Engagement Level */}
+              <div className="p-3 rounded-lg bg-gray-50 border border-gray-100">
+                <dt className="text-xs text-gray-500 mb-1">Engagement</dt>
+                <dd>
+                  {enrichment.engagementLevel ? (() => {
+                    const style = ENGAGEMENT_STYLES[enrichment.engagementLevel] || ENGAGEMENT_STYLES.low;
+                    return (
+                      <span className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full ${style.bg} ${style.text}`}>
+                        {style.label}
+                      </span>
+                    );
+                  })() : (
+                    <span className="text-sm text-gray-400">Unknown</span>
+                  )}
+                </dd>
+              </div>
+            </div>
+
+            {/* Interests */}
+            {enrichment.interests && enrichment.interests.length > 0 && (
+              <div>
+                <dt className="text-xs text-gray-500 mb-2">Interests & Technologies</dt>
+                <dd className="flex flex-wrap gap-1.5">
+                  {enrichment.interests.map((interest, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex text-xs font-medium px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100"
+                    >
+                      {interest}
+                    </span>
+                  ))}
+                </dd>
+              </div>
+            )}
+
+            {/* AI Summary */}
+            {enrichment.summary && (
+              <div className="p-4 rounded-lg bg-indigo-50/50 border border-indigo-100">
+                <dt className="text-xs text-gray-500 mb-1.5 flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                  </svg>
+                  AI Summary
+                </dt>
+                <dd className="text-sm text-gray-700 leading-relaxed">{enrichment.summary}</dd>
+              </div>
+            )}
+
+            {/* Footer: signal count + token usage */}
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs text-gray-400">
+              <div className="flex items-center gap-3">
+                {signalCount !== null && (
+                  <span>Based on {signalCount} signal{signalCount !== 1 ? 's' : ''}</span>
+                )}
+              </div>
+              {tokenUsage && (
+                <div className="flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
+                  </svg>
+                  <span>{tokenUsage.promptTokens.toLocaleString()} + {tokenUsage.outputTokens.toLocaleString()} tokens</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Raw text fallback */}
+        {rawFallback && !enrichment && !loading && (
+          <div className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 rounded-lg p-4 border border-gray-100">
+            {rawFallback}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!hasResults && !loading && !error && (
+          <div className="text-center py-8">
+            <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+            </svg>
+            <p className="text-sm text-gray-500 mb-3">Click "Enrich with AI" to infer role, seniority, interests, and engagement level from signal data.</p>
+            <button
+              onClick={handleEnrich}
+              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Enrich with AI
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
