@@ -20,7 +20,7 @@ test.describe('Authentication flows', () => {
       await page.goto('/register');
 
       // Verify the registration form is visible
-      await expect(page.getByRole('heading', { name: /headless crm/i })).toBeVisible();
+      await expect(page.getByRole('heading', { name: /sigscore/i })).toBeVisible();
 
       // Fill in the registration form
       await page.getByLabel('First name').fill(firstName);
