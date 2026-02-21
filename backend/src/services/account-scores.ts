@@ -43,7 +43,7 @@ export const computeAccountScore = async (organizationId: string, accountId: str
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
   // Fetch signal data for scoring
-  const [totalSignals, recentSignals, uniqueActors, signalsByType, lastSignal, company] =
+  const [totalSignals, recentSignals, uniqueActors, signalsByType, lastSignal, company, seniorContactCount] =
     await Promise.all([
       // Total signals in last 30 days
       prisma.signal.count({
@@ -71,10 +71,28 @@ export const computeAccountScore = async (organizationId: string, accountId: str
         orderBy: { timestamp: 'desc' },
         select: { timestamp: true },
       }),
-      // Company info for firmographic fit
+      // Company info for firmographic fit (without loading all contacts)
       prisma.company.findFirst({
         where: { id: accountId, organizationId },
-        select: { size: true, industry: true, contacts: { select: { title: true } } },
+        select: { size: true, industry: true },
+      }),
+      // Count senior contacts at DB level instead of loading all into memory
+      prisma.contact.count({
+        where: {
+          companyId: accountId,
+          organizationId,
+          title: { not: null },
+          OR: [
+            { title: { contains: 'VP', mode: 'insensitive' } },
+            { title: { contains: 'Director', mode: 'insensitive' } },
+            { title: { contains: 'Head', mode: 'insensitive' } },
+            { title: { contains: 'CTO', mode: 'insensitive' } },
+            { title: { contains: 'CEO', mode: 'insensitive' } },
+            { title: { contains: 'Founder', mode: 'insensitive' } },
+            { title: { contains: 'Chief', mode: 'insensitive' } },
+            { title: { contains: 'President', mode: 'insensitive' } },
+          ],
+        },
       }),
     ]);
 
@@ -132,10 +150,7 @@ export const computeAccountScore = async (organizationId: string, accountId: str
   });
 
   // Factor 5: Seniority signals — contacts with senior titles (0-10 points)
-  const seniorTitles = ['vp', 'director', 'head', 'cto', 'ceo', 'founder', 'chief', 'president'];
-  const seniorContacts = (company?.contacts || []).filter((c: { title: string | null }) =>
-    c.title && seniorTitles.some((t) => c.title!.toLowerCase().includes(t))
-  ).length;
+  const seniorContacts = seniorContactCount;
   const seniorityScore = Math.min(seniorContacts * 5, 10);
   factors.push({
     name: 'seniority_signals',
