@@ -48,9 +48,14 @@ router.post(
     try {
       const organizationId = req.organizationId!;
       const playbookId = req.params.id;
-      const workflow = await playbookService.activatePlaybook(organizationId, playbookId);
+      const { workflow, warnings } = await playbookService.activatePlaybook(organizationId, playbookId);
       logger.info(`Playbook activated: ${playbookId} -> workflow ${workflow.id}`);
-      res.status(201).json({ ok: true, playbookId, workflowId: workflow.id });
+      res.status(201).json({
+        ok: true,
+        playbookId,
+        workflowId: workflow.id,
+        warnings,
+      });
     } catch (error) {
       next(error);
     }

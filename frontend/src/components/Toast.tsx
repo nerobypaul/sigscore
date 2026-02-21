@@ -9,7 +9,7 @@ import {
 
 // --- Types ---
 
-type ToastType = 'success' | 'error' | 'info';
+type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 interface Toast {
   id: number;
@@ -22,6 +22,7 @@ interface ToastContextType {
   success: (message: string) => void;
   error: (message: string) => void;
   info: (message: string) => void;
+  warning: (message: string) => void;
 }
 
 // --- Context ---
@@ -77,9 +78,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (message: string) => addToast('info', message),
     [addToast]
   );
+  const warning = useCallback(
+    (message: string) => addToast('warning', message),
+    [addToast]
+  );
 
   return (
-    <ToastContext.Provider value={{ success, error, info }}>
+    <ToastContext.Provider value={{ success, error, info, warning }}>
       {children}
       {/* Toast container */}
       <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
@@ -112,6 +117,11 @@ const typeStyles: Record<ToastType, { bg: string; icon: string; border: string }
     bg: 'bg-blue-50',
     icon: 'text-blue-500',
     border: 'border-blue-200',
+  },
+  warning: {
+    bg: 'bg-amber-50',
+    icon: 'text-amber-500',
+    border: 'border-amber-200',
   },
 };
 
@@ -148,6 +158,11 @@ function ToastItem({
         {toast.type === 'info' && (
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+          </svg>
+        )}
+        {toast.type === 'warning' && (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
         )}
       </div>

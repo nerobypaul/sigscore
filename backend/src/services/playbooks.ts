@@ -2,6 +2,7 @@ import { prisma } from '../config/database';
 import { Prisma } from '@prisma/client';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { getSlackWebhookUrl } from './slack-notifications';
 import type { WorkflowTrigger, WorkflowAction, WorkflowCondition } from './workflows';
 
 // ---------------------------------------------------------------------------
@@ -382,6 +383,34 @@ export const PLAYBOOK_TEMPLATES: PlaybookTemplate[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Integration validation helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Check which integrations are required by a playbook's actions and return
+ * warnings for any that are not configured. This does NOT block activation —
+ * it only surfaces actionable guidance so the user can configure them later.
+ */
+async function validateIntegrations(
+  organizationId: string,
+  actions: WorkflowAction[],
+): Promise<string[]> {
+  const warnings: string[] = [];
+  const actionTypes = actions.map((a) => a.type);
+
+  if (actionTypes.includes('send_slack')) {
+    const webhookUrl = await getSlackWebhookUrl(organizationId);
+    if (!webhookUrl) {
+      warnings.push(
+        'Slack webhook is not configured. Slack notifications will be skipped until configured in Settings > Slack.',
+      );
+    }
+  }
+
+  return warnings;
+}
+
+// ---------------------------------------------------------------------------
 // Service functions
 // ---------------------------------------------------------------------------
 
@@ -448,6 +477,9 @@ export const activatePlaybook = async (organizationId: string, playbookId: strin
     throw new AppError('Playbook template not found', 404);
   }
 
+  // Pre-flight: check required integrations and collect warnings
+  const warnings = await validateIntegrations(organizationId, template.actions);
+
   const workflowName = `${PLAYBOOK_PREFIX} ${template.name}`;
 
   // Check if already activated
@@ -463,7 +495,7 @@ export const activatePlaybook = async (organizationId: string, playbookId: strin
         data: { enabled: true },
       });
       logger.info(`Playbook "${playbookId}" re-enabled for org ${organizationId}`);
-      return updated;
+      return { workflow: updated, warnings };
     }
     throw new AppError('Playbook is already active', 409);
   }
@@ -482,7 +514,7 @@ export const activatePlaybook = async (organizationId: string, playbookId: strin
   });
 
   logger.info(`Playbook "${playbookId}" activated as workflow ${workflow.id} for org ${organizationId}`);
-  return workflow;
+  return { workflow, warnings };
 };
 
 /**

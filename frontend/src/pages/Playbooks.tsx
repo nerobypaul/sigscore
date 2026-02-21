@@ -91,8 +91,12 @@ export default function Playbooks() {
         await api.delete(`/playbooks/${playbook.id}`);
         toast.success(`"${playbook.name}" deactivated.`);
       } else {
-        await api.post(`/playbooks/${playbook.id}/activate`);
+        const { data } = await api.post(`/playbooks/${playbook.id}/activate`);
         toast.success(`"${playbook.name}" activated!`);
+        // Show pre-flight integration warnings (non-blocking)
+        if (data.warnings?.length) {
+          data.warnings.forEach((w: string) => toast.warning(w));
+        }
       }
       await fetchPlaybooks();
     } catch {
