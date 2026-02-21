@@ -311,11 +311,7 @@ async function seedFullDemoData(
           githubOrg: c.githubOrg,
           website: c.website,
           description: c.description,
-          customFields: c.name === 'Acme DevTools'
-            ? {
-                aiBrief: `## Acme DevTools - Account Intelligence Brief\n\n**Company Overview:** Acme DevTools builds modern CLI tooling for cloud-native development. Series A ($12M), 45 employees, HQ in San Francisco.\n\n**Product Usage Signals:**\n- 8 active developers using our SDK (up from 3 last month)\n- 147 signals in the last 30 days (2.4x increase)\n- Heaviest usage: API calls (62%), GitHub integrations (24%), npm downloads (14%)\n- Sarah Chen (VP Eng) personally tested the enterprise features last week\n\n**Expansion Indicators:**\n- Team size grew from 3 to 8 users in 30 days\n- Opened GitHub issue requesting SSO support (enterprise signal)\n- npm downloads spiked 300% after internal hackathon\n- Marcus Johnson starred 3 of our repos in one day\n\n**Recommended Next Steps:**\n1. Reach out to Sarah Chen about enterprise tier - she's the decision maker\n2. Offer a technical deep-dive with their DevOps lead Priya Patel\n3. Propose a 30-day enterprise trial with SSO and audit logging\n\n**Risk Factors:** None identified. Strong momentum across all signals.`,
-              } as unknown as Prisma.InputJsonValue
-            : undefined,
+          customFields: undefined,
         },
       }),
     ),
@@ -437,17 +433,28 @@ async function seedFullDemoData(
     ),
   );
 
+  const demoConfig = { demo: true } as unknown as Prisma.InputJsonValue;
   const sourceCreatePromise = Promise.all([
-    prisma.signalSource.create({ data: { organizationId, type: 'GITHUB', name: 'GitHub', config: { demo: true } as unknown as Prisma.InputJsonValue, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'NPM', name: 'npm Registry', config: { demo: true } as unknown as Prisma.InputJsonValue, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'PRODUCT_API', name: 'Product Analytics', config: { demo: true } as unknown as Prisma.InputJsonValue, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'CUSTOM_WEBHOOK', name: 'Community Signals', config: { demo: true } as unknown as Prisma.InputJsonValue, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'SEGMENT', name: 'Segment', config: { demo: true } as unknown as Prisma.InputJsonValue, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'DISCORD', name: 'Discord', config: { demo: true } as unknown as Prisma.InputJsonValue, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'GITHUB', name: 'GitHub', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'NPM', name: 'npm Registry', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'PRODUCT_API', name: 'Product Analytics', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'CUSTOM_WEBHOOK', name: 'Zapier Webhooks', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'SEGMENT', name: 'Segment', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'DISCORD', name: 'Discord', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'PYPI', name: 'PyPI', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'TWITTER', name: 'Twitter/X', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'STACKOVERFLOW', name: 'Stack Overflow', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'REDDIT', name: 'Reddit', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'POSTHOG', name: 'PostHog', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'LINKEDIN', name: 'LinkedIn', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'INTERCOM', name: 'Intercom', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'ZENDESK', name: 'Zendesk', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'WEBSITE', name: 'Website Tracker', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
+    prisma.signalSource.create({ data: { organizationId, type: 'DOCS', name: 'Documentation', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
   ]);
 
   // Fire all parallel: tags, scores, snapshots, contacts, sources
-  const [contacts, [githubSource, npmSource, productSource, communitySource, segmentSource, discordSource]] = await Promise.all([
+  const [contacts, [githubSource, npmSource, productSource, webhookSource, segmentSource, discordSource, pypiSource, twitterSource, stackoverflowSource, redditSource, posthogSource, linkedinSource, intercomSource, zendeskSource, websiteSource, docsSource]] = await Promise.all([
     contactCreatePromise,
     sourceCreatePromise,
     prisma.companyTag.createMany({ data: companyTagData, skipDuplicates: true }),
@@ -526,16 +533,16 @@ async function seedFullDemoData(
     { type: 'github_issue', sourceId: githubSource.id, metadata: (n) => ({ repo: `${slugify(n)}/sdk`, title: 'Feature request: custom config support', number: rand(1, 200) }) },
     { type: 'github_pr', sourceId: githubSource.id, metadata: (n) => ({ repo: `${slugify(n)}/sdk`, title: 'Add retry logic to HTTP client', number: rand(1, 150), action: 'opened' }) },
     { type: 'npm_download', sourceId: npmSource.id, metadata: (n) => ({ package: `@${slugify(n)}/core`, version: '2.3.1', downloads: rand(100, 1200) }) },
-    { type: 'pypi_download', sourceId: npmSource.id, metadata: (n) => ({ package: slugify(n), version: '1.5.0', downloads: rand(50, 600) }) },
-    { type: 'stackoverflow_question', sourceId: communitySource.id, metadata: (n) => ({ title: `How to configure ${n} SDK for production?`, tags: ['sdk', slugify(n)], views: rand(50, 500) }) },
-    { type: 'stackoverflow_answer', sourceId: communitySource.id, metadata: (n) => ({ questionTitle: `${n} SDK timeout configuration`, accepted: true, score: rand(1, 25) }) },
-    { type: 'twitter_mention', sourceId: communitySource.id, metadata: (n) => ({ text: `Just shipped our integration with ${n} SDK - game changer for our workflow!`, username: 'dev_user', likes: rand(5, 100) }) },
-    { type: 'twitter_praise', sourceId: communitySource.id, metadata: (n) => ({ text: `${n} has the best developer experience I've seen. Seriously impressed.`, username: 'tech_lead', likes: rand(10, 200) }) },
-    { type: 'reddit_discussion', sourceId: communitySource.id, metadata: (n) => ({ subreddit: 'devtools', title: `Anyone using ${n}? Looking for alternatives`, upvotes: rand(10, 150), comments: rand(5, 40) }) },
-    { type: 'reddit_question', sourceId: communitySource.id, metadata: (n) => ({ subreddit: 'programming', title: `${n} vs competitors - which is better for startups?`, upvotes: rand(5, 80), comments: rand(3, 25) }) },
-    { type: 'discord_message', sourceId: communitySource.id, metadata: (n) => ({ channel: 'general', content: `Love the new ${n} release. The API improvements are huge.`, guildName: `${n} Community` }) },
-    { type: 'slack_message', sourceId: communitySource.id, metadata: (n) => ({ channel: '#devtools', content: `Team, I just integrated ${n} into our pipeline`, workspace: 'Engineering' }) },
-    { type: 'page_view', sourceId: productSource.id, metadata: () => ({ url: '/docs/getting-started', referrer: 'https://google.com', userAgent: 'Mozilla/5.0' }) },
+    { type: 'pypi_download', sourceId: pypiSource.id, metadata: (n) => ({ package: slugify(n), version: '1.5.0', downloads: rand(50, 600) }) },
+    { type: 'stackoverflow_question', sourceId: stackoverflowSource.id, metadata: (n) => ({ title: `How to configure ${n} SDK for production?`, tags: ['sdk', slugify(n)], views: rand(50, 500) }) },
+    { type: 'stackoverflow_answer', sourceId: stackoverflowSource.id, metadata: (n) => ({ questionTitle: `${n} SDK timeout configuration`, accepted: true, score: rand(1, 25) }) },
+    { type: 'twitter_mention', sourceId: twitterSource.id, metadata: (n) => ({ text: `Just shipped our integration with ${n} SDK - game changer for our workflow!`, username: 'sarahdev_', likes: rand(5, 100) }) },
+    { type: 'twitter_praise', sourceId: twitterSource.id, metadata: (n) => ({ text: `${n} has the best developer experience I've seen. Seriously impressed.`, username: 'devops_weekly', likes: rand(10, 200) }) },
+    { type: 'reddit_discussion', sourceId: redditSource.id, metadata: (n) => ({ subreddit: 'devtools', title: `Anyone using ${n}? Looking for alternatives`, upvotes: rand(10, 150), comments: rand(5, 40) }) },
+    { type: 'reddit_question', sourceId: redditSource.id, metadata: (n) => ({ subreddit: 'programming', title: `${n} vs competitors - which is better for startups?`, upvotes: rand(5, 80), comments: rand(3, 25) }) },
+    { type: 'discord_message', sourceId: discordSource.id, metadata: (n) => ({ channel: 'general', content: `Love the new ${n} release. The API improvements are huge.`, guildName: `${n} Community` }) },
+    { type: 'slack_message', sourceId: webhookSource.id, metadata: (n) => ({ channel: '#devtools', content: `Team, I just integrated ${n} into our pipeline`, workspace: 'Engineering' }) },
+    { type: 'page_view', sourceId: websiteSource.id, metadata: () => ({ url: '/pricing', referrer: 'https://google.com', userAgent: 'Mozilla/5.0' }) },
     { type: 'signup', sourceId: productSource.id, metadata: () => ({ plan: 'free', source: 'organic', referrer: 'https://github.com' }) },
     { type: 'feature_usage', sourceId: productSource.id, metadata: () => ({ feature: 'api-dashboard', action: 'viewed', duration: rand(30, 300) }) },
     { type: 'api_call', sourceId: productSource.id, metadata: () => ({ endpoint: '/api/v1/signals', method: 'POST', statusCode: 200, latencyMs: rand(20, 200) }) },
@@ -543,8 +550,12 @@ async function seedFullDemoData(
     { type: 'segment_track', sourceId: segmentSource.id, metadata: () => ({ event: 'Feature Activated', properties: { feature: 'webhooks', plan: 'pro' }, source: 'server' }) },
     { type: 'discord_join', sourceId: discordSource.id, metadata: (n) => ({ guildName: `${n} Community`, memberCount: rand(50, 500), channel: 'introductions' }) },
     { type: 'discord_thread', sourceId: discordSource.id, metadata: (n) => ({ guildName: `${n} Community`, channel: 'help', title: 'Best practices for SDK integration?', replies: rand(3, 15) }) },
-    { type: 'docs_read', sourceId: productSource.id, metadata: () => ({ page: '/docs/api-reference', timeOnPage: rand(60, 600), scrollDepth: rand(40, 100) }) },
+    { type: 'docs_read', sourceId: docsSource.id, metadata: () => ({ page: '/docs/api-reference', timeOnPage: rand(60, 600), scrollDepth: rand(40, 100) }) },
     { type: 'github_commit', sourceId: githubSource.id, metadata: (n) => ({ repo: `${slugify(n)}/sdk`, message: 'feat: add custom config support', additions: rand(20, 200), deletions: rand(5, 50) }) },
+    { type: 'posthog_event', sourceId: posthogSource.id, metadata: () => ({ event: '$pageview', distinctId: `user-${rand(1000,9999)}`, properties: { $current_url: '/dashboard', $browser: 'Chrome' } }) },
+    { type: 'linkedin_view', sourceId: linkedinSource.id, metadata: (n) => ({ companyPage: slugify(n), viewerTitle: 'VP Engineering', viewerCompany: 'Fortune 500 Co' }) },
+    { type: 'intercom_conversation', sourceId: intercomSource.id, metadata: (n) => ({ subject: `Question about ${n} enterprise pricing`, status: 'open', priority: 'high' }) },
+    { type: 'zendesk_ticket', sourceId: zendeskSource.id, metadata: (n) => ({ subject: `${n} SSO configuration help`, status: 'pending', priority: 'normal', ticketId: rand(10000, 99999) }) },
   ];
 
   // Distribute signals across companies proportional to their scores
@@ -665,9 +676,9 @@ async function seedFullDemoData(
 - npm download spike of 300% coincided with internal hackathon mention on Twitter
 - Marcus Johnson (Sr Backend Engineer) starred 3 SDK repos in a single session
 
-**Competitive Intelligence:**
-- Currently evaluating Common Room alongside DevSignal
-- Price-sensitive: mentioned "12x cheaper" in a Reddit thread comparing tools
+**Competitive Landscape:**
+- No competitive tools detected in their stack
+- Reddit discussion mentions evaluating developer analytics options for Q2
 
 **Recommended Next Steps:**
 1. Schedule executive briefing with Sarah Chen - she is the budget holder
@@ -738,22 +749,90 @@ async function seedFullDemoData(
 - Company blog mentioned "evaluating developer signal tools" in their Q1 planning post
 - 3 separate team members browsing enterprise pricing page
 
-**Competitive Intelligence:**
-- Currently using Common Room ($18K/year) - unhappy with pricing
-- Mentioned "looking for something 10x cheaper" in an internal Slack leak on Reddit
-- Decision timeline: Q1 2026 (within next 6 weeks)
+**Competitive Landscape:**
+- Reddit discussion indicates team is evaluating developer analytics solutions
+- Browsing behavior suggests price comparison research (3 visits to pricing page)
+- Decision timeline estimated: Q1 2026 based on procurement signals
 
 **Recommended Next Steps:**
-1. Send Jordan Park a tailored ROI comparison: DevSignal vs Common Room
-2. Offer a migration path: free data import from Common Room
-3. Schedule a joint call with Jordan + Logan to address SRE-specific requirements
-4. Fast-track their security questionnaire to accelerate procurement
+1. Send Jordan Park a tailored TCO comparison for their team size
+2. Schedule a joint call with Jordan + Logan to address SRE-specific requirements
+3. Fast-track their security questionnaire to accelerate procurement
+4. Offer a 14-day pilot focused on their multi-cloud monitoring use case
 
-**Risk Factors:** Medium. Active evaluation of multiple tools. Price is the primary driver - we have a strong advantage here. Timeline pressure from Q1 budget cycle works in our favor.`,
+**Risk Factors:** Medium. Active evaluation phase with multiple stakeholders. Price sensitivity detected from browsing patterns. Timeline pressure from Q1 budget cycle.`,
       generatedAt: daysAgo(1),
       validUntil: daysFromNow(6),
       promptTokens: 2600,
       outputTokens: 880,
+    },
+  }),
+  prisma.accountBrief.create({
+    data: {
+      organizationId,
+      accountId: companies[3].id, // DataPipe Labs
+      content: `## DataPipe Labs - Account Intelligence Brief
+
+**Company Overview:** DataPipe Labs builds real-time data pipeline orchestration for engineering teams. Series A, 30 employees, active open-source contributors with strong community presence.
+
+**Product Usage Signals (Last 30 Days):**
+- 3 active developers using the SDK
+- 65 total signals across GitHub, npm, and Segment
+- Consistent usage pattern: daily API calls with focus on webhook integrations
+- Zara Ahmed (Data Engineer) building custom data pipeline integrations
+
+**Key Expansion Indicators:**
+- Stable week-over-week usage with no drop-off (retention signal)
+- GitHub contributions to our public SDK repo (community champion)
+- Segment events show deep product exploration across 4 features
+
+**Competitive Landscape:**
+- No competing tools detected in their stack
+
+**Recommended Next Steps:**
+1. Invite to open-source contributor program (leverage community involvement)
+2. Propose team expansion from 3 to 10 seats with volume discount
+3. Feature their data pipeline use case in product documentation
+
+**Risk Factors:** Low. Steady engagement with no churn signals. Budget may be limited at 30 employees.`,
+      generatedAt: daysAgo(3),
+      validUntil: daysFromNow(4),
+      promptTokens: 1900,
+      outputTokens: 640,
+    },
+  }),
+  prisma.accountBrief.create({
+    data: {
+      organizationId,
+      accountId: companies[4].id, // Synthwave AI
+      content: `## Synthwave AI - Account Intelligence Brief
+
+**Company Overview:** Synthwave AI is an AI model serving and inference optimization platform. Pre-seed, 8 employees. Early adopter with growing usage and strong technical engagement.
+
+**Product Usage Signals (Last 30 Days):**
+- 2 active developers (founders likely hands-on)
+- 45 total signals with accelerating trend (up from 20 last month)
+- Primary usage: GitHub integrations and API monitoring
+- Discord community mentions indicate organic product enthusiasm
+
+**Key Expansion Indicators:**
+- Signal volume more than doubled month-over-month (rising trend)
+- Exploring enterprise features like SSO docs and webhooks
+- Stack Overflow question about our SDK suggests building deep integration
+
+**Competitive Landscape:**
+- Early-stage; building greenfield infrastructure, no legacy tools detected
+
+**Recommended Next Steps:**
+1. Offer startup-friendly pricing to lock in early (pre-seed timing)
+2. Connect with founders for product feedback loop
+3. Monitor for funding announcement (potential rapid expansion trigger)
+
+**Risk Factors:** Medium. Pre-seed budget constraints. Strong signals but small team size. Watch for funding milestones.`,
+      generatedAt: daysAgo(2),
+      validUntil: daysFromNow(5),
+      promptTokens: 1800,
+      outputTokens: 590,
     },
   }),
   ]);

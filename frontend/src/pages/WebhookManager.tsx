@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../lib/api';
 import { useToast } from '../components/Toast';
+import Spinner from '../components/Spinner';
 import WebhookTestPanel from '../components/WebhookTestPanel';
 
 interface WebhookSubscription {
@@ -274,10 +275,13 @@ export default function WebhookManager() {
 
       {/* Loading / Error / Empty */}
       {loading && (
-        <div className="text-center py-12 text-gray-500">Loading subscriptions...</div>
+        <div className="flex justify-center py-12"><Spinner /></div>
       )}
       {error && (
-        <div className="text-center py-12 text-red-500">{error}</div>
+        <div className="text-center py-12">
+          <p className="text-red-500 mb-3">{error}</p>
+          <button onClick={fetchSubscriptions} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Retry</button>
+        </div>
       )}
       {!loading && !error && filteredSubscriptions.length === 0 && (
         <div className="text-center py-12">

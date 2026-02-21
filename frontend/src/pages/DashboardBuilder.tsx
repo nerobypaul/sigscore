@@ -306,7 +306,7 @@ function StatContent({ data }: { data: WidgetData }) {
 
 function ListContent({ data }: { data: WidgetData }) {
   const rows = data.rows || [];
-  if (rows.length === 0) return <p className="text-sm text-gray-400">No data</p>;
+  if (rows.length === 0) return <p className="text-sm text-gray-400 py-4 text-center">No data available</p>;
 
   return (
     <div className="divide-y divide-gray-100 -mx-1">
@@ -333,7 +333,7 @@ function ChartContent({ type, data }: { type: WidgetType; data: WidgetData }) {
 // --- Simple SVG line chart ---
 
 function LineChart({ points }: { points: Array<{ date: string; value: number }> }) {
-  if (points.length === 0) return <p className="text-sm text-gray-400 py-4 text-center">No data</p>;
+  if (points.length === 0) return <p className="text-sm text-gray-400 py-4 text-center">No data available</p>;
 
   const maxVal = Math.max(...points.map((p) => p.value), 1);
   const w = 280;
@@ -377,7 +377,7 @@ function LineChart({ points }: { points: Array<{ date: string; value: number }> 
 // --- Simple horizontal bar chart ---
 
 function BarChart({ bars }: { bars: Array<{ label: string; value: number }> }) {
-  if (bars.length === 0) return <p className="text-sm text-gray-400 py-4 text-center">No data</p>;
+  if (bars.length === 0) return <p className="text-sm text-gray-400 py-4 text-center">No data available</p>;
 
   const maxVal = Math.max(...bars.map((b) => b.value), 1);
   const colors = ['bg-indigo-500', 'bg-purple-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-pink-500', 'bg-cyan-500', 'bg-red-400', 'bg-teal-500'];
