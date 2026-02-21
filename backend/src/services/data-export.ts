@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { prisma } from '../config/database';
+import { redis } from '../config/redis';
 import { logger } from '../utils/logger';
 import type { DataExportJobData } from '../jobs/queue';
 
@@ -36,41 +37,60 @@ export interface ExportStatus {
 }
 
 // ---------------------------------------------------------------------------
-// In-memory export history store (per-process; replace with DB model for HA)
+// Redis-backed export history store (shared across app + worker processes)
 // ---------------------------------------------------------------------------
 
-const exportHistory = new Map<string, ExportStatus>();
+const EXPORT_KEY_PREFIX = 'sigscore:export:';
+const EXPORT_ORG_PREFIX = 'sigscore:exports:org:';
+const EXPORT_TTL = 86400; // 24 hours — exports auto-expire
 
-export function getExportStatus(jobId: string): ExportStatus | undefined {
-  return exportHistory.get(jobId);
-}
-
-export function getExportHistory(organizationId: string): ExportStatus[] {
-  const entries: ExportStatus[] = [];
-  for (const status of exportHistory.values()) {
-    if (status.organizationId === organizationId) {
-      entries.push(status);
-    }
+export async function getExportStatus(jobId: string): Promise<ExportStatus | undefined> {
+  try {
+    const raw = await redis.get(`${EXPORT_KEY_PREFIX}${jobId}`);
+    return raw ? JSON.parse(raw) : undefined;
+  } catch {
+    return undefined;
   }
-  // Sort by createdAt descending
-  entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  return entries;
 }
 
-export function setExportStatus(jobId: string, status: ExportStatus): void {
-  exportHistory.set(jobId, status);
-  // Evict oldest entries if the map grows too large (keep last 200 per process)
-  if (exportHistory.size > 200) {
-    const oldest = [...exportHistory.entries()]
-      .sort(([, a], [, b]) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    const toRemove = oldest.slice(0, exportHistory.size - 200);
-    for (const [key, entry] of toRemove) {
-      // Clean up file on disk if it exists
-      if (entry.filePath) {
-        fs.unlink(entry.filePath, () => { /* ignore errors */ });
-      }
-      exportHistory.delete(key);
+export async function getExportHistory(organizationId: string): Promise<ExportStatus[]> {
+  try {
+    const jobIds = await redis.smembers(`${EXPORT_ORG_PREFIX}${organizationId}`);
+    if (jobIds.length === 0) return [];
+
+    const pipeline = redis.pipeline();
+    for (const jobId of jobIds) {
+      pipeline.get(`${EXPORT_KEY_PREFIX}${jobId}`);
     }
+    const results = await pipeline.exec();
+    if (!results) return [];
+
+    const entries: ExportStatus[] = [];
+    for (const [err, val] of results) {
+      if (!err && val) {
+        try { entries.push(JSON.parse(val as string)); } catch { /* skip */ }
+      }
+    }
+    entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return entries;
+  } catch {
+    return [];
+  }
+}
+
+export async function setExportStatus(jobId: string, status: ExportStatus): Promise<void> {
+  try {
+    await redis.set(
+      `${EXPORT_KEY_PREFIX}${jobId}`,
+      JSON.stringify(status),
+      'EX',
+      EXPORT_TTL,
+    );
+    // Track job ID in org set for listing
+    await redis.sadd(`${EXPORT_ORG_PREFIX}${status.organizationId}`, jobId);
+    await redis.expire(`${EXPORT_ORG_PREFIX}${status.organizationId}`, EXPORT_TTL);
+  } catch (err) {
+    logger.warn('Failed to persist export status to Redis', { jobId, error: String(err) });
   }
 }
 

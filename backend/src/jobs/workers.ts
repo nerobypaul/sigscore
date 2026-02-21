@@ -880,7 +880,7 @@ function createDataExportWorker(): Worker<DataExportJobData> {
       });
 
       // Mark as processing
-      setExportStatus(jobId, {
+      await setExportStatus(jobId, {
         jobId,
         organizationId,
         userId,
@@ -894,7 +894,7 @@ function createDataExportWorker(): Worker<DataExportJobData> {
         const result = await generateExport(job.data);
 
         // Mark as completed
-        setExportStatus(jobId, {
+        await setExportStatus(jobId, {
           jobId,
           organizationId,
           userId,
@@ -922,7 +922,7 @@ function createDataExportWorker(): Worker<DataExportJobData> {
         const errorMessage = err instanceof Error ? err.message : String(err);
 
         // Mark as failed
-        setExportStatus(jobId, {
+        await setExportStatus(jobId, {
           jobId,
           organizationId,
           userId,

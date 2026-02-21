@@ -53,8 +53,8 @@ router.post(
 
       const jobId = job.id ?? `unknown-${Date.now()}`;
 
-      // Initialize status in the in-memory store
-      setExportStatus(jobId, {
+      // Initialize status in Redis
+      await setExportStatus(jobId, {
         jobId,
         organizationId,
         userId,
@@ -84,7 +84,7 @@ router.get(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const organizationId = req.organizationId!;
-      const history = getExportHistory(organizationId);
+      const history = await getExportHistory(organizationId);
 
       // Strip filePath from the response (internal detail)
       const sanitized = history.map(({ filePath: _filePath, ...rest }) => rest);
@@ -106,7 +106,7 @@ router.get(
     try {
       const { jobId } = req.params;
       const organizationId = req.organizationId!;
-      const status = getExportStatus(jobId);
+      const status = await getExportStatus(jobId);
 
       if (!status || status.organizationId !== organizationId) {
         res.status(404).json({ error: 'Export job not found' });
@@ -133,7 +133,7 @@ router.get(
     try {
       const { jobId } = req.params;
       const organizationId = req.organizationId!;
-      const status = getExportStatus(jobId);
+      const status = await getExportStatus(jobId);
 
       if (!status || status.organizationId !== organizationId) {
         res.status(404).json({ error: 'Export job not found' });
