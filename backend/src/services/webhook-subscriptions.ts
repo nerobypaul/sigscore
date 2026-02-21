@@ -23,6 +23,24 @@ export const WEBHOOK_EVENT_TYPES = [
 export type WebhookEventType = (typeof WEBHOOK_EVENT_TYPES)[number];
 
 // ---------------------------------------------------------------------------
+// Filter & payload template types
+// ---------------------------------------------------------------------------
+
+export interface WebhookFilters {
+  scoreAbove?: number;
+  scoreBelow?: number;
+  tiers?: string[];
+  signalTypes?: string[];
+  accountIds?: string[];
+}
+
+/**
+ * Payload template is a JSON object where values can contain
+ * {{variable}} placeholders that are resolved against the event data.
+ */
+export type PayloadTemplate = Record<string, unknown>;
+
+// ---------------------------------------------------------------------------
 // CRUD operations
 // ---------------------------------------------------------------------------
 
@@ -30,6 +48,15 @@ export interface CreateSubscriptionInput {
   targetUrl: string;
   event: string;
   hookId?: string;
+  filters?: WebhookFilters;
+  payloadTemplate?: PayloadTemplate;
+}
+
+export interface UpdateSubscriptionInput {
+  targetUrl?: string;
+  event?: string;
+  filters?: WebhookFilters | null;
+  payloadTemplate?: PayloadTemplate | null;
 }
 
 export const createSubscription = async (
@@ -49,7 +76,55 @@ export const createSubscription = async (
       event: data.event,
       hookId: data.hookId || null,
       secret,
+      filters: data.filters
+        ? (data.filters as unknown as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
+      payloadTemplate: data.payloadTemplate
+        ? (data.payloadTemplate as unknown as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
     },
+  });
+};
+
+export const updateSubscription = async (
+  organizationId: string,
+  subscriptionId: string,
+  data: UpdateSubscriptionInput,
+) => {
+  const subscription = await prisma.webhookSubscription.findFirst({
+    where: { id: subscriptionId, organizationId },
+  });
+
+  if (!subscription) {
+    throw new AppError('Webhook subscription not found', 404);
+  }
+
+  if (data.event && !WEBHOOK_EVENT_TYPES.includes(data.event as WebhookEventType)) {
+    throw new AppError(`Unsupported event type: ${data.event}. Supported: ${WEBHOOK_EVENT_TYPES.join(', ')}`, 400);
+  }
+
+  const updateData: Prisma.WebhookSubscriptionUpdateInput = {};
+
+  if (data.targetUrl !== undefined) {
+    updateData.targetUrl = data.targetUrl;
+  }
+  if (data.event !== undefined) {
+    updateData.event = data.event;
+  }
+  if (data.filters !== undefined) {
+    updateData.filters = data.filters
+      ? (data.filters as unknown as Prisma.InputJsonValue)
+      : Prisma.JsonNull;
+  }
+  if (data.payloadTemplate !== undefined) {
+    updateData.payloadTemplate = data.payloadTemplate
+      ? (data.payloadTemplate as unknown as Prisma.InputJsonValue)
+      : Prisma.JsonNull;
+  }
+
+  return prisma.webhookSubscription.update({
+    where: { id: subscriptionId },
+    data: updateData,
   });
 };
 
@@ -110,6 +185,198 @@ export const toggleSubscription = async (
 };
 
 // ---------------------------------------------------------------------------
+// Filter evaluation
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolves a dot-notation path against a nested object.
+ * e.g. resolveNestedValue({ account: { name: 'Acme' } }, 'account.name') => 'Acme'
+ */
+const resolveNestedValue = (
+  data: Record<string, unknown>,
+  path: string,
+): unknown => {
+  const segments = path.split('.');
+  let current: unknown = data;
+  for (const segment of segments) {
+    if (current === null || current === undefined || typeof current !== 'object') {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return current;
+};
+
+/**
+ * Parses a subscription's filters JSON into a typed WebhookFilters object.
+ * Returns null if the subscription has no filters configured.
+ */
+const parseFilters = (filtersJson: Prisma.JsonValue | null): WebhookFilters | null => {
+  if (!filtersJson || filtersJson === null || typeof filtersJson !== 'object' || Array.isArray(filtersJson)) {
+    return null;
+  }
+  const raw = filtersJson as Record<string, unknown>;
+
+  // Only return non-empty filters
+  const filters: WebhookFilters = {};
+  let hasFilter = false;
+
+  if (typeof raw.scoreAbove === 'number') {
+    filters.scoreAbove = raw.scoreAbove;
+    hasFilter = true;
+  }
+  if (typeof raw.scoreBelow === 'number') {
+    filters.scoreBelow = raw.scoreBelow;
+    hasFilter = true;
+  }
+  if (Array.isArray(raw.tiers) && raw.tiers.length > 0) {
+    filters.tiers = raw.tiers.filter((t): t is string => typeof t === 'string');
+    if (filters.tiers.length > 0) hasFilter = true;
+  }
+  if (Array.isArray(raw.signalTypes) && raw.signalTypes.length > 0) {
+    filters.signalTypes = raw.signalTypes.filter((t): t is string => typeof t === 'string');
+    if (filters.signalTypes.length > 0) hasFilter = true;
+  }
+  if (Array.isArray(raw.accountIds) && raw.accountIds.length > 0) {
+    filters.accountIds = raw.accountIds.filter((t): t is string => typeof t === 'string');
+    if (filters.accountIds.length > 0) hasFilter = true;
+  }
+
+  return hasFilter ? filters : null;
+};
+
+/**
+ * Evaluates all filter conditions against an event payload (AND logic).
+ * Returns true if the event should be dispatched to the subscriber.
+ * If no filters are set, always returns true (backward compatible).
+ */
+export const evaluateFilters = (
+  filters: WebhookFilters | null,
+  payload: Record<string, unknown>,
+): boolean => {
+  if (!filters) return true;
+
+  // Score thresholds: check payload.score, payload.newScore, or payload.data.newScore
+  const score =
+    (typeof payload.score === 'number' ? payload.score : undefined) ??
+    (typeof payload.newScore === 'number' ? payload.newScore : undefined) ??
+    (typeof (payload.data as Record<string, unknown> | undefined)?.newScore === 'number'
+      ? (payload.data as Record<string, unknown>).newScore as number
+      : undefined) ??
+    (typeof (payload.data as Record<string, unknown> | undefined)?.score === 'number'
+      ? (payload.data as Record<string, unknown>).score as number
+      : undefined);
+
+  if (filters.scoreAbove !== undefined) {
+    if (score === undefined || score <= filters.scoreAbove) return false;
+  }
+  if (filters.scoreBelow !== undefined) {
+    if (score === undefined || score >= filters.scoreBelow) return false;
+  }
+
+  // Tier filter: check payload.tier, payload.newTier, or payload.data.newTier
+  if (filters.tiers && filters.tiers.length > 0) {
+    const tier =
+      (typeof payload.tier === 'string' ? payload.tier : undefined) ??
+      (typeof payload.newTier === 'string' ? payload.newTier : undefined) ??
+      (typeof (payload.data as Record<string, unknown> | undefined)?.newTier === 'string'
+        ? (payload.data as Record<string, unknown>).newTier as string
+        : undefined) ??
+      (typeof (payload.data as Record<string, unknown> | undefined)?.tier === 'string'
+        ? (payload.data as Record<string, unknown>).tier as string
+        : undefined);
+
+    if (!tier || !filters.tiers.includes(tier)) return false;
+  }
+
+  // Signal type filter: check payload.type or payload.data.type
+  if (filters.signalTypes && filters.signalTypes.length > 0) {
+    const signalType =
+      (typeof payload.type === 'string' ? payload.type : undefined) ??
+      (typeof (payload.data as Record<string, unknown> | undefined)?.type === 'string'
+        ? (payload.data as Record<string, unknown>).type as string
+        : undefined);
+
+    if (!signalType || !filters.signalTypes.includes(signalType)) return false;
+  }
+
+  // Account ID filter: check payload.accountId or payload.data.accountId
+  if (filters.accountIds && filters.accountIds.length > 0) {
+    const accountId =
+      (typeof payload.accountId === 'string' ? payload.accountId : undefined) ??
+      (typeof (payload.data as Record<string, unknown> | undefined)?.accountId === 'string'
+        ? (payload.data as Record<string, unknown>).accountId as string
+        : undefined) ??
+      (typeof (payload.data as Record<string, unknown> | undefined)?.companyId === 'string'
+        ? (payload.data as Record<string, unknown>).companyId as string
+        : undefined);
+
+    if (!accountId || !filters.accountIds.includes(accountId)) return false;
+  }
+
+  return true;
+};
+
+// ---------------------------------------------------------------------------
+// Payload templating
+// ---------------------------------------------------------------------------
+
+/**
+ * Interpolates {{variable}} placeholders in a string against event data.
+ * Supports dot-notation paths: {{account.name}}, {{signal.type}}, {{score}}.
+ * Unresolved placeholders are replaced with an empty string.
+ */
+const interpolateTemplateString = (
+  template: string,
+  eventData: Record<string, unknown>,
+): string => {
+  return template.replace(/\{\{([\w.]+)\}\}/g, (_match, path: string) => {
+    const value = resolveNestedValue(eventData, path);
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  });
+};
+
+/**
+ * Recursively walks a payload template and interpolates all string values.
+ * Non-string leaves, arrays, and nested objects are all handled.
+ */
+const interpolatePayloadTemplate = (
+  template: unknown,
+  eventData: Record<string, unknown>,
+): unknown => {
+  if (typeof template === 'string') {
+    return interpolateTemplateString(template, eventData);
+  }
+  if (Array.isArray(template)) {
+    return template.map((item) => interpolatePayloadTemplate(item, eventData));
+  }
+  if (template !== null && typeof template === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(template as Record<string, unknown>)) {
+      result[k] = interpolatePayloadTemplate(v, eventData);
+    }
+    return result;
+  }
+  return template;
+};
+
+/**
+ * Applies a payload template to event data, producing a custom-shaped payload.
+ * If no template is configured, returns null so the caller uses the default envelope.
+ */
+export const applyPayloadTemplate = (
+  templateJson: Prisma.JsonValue | null,
+  eventData: Record<string, unknown>,
+): Record<string, unknown> | null => {
+  if (!templateJson || templateJson === null || typeof templateJson !== 'object' || Array.isArray(templateJson)) {
+    return null;
+  }
+  return interpolatePayloadTemplate(templateJson, eventData) as Record<string, unknown>;
+};
+
+// ---------------------------------------------------------------------------
 // Event firing
 // ---------------------------------------------------------------------------
 
@@ -117,6 +384,10 @@ export const toggleSubscription = async (
  * Delivers a webhook event payload to all active subscribers of that event type.
  * Each delivery is enqueued as a separate BullMQ job per subscription for
  * independent retry with exponential backoff (30s, 60s, 120s, 240s, 480s).
+ *
+ * Subscriptions with filters are evaluated before enqueuing -- only matching
+ * events are dispatched. Subscriptions with a payloadTemplate get a custom
+ * payload shape instead of the default envelope.
  */
 export const fireEvent = async (
   organizationId: string,
@@ -133,7 +404,7 @@ export const fireEvent = async (
 
   if (subscriptions.length === 0) return;
 
-  const envelope = {
+  const defaultEnvelope = {
     event,
     timestamp: new Date().toISOString(),
     organizationId,
@@ -142,12 +413,32 @@ export const fireEvent = async (
 
   const enqueuePromises = subscriptions.map(async (sub) => {
     try {
+      // Evaluate filters -- skip this subscription if conditions do not match
+      const filters = parseFilters(sub.filters);
+      if (!evaluateFilters(filters, payload)) {
+        logger.debug('Webhook subscription skipped by filter', {
+          subscriptionId: sub.id,
+          event,
+          filters,
+        });
+        return;
+      }
+
+      // Apply payload template if configured, otherwise use the default envelope
+      const customPayload = applyPayloadTemplate(sub.payloadTemplate, {
+        ...payload,
+        event,
+        organizationId,
+        timestamp: defaultEnvelope.timestamp,
+      });
+      const finalPayload = customPayload ?? defaultEnvelope;
+
       await webhookDeliveryQueue.add(
         'deliver-subscription-webhook',
         {
           organizationId,
           event,
-          payload: envelope,
+          payload: finalPayload,
           subscriptionId: sub.id,
           targetUrl: sub.targetUrl,
           secret: sub.secret,

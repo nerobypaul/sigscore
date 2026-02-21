@@ -10,6 +10,7 @@ import {
   listSubscriptions,
   getSubscription,
   toggleSubscription,
+  updateSubscription,
   sendTestWebhook,
   getSubscriptionDeliveries,
   getSubscriptionWithDeliveryStats,
@@ -49,6 +50,14 @@ const flexAuth = [
 // Validation schemas
 // ---------------------------------------------------------------------------
 
+const webhookFiltersSchema = z.object({
+  scoreAbove: z.number().optional(),
+  scoreBelow: z.number().optional(),
+  tiers: z.array(z.string()).optional(),
+  signalTypes: z.array(z.string()).optional(),
+  accountIds: z.array(z.string()).optional(),
+}).optional();
+
 const createSubscriptionSchema = z.object({
   targetUrl: z.string().url('targetUrl must be a valid URL'),
   event: z.enum(WEBHOOK_EVENT_TYPES as unknown as [string, ...string[]], {
@@ -57,6 +66,20 @@ const createSubscriptionSchema = z.object({
     }),
   }),
   hookId: z.string().optional(),
+  filters: webhookFiltersSchema,
+  payloadTemplate: z.record(z.unknown()).optional(),
+});
+
+const updateSubscriptionSchema = z.object({
+  targetUrl: z.string().url('targetUrl must be a valid URL').optional(),
+  event: z.enum(WEBHOOK_EVENT_TYPES as unknown as [string, ...string[]], {
+    errorMap: () => ({
+      message: `event must be one of: ${WEBHOOK_EVENT_TYPES.join(', ')}`,
+    }),
+  }).optional(),
+  active: z.boolean().optional(),
+  filters: webhookFiltersSchema.nullable(),
+  payloadTemplate: z.record(z.unknown()).nullable().optional(),
 });
 
 const toggleActiveSchema = z.object({
@@ -102,13 +125,35 @@ router.get('/:id', ...flexAuth, async (req: Request, res: Response, next: NextFu
 
 /**
  * POST /webhooks/subscribe — create a new subscription (Zapier REST Hook pattern)
+ * Supports optional filters and payloadTemplate for conditional dispatch.
  */
 router.post('/', ...flexAuth, validate(createSubscriptionSchema), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const organizationId = req.organizationId!;
     const subscription = await createSubscription(organizationId, req.body);
-    logger.info(`Webhook subscription created: ${subscription.id} → ${subscription.targetUrl} [${subscription.event}]`);
+    logger.info(`Webhook subscription created: ${subscription.id} -> ${subscription.targetUrl} [${subscription.event}]`);
     res.status(201).json(subscription);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * PUT /webhooks/subscribe/:id — update subscription (URL, event, filters, payloadTemplate)
+ */
+router.put('/:id', ...flexAuth, validate(updateSubscriptionSchema), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const organizationId = req.organizationId!;
+    const { active, ...updateData } = req.body;
+
+    // Handle active toggle alongside other updates
+    if (active !== undefined) {
+      await toggleSubscription(organizationId, req.params.id, active);
+    }
+
+    const subscription = await updateSubscription(organizationId, req.params.id, updateData);
+    logger.info(`Webhook subscription updated: ${subscription.id}`);
+    res.json(subscription);
   } catch (error) {
     next(error);
   }

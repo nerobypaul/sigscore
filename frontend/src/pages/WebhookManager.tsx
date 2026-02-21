@@ -4,6 +4,18 @@ import { useToast } from '../components/Toast';
 import Spinner from '../components/Spinner';
 import WebhookTestPanel from '../components/WebhookTestPanel';
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface WebhookFilters {
+  scoreAbove?: number;
+  scoreBelow?: number;
+  tiers?: string[];
+  signalTypes?: string[];
+  accountIds?: string[];
+}
+
 interface WebhookSubscription {
   id: string;
   targetUrl: string;
@@ -11,9 +23,15 @@ interface WebhookSubscription {
   hookId: string | null;
   secret: string;
   active: boolean;
+  filters: WebhookFilters | null;
+  payloadTemplate: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
 }
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 
 const EVENT_TYPES = [
   { value: 'signal.created', label: 'Signal Created', description: 'When a new signal is ingested' },
@@ -37,8 +55,93 @@ const EVENT_COLORS: Record<string, string> = {
   'tier.changed': 'bg-rose-100 text-rose-800',
 };
 
+const TIER_OPTIONS = ['HOT', 'WARM', 'COLD', 'INACTIVE'] as const;
+
+const SIGNAL_TYPE_OPTIONS = [
+  { value: 'npm_download', label: 'npm Download' },
+  { value: 'github_star', label: 'GitHub Star' },
+  { value: 'github_fork', label: 'GitHub Fork' },
+  { value: 'github_issue', label: 'GitHub Issue' },
+  { value: 'github_pr', label: 'GitHub PR' },
+  { value: 'api_call', label: 'API Call' },
+  { value: 'page_view', label: 'Page View' },
+  { value: 'signup', label: 'Signup' },
+  { value: 'feature_usage', label: 'Feature Usage' },
+  { value: 'pypi_download', label: 'PyPI Download' },
+  { value: 'docs_view', label: 'Docs View' },
+  { value: 'repo_clone', label: 'Repo Clone' },
+  { value: 'package_install', label: 'Package Install' },
+];
+
+const TEMPLATE_PLACEHOLDER = `{
+  "text": "New {{event}} from {{data.accountName}}",
+  "score": "{{data.newScore}}",
+  "tier": "{{data.newTier}}"
+}`;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Build a clean filters object, returning undefined if no filters are set */
+function buildFilters(
+  scoreAbove: string,
+  scoreBelow: string,
+  tiers: string[],
+  signalTypes: string[],
+  accountIds: string,
+): WebhookFilters | undefined {
+  const filters: WebhookFilters = {};
+  let hasFilter = false;
+
+  const above = scoreAbove.trim() !== '' ? Number(scoreAbove) : NaN;
+  if (!isNaN(above)) { filters.scoreAbove = above; hasFilter = true; }
+
+  const below = scoreBelow.trim() !== '' ? Number(scoreBelow) : NaN;
+  if (!isNaN(below)) { filters.scoreBelow = below; hasFilter = true; }
+
+  if (tiers.length > 0) { filters.tiers = tiers; hasFilter = true; }
+  if (signalTypes.length > 0) { filters.signalTypes = signalTypes; hasFilter = true; }
+
+  const ids = accountIds.split(',').map(s => s.trim()).filter(Boolean);
+  if (ids.length > 0) { filters.accountIds = ids; hasFilter = true; }
+
+  return hasFilter ? filters : undefined;
+}
+
+/** Parse a payload template JSON string, returning undefined on empty/invalid input */
+function parsePayloadTemplate(raw: string): Record<string, unknown> | undefined {
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Summarize active filters for display in the subscription table */
+function summarizeFilters(filters: WebhookFilters | null): string | null {
+  if (!filters) return null;
+  const parts: string[] = [];
+  if (filters.scoreAbove !== undefined) parts.push(`score > ${filters.scoreAbove}`);
+  if (filters.scoreBelow !== undefined) parts.push(`score < ${filters.scoreBelow}`);
+  if (filters.tiers && filters.tiers.length > 0) parts.push(`tiers: ${filters.tiers.join(', ')}`);
+  if (filters.signalTypes && filters.signalTypes.length > 0) parts.push(`types: ${filters.signalTypes.length}`);
+  if (filters.accountIds && filters.accountIds.length > 0) parts.push(`accounts: ${filters.accountIds.length}`);
+  return parts.length > 0 ? parts.join(' | ') : null;
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export default function WebhookManager() {
-  useEffect(() => { document.title = 'Webhooks — Sigscore'; }, []);
+  useEffect(() => { document.title = 'Webhooks -- Sigscore'; }, []);
   const toast = useToast();
 
   const [subscriptions, setSubscriptions] = useState<WebhookSubscription[]>([]);
@@ -52,15 +155,36 @@ export default function WebhookManager() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
+  // Filter form state (for create/edit)
+  const [formScoreAbove, setFormScoreAbove] = useState('');
+  const [formScoreBelow, setFormScoreBelow] = useState('');
+  const [formTiers, setFormTiers] = useState<string[]>([]);
+  const [formSignalTypes, setFormSignalTypes] = useState<string[]>([]);
+  const [formAccountIds, setFormAccountIds] = useState('');
+  const [formPayloadTemplate, setFormPayloadTemplate] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [templateError, setTemplateError] = useState<string | null>(null);
+
   // Newly created secret (shown once)
   const [newSecret, setNewSecret] = useState<{ id: string; secret: string } | null>(null);
   const [copiedSecret, setCopiedSecret] = useState(false);
 
-  // Filter state
+  // Filter state for the list view
   const [eventFilter, setEventFilter] = useState<string>('all');
 
   // Expanded row for test panel
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const resetFormFilters = () => {
+    setFormScoreAbove('');
+    setFormScoreBelow('');
+    setFormTiers([]);
+    setFormSignalTypes([]);
+    setFormAccountIds('');
+    setFormPayloadTemplate('');
+    setShowAdvanced(false);
+    setTemplateError(null);
+  };
 
   const fetchSubscriptions = useCallback(async () => {
     try {
@@ -84,16 +208,37 @@ export default function WebhookManager() {
     e.preventDefault();
     setCreating(true);
     setCreateError(null);
+    setTemplateError(null);
+
+    // Validate payload template JSON if provided
+    const templateRaw = formPayloadTemplate.trim();
+    if (templateRaw) {
+      try {
+        JSON.parse(templateRaw);
+      } catch {
+        setTemplateError('Invalid JSON in payload template');
+        setCreating(false);
+        return;
+      }
+    }
 
     try {
-      const { data } = await api.post('/webhooks/subscribe', {
+      const filters = buildFilters(formScoreAbove, formScoreBelow, formTiers, formSignalTypes, formAccountIds);
+      const payloadTemplate = parsePayloadTemplate(formPayloadTemplate);
+
+      const body: Record<string, unknown> = {
         targetUrl: formUrl,
         event: formEvent,
-      });
+      };
+      if (filters) body.filters = filters;
+      if (payloadTemplate) body.payloadTemplate = payloadTemplate;
+
+      const { data } = await api.post('/webhooks/subscribe', body);
       setSubscriptions((prev) => [data, ...prev]);
       setNewSecret({ id: data.id, secret: data.secret });
       setFormUrl('');
       setShowForm(false);
+      resetFormFilters();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string; details?: { message: string }[] } } };
       const msg =
@@ -132,6 +277,14 @@ export default function WebhookManager() {
     setTimeout(() => setCopiedSecret(false), 2000);
   };
 
+  const handleTierToggle = (tier: string) => {
+    setFormTiers(prev => prev.includes(tier) ? prev.filter(t => t !== tier) : [...prev, tier]);
+  };
+
+  const handleSignalTypeToggle = (st: string) => {
+    setFormSignalTypes(prev => prev.includes(st) ? prev.filter(t => t !== st) : [...prev, st]);
+  };
+
   const filteredSubscriptions =
     eventFilter === 'all'
       ? subscriptions
@@ -151,6 +304,7 @@ export default function WebhookManager() {
           onClick={() => {
             setShowForm(true);
             setCreateError(null);
+            resetFormFilters();
           }}
           className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
         >
@@ -199,7 +353,7 @@ export default function WebhookManager() {
       {/* Create form modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">New Webhook Subscription</h2>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
@@ -228,6 +382,165 @@ export default function WebhookManager() {
                 </select>
               </div>
 
+              {/* Advanced: Filters & Payload Template */}
+              <div className="border-t border-gray-200 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <svg
+                    className={`w-3.5 h-3.5 transition-transform ${showAdvanced ? 'rotate-90' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                  Filters & Payload Template
+                  <span className="text-xs text-gray-400 font-normal">(optional)</span>
+                </button>
+
+                {showAdvanced && (
+                  <div className="mt-3 space-y-4 pl-1">
+                    {/* Score thresholds */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">
+                        Score Thresholds
+                      </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Score above</label>
+                          <input
+                            type="number"
+                            value={formScoreAbove}
+                            onChange={(e) => setFormScoreAbove(e.target.value)}
+                            placeholder="e.g. 50"
+                            min={0}
+                            max={100}
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Score below</label>
+                          <input
+                            type="number"
+                            value={formScoreBelow}
+                            onChange={(e) => setFormScoreBelow(e.target.value)}
+                            placeholder="e.g. 80"
+                            min={0}
+                            max={100}
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">Only fire when the event's score is within this range</p>
+                    </div>
+
+                    {/* Tier filter */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">
+                        Tiers
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {TIER_OPTIONS.map((tier) => (
+                          <label
+                            key={tier}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors border ${
+                              formTiers.includes(tier)
+                                ? tier === 'HOT' ? 'bg-red-100 text-red-700 border-red-300'
+                                : tier === 'WARM' ? 'bg-orange-100 text-orange-700 border-orange-300'
+                                : tier === 'COLD' ? 'bg-blue-100 text-blue-700 border-blue-300'
+                                : 'bg-gray-100 text-gray-600 border-gray-300'
+                                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formTiers.includes(tier)}
+                              onChange={() => handleTierToggle(tier)}
+                              className="sr-only"
+                            />
+                            {tier}
+                          </label>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">Only fire for events matching these tiers</p>
+                    </div>
+
+                    {/* Signal type filter */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">
+                        Signal Types
+                      </label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {SIGNAL_TYPE_OPTIONS.map((st) => (
+                          <label
+                            key={st.value}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs cursor-pointer transition-colors border ${
+                              formSignalTypes.includes(st.value)
+                                ? 'bg-indigo-50 text-indigo-700 border-indigo-300'
+                                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formSignalTypes.includes(st.value)}
+                              onChange={() => handleSignalTypeToggle(st.value)}
+                              className="sr-only"
+                            />
+                            {st.label}
+                          </label>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">Only fire for these signal types (signal.created events)</p>
+                    </div>
+
+                    {/* Account IDs */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">
+                        Account IDs
+                      </label>
+                      <input
+                        type="text"
+                        value={formAccountIds}
+                        onChange={(e) => setFormAccountIds(e.target.value)}
+                        placeholder="Comma-separated account IDs"
+                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">Only fire for events from specific accounts</p>
+                    </div>
+
+                    {/* Payload template */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">
+                        Payload Template
+                      </label>
+                      <textarea
+                        value={formPayloadTemplate}
+                        onChange={(e) => {
+                          setFormPayloadTemplate(e.target.value);
+                          setTemplateError(null);
+                        }}
+                        placeholder={TEMPLATE_PLACEHOLDER}
+                        rows={5}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        spellCheck={false}
+                      />
+                      {templateError && (
+                        <p className="text-xs text-red-600 mt-1">{templateError}</p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-1">
+                        Custom JSON payload shape. Use {'{{variable}}'} placeholders for event data
+                        (e.g. {'{{data.accountName}}'}, {'{{data.newScore}}'}, {'{{event}}'}).
+                        Leave empty for the default Sigscore payload.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {createError && (
                 <p className="text-sm text-red-600">{createError}</p>
               )}
@@ -235,7 +548,7 @@ export default function WebhookManager() {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
+                  onClick={() => { setShowForm(false); resetFormFilters(); }}
                   className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
                 >
                   Cancel
@@ -304,92 +617,108 @@ export default function WebhookManager() {
               <tr className="bg-gray-50 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <th className="px-4 py-3">URL</th>
                 <th className="px-4 py-3">Event</th>
+                <th className="px-4 py-3">Filters</th>
                 <th className="px-4 py-3">Created</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredSubscriptions.map((sub) => (
-                <tr key={sub.id} className="group">
-                  <td colSpan={5} className="p-0">
-                    {/* Subscription row */}
-                    <div className="flex items-center hover:bg-gray-50 transition-colors">
-                      <div className="flex-1 grid grid-cols-[1fr_auto_auto_auto_auto] items-center">
-                        <button
-                          onClick={() => setExpandedId(expandedId === sub.id ? null : sub.id)}
-                          className="flex items-center gap-2 px-4 py-3 text-left"
-                        >
-                          <svg
-                            className={`w-3.5 h-3.5 text-gray-400 transition-transform flex-shrink-0 ${expandedId === sub.id ? 'rotate-90' : ''}`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                          </svg>
-                          <span className="text-sm text-gray-900 font-mono truncate max-w-xs" title={sub.targetUrl}>
-                            {sub.targetUrl.length > 50
-                              ? sub.targetUrl.slice(0, 50) + '...'
-                              : sub.targetUrl}
-                          </span>
-                        </button>
-                        <div className="px-4 py-3">
-                          <span
-                            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                              EVENT_COLORS[sub.event] || 'bg-gray-100 text-gray-800'
-                            }`}
-                          >
-                            {sub.event}
-                          </span>
-                        </div>
-                        <div className="px-4 py-3 text-sm text-gray-500">
-                          {new Date(sub.createdAt).toLocaleDateString()}
-                        </div>
-                        <div className="px-4 py-3">
+              {filteredSubscriptions.map((sub) => {
+                const filterSummary = summarizeFilters(sub.filters);
+                return (
+                  <tr key={sub.id} className="group">
+                    <td colSpan={6} className="p-0">
+                      {/* Subscription row */}
+                      <div className="flex items-center hover:bg-gray-50 transition-colors">
+                        <div className="flex-1 grid grid-cols-[1fr_auto_auto_auto_auto_auto] items-center">
                           <button
-                            onClick={() => handleToggle(sub.id, sub.active)}
-                            className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                              sub.active ? 'bg-indigo-600' : 'bg-gray-200'
-                            }`}
+                            onClick={() => setExpandedId(expandedId === sub.id ? null : sub.id)}
+                            className="flex items-center gap-2 px-4 py-3 text-left"
                           >
-                            <span
-                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                sub.active ? 'translate-x-4' : 'translate-x-0'
-                              }`}
-                            />
+                            <svg
+                              className={`w-3.5 h-3.5 text-gray-400 transition-transform flex-shrink-0 ${expandedId === sub.id ? 'rotate-90' : ''}`}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                            <span className="text-sm text-gray-900 font-mono truncate max-w-xs" title={sub.targetUrl}>
+                              {sub.targetUrl.length > 50
+                                ? sub.targetUrl.slice(0, 50) + '...'
+                                : sub.targetUrl}
+                            </span>
                           </button>
-                        </div>
-                        <div className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => setExpandedId(expandedId === sub.id ? null : sub.id)}
-                              className="px-2.5 py-1 text-xs font-medium text-indigo-600 border border-indigo-200 rounded-md hover:bg-indigo-50 transition-colors"
+                          <div className="px-4 py-3">
+                            <span
+                              className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                                EVENT_COLORS[sub.event] || 'bg-gray-100 text-gray-800'
+                              }`}
                             >
-                              {expandedId === sub.id ? 'Close' : 'Test'}
-                            </button>
+                              {sub.event}
+                            </span>
+                          </div>
+                          <div className="px-4 py-3">
+                            {filterSummary ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs" title={filterSummary}>
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+                                </svg>
+                                {filterSummary.length > 30 ? filterSummary.slice(0, 30) + '...' : filterSummary}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-400">--</span>
+                            )}
+                          </div>
+                          <div className="px-4 py-3 text-sm text-gray-500">
+                            {new Date(sub.createdAt).toLocaleDateString()}
+                          </div>
+                          <div className="px-4 py-3">
                             <button
-                              onClick={() => handleDelete(sub.id)}
-                              className="px-2.5 py-1 text-xs font-medium text-red-600 border border-red-200 rounded-md hover:bg-red-50 transition-colors"
+                              onClick={() => handleToggle(sub.id, sub.active)}
+                              className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                sub.active ? 'bg-indigo-600' : 'bg-gray-200'
+                              }`}
                             >
-                              Delete
+                              <span
+                                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                  sub.active ? 'translate-x-4' : 'translate-x-0'
+                                }`}
+                              />
                             </button>
+                          </div>
+                          <div className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => setExpandedId(expandedId === sub.id ? null : sub.id)}
+                                className="px-2.5 py-1 text-xs font-medium text-indigo-600 border border-indigo-200 rounded-md hover:bg-indigo-50 transition-colors"
+                              >
+                                {expandedId === sub.id ? 'Close' : 'Test'}
+                              </button>
+                              <button
+                                onClick={() => handleDelete(sub.id)}
+                                className="px-2.5 py-1 text-xs font-medium text-red-600 border border-red-200 rounded-md hover:bg-red-50 transition-colors"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Expandable test panel */}
-                    {expandedId === sub.id && (
-                      <WebhookTestPanel
-                        subscription={sub}
-                        onClose={() => setExpandedId(null)}
-                      />
-                    )}
-                  </td>
-                </tr>
-              ))}
+                      {/* Expandable test panel */}
+                      {expandedId === sub.id && (
+                        <WebhookTestPanel
+                          subscription={sub}
+                          onClose={() => setExpandedId(null)}
+                        />
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -423,16 +752,37 @@ export default function WebhookManager() {
             </ol>
           </div>
           <div>
+            <h3 className="font-medium text-gray-800 mb-1">Conditional Dispatch</h3>
+            <p>
+              Use filters to control when webhooks fire. You can filter by score thresholds,
+              account tiers, signal types, and specific account IDs. All conditions must
+              match for the webhook to dispatch (AND logic). Webhooks without filters fire unconditionally.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-medium text-gray-800 mb-1">Payload Templates</h3>
+            <p>
+              Customize the webhook payload shape using templates. Use <code className="px-1 py-0.5 bg-gray-100 rounded text-xs">{'{{variable}}'}</code> placeholders
+              to inject event data. Supports nested paths like <code className="px-1 py-0.5 bg-gray-100 rounded text-xs">{'{{data.accountName}}'}</code>.
+              Leave the template empty to receive the default Sigscore payload format.
+            </p>
+          </div>
+          <div>
             <h3 className="font-medium text-gray-800 mb-1">Programmatic (API)</h3>
             <p>
               Use the Sigscore API with your API key to manage subscriptions programmatically:
             </p>
             <pre className="mt-2 p-3 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto">
-{`# Subscribe
+{`# Subscribe with filters
 curl -X POST https://api.sigscore.dev/api/v1/webhooks/subscribe \\
   -H "x-api-key: ds_live_YOUR_KEY" \\
   -H "Content-Type: application/json" \\
-  -d '{"targetUrl": "https://your-endpoint.com/hook", "event": "signal.created"}'
+  -d '{
+    "targetUrl": "https://your-endpoint.com/hook",
+    "event": "score.changed",
+    "filters": { "scoreAbove": 70, "tiers": ["HOT"] },
+    "payloadTemplate": { "text": "{{data.accountName}} is now {{data.newTier}}" }
+  }'
 
 # Unsubscribe
 curl -X DELETE https://api.sigscore.dev/api/v1/webhooks/subscribe/SUB_ID \\

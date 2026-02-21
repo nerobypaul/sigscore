@@ -732,6 +732,8 @@ model WebhookSubscription {
   secret          String                       // HMAC signing secret (auto-generated)
   active          Boolean                      @default(true)
   status          WebhookSubscriptionStatus    @default(HEALTHY)
+  filters         Json?                        // Conditional dispatch filters (scoreAbove, scoreBelow, tiers, signalTypes, accountIds)
+  payloadTemplate Json?                        // Custom payload shape with {{variable}} placeholders
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
