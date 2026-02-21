@@ -26,7 +26,7 @@ export function initWebSocket(server: Server): void {
     const orgId = url.searchParams.get('orgId');
 
     if (!token || !orgId) {
-      ws.close(4001, 'Missing authentication');
+      ws.close(4001, 'Authentication failed');
       return;
     }
 
@@ -43,7 +43,7 @@ export function initWebSocket(server: Server): void {
         },
       });
       if (!membership) {
-        ws.close(4002, 'Not a member of this organization');
+        ws.close(4002, 'Authentication failed');
         return;
       }
 
@@ -75,7 +75,7 @@ export function initWebSocket(server: Server): void {
       // Send a welcome message
       socket.send(JSON.stringify({ type: 'connected', userId: decoded.userId }));
     } catch {
-      ws.close(4001, 'Invalid token');
+      ws.close(4001, 'Authentication failed');
     }
   });
 

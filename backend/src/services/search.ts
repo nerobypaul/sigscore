@@ -1,5 +1,27 @@
 import { prisma } from '../config/database';
 
+/**
+ * Strip characters that have special meaning in PostgreSQL tsquery syntax.
+ * Prevents to_tsquery() from throwing on user input like "foo's" or "a & b".
+ */
+function sanitizeTsWord(word: string): string {
+  return word.replace(/[&|!()':*\\<>]/g, '').trim();
+}
+
+/**
+ * Build a prefix-matching tsquery string from raw user input.
+ * Each word gets :* for autocomplete, joined with & (AND).
+ */
+function buildTsQuery(raw: string): string {
+  return raw
+    .trim()
+    .split(/\s+/)
+    .map(sanitizeTsWord)
+    .filter(Boolean)
+    .map((w) => w + ':*')
+    .join(' & ');
+}
+
 export interface SearchResult {
   type: 'contact' | 'company' | 'deal' | 'signal';
   id: string;
@@ -31,14 +53,7 @@ export async function globalSearch(
   const limit = Math.min(options?.limit || 20, 50);
   const types = options?.types || ['contact', 'company', 'deal', 'signal'];
 
-  // Build a prefix-matching tsquery: each word gets :* for autocomplete behaviour,
-  // joined with & (AND) so all terms must match.
-  const tsQuery = query
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((w) => w + ':*')
-    .join(' & ');
+  const tsQuery = buildTsQuery(query);
 
   if (!tsQuery) {
     return { results: [], total: 0, query };
@@ -277,12 +292,7 @@ export async function groupedSearch(
   const cap = Math.min(limit, 10);
   const likePattern = `%${query.trim()}%`;
 
-  const tsQuery = query
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((w) => w + ':*')
-    .join(' & ');
+  const tsQuery = buildTsQuery(query);
 
   if (!tsQuery) {
     return { contacts: [], companies: [], signals: [], query };

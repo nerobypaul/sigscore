@@ -18,7 +18,7 @@ export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3000', 10),
   apiUrl: process.env.API_URL || 'http://localhost:3000',
-  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  corsOrigin: requireEnv('CORS_ORIGIN', 'http://localhost:5173'),
 
   database: {
     url: process.env.DATABASE_URL || '',
