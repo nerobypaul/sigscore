@@ -294,7 +294,7 @@ export default function SharedReport() {
         <section className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
           <div className="flex items-start gap-4">
             {company.logo ? (
-              <img src={company.logo} alt="" className="w-14 h-14 rounded-xl object-contain bg-gray-50 p-1 border border-gray-100" />
+              <img src={company.logo} alt={`${company.name} logo`} className="w-14 h-14 rounded-xl object-contain bg-gray-50 p-1 border border-gray-100" />
             ) : (
               <div className="w-14 h-14 rounded-xl bg-indigo-100 flex items-center justify-center text-xl font-bold text-indigo-600">
                 {company.name.charAt(0)}

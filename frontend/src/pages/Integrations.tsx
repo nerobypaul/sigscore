@@ -78,7 +78,11 @@ export default function Integrations() {
           setSources(sourcesRes.data.sources);
         }
       } catch {
-        // Silently handle — the page shows empty state
+        if (!cancelled) {
+          window.dispatchEvent(new CustomEvent('sigscore:toast', {
+            detail: { type: 'error', message: 'Failed to load integrations. Please try again.' },
+          }));
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }

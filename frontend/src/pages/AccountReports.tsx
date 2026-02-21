@@ -246,7 +246,7 @@ export default function AccountReports() {
                       {report.company.logo ? (
                         <img
                           src={report.company.logo}
-                          alt=""
+                          alt={`${report.company.name} logo`}
                           className="w-6 h-6 rounded"
                         />
                       ) : (

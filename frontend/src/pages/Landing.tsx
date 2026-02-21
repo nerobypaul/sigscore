@@ -214,16 +214,18 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
     <div className="border-b border-gray-200">
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
         className="w-full flex items-center justify-between py-5 text-left group"
       >
         <span className="text-base font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors pr-4">
           {question}
         </span>
-        <span className={`flex-shrink-0 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+        <span className={`flex-shrink-0 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} aria-hidden="true">
           <ChevronDownIcon />
         </span>
       </button>
       <div
+        role="region"
         className={`overflow-hidden transition-all duration-200 ${open ? 'max-h-40 pb-5' : 'max-h-0'}`}
       >
         <p className="text-gray-500 leading-relaxed">{answer}</p>
@@ -1184,7 +1186,7 @@ export default function Landing() {
           <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl px-8 sm:px-16 py-16 sm:py-20 text-center">
             {/* Decorative grid */}
             <div className="absolute inset-0 opacity-10">
-              <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <defs>
                   <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
                     <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
