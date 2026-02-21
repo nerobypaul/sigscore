@@ -207,6 +207,7 @@ export default function SavedViewSelector({
               }}
               className="p-1 text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
               style={{ opacity: menuViewId === view.id ? 1 : undefined }}
+              aria-label="View options"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />

@@ -471,7 +471,9 @@ export default function SignalFeed() {
       setPagination(data.pagination || null);
       setPage(nextPage);
     } catch {
-      // Ignore load-more errors
+      window.dispatchEvent(new CustomEvent('sigscore:toast', {
+        detail: { type: 'error', message: 'Failed to load more signals.' },
+      }));
     } finally {
       setLoadingMore(false);
     }

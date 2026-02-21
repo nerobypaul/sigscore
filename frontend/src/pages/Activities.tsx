@@ -53,6 +53,9 @@ export default function Activities() {
       setPagination(data.pagination || null);
     } catch {
       setActivities([]);
+      window.dispatchEvent(new CustomEvent('sigscore:toast', {
+        detail: { type: 'error', message: 'Failed to load activities.' },
+      }));
     } finally {
       setLoading(false);
     }

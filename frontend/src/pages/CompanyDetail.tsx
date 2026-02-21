@@ -74,7 +74,7 @@ function CopyableId({ label, value }: { label: string; value: string }) {
       <dt className="text-xs text-gray-500">{label}</dt>
       <dd className="text-sm text-gray-700 font-mono truncate flex items-center gap-1.5">
         <span className="truncate">{value}</span>
-        <button onClick={handleCopy} className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 flex-shrink-0" title="Copy">
+        <button onClick={handleCopy} className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 flex-shrink-0" title="Copy" aria-label="Copy to clipboard">
           {copied ? (
             <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
           ) : (
