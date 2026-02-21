@@ -47,6 +47,7 @@ const navSections: NavSection[] = [
       { to: '/signals/feed', label: 'Signal Feed', icon: SignalFeedIcon, hideInDemo: true },
       { to: '/scores', label: 'PQA Scores', icon: ScoresIcon, dataTour: 'nav-scores' },
       { to: '/anomalies', label: 'Anomalies', icon: AnomaliesIcon },
+      { to: '/patterns', label: 'Signal Patterns', icon: SignalPatternsIcon },
       { to: '/reports', label: 'Reports', icon: ReportsIcon },
     ],
   },
@@ -450,6 +451,14 @@ function AnomaliesIcon() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+    </svg>
+  );
+}
+
+function SignalPatternsIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
     </svg>
   );
 }

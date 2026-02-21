@@ -76,6 +76,7 @@ const CompareReodev = lazy(() => import('./pages/CompareReodev'));
 const Integrations = lazy(() => import('./pages/Integrations'));
 const IntegrationDetail = lazy(() => import('./pages/IntegrationDetail'));
 const AccountHealth = lazy(() => import('./pages/AccountHealth'));
+const SignalPatterns = lazy(() => import('./pages/SignalPatterns'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
@@ -214,6 +215,7 @@ function AppRoutes() {
           <Route path="/enrichment" element={<EnrichmentQueue />} />
           <Route path="/api-usage" element={<ApiUsage />} />
           <Route path="/health" element={<AccountHealth />} />
+          <Route path="/patterns" element={<SignalPatterns />} />
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/integrations/:type" element={<IntegrationDetail />} />
         </Route>

@@ -78,6 +78,7 @@ import healthRoutes from './routes/health';
 import seoRoutes from './routes/seo';
 import changelogRoutes from './routes/changelog';
 import anomalyRoutes from './routes/anomalies';
+import signalPatternRoutes from './routes/signal-patterns';
 import { apiUsageTracker } from './middleware/api-usage';
 import { requestIdMiddleware } from './middleware/request-id';
 import { sentryErrorHandler } from './utils/sentry';
@@ -289,6 +290,9 @@ app.use('/api/v1/account-reports', accountReportRoutes);
 
 // API routes — Signal Anomaly Detection
 app.use('/api/v1/anomalies', anomalyRoutes);
+
+// API routes — Signal Pattern Clustering & ICP Matching
+app.use('/api/v1/patterns', signalPatternRoutes);
 
 // API routes — Data Export (enterprise compliance & data portability)
 app.use('/api/v1/exports', dataExportRoutes);
