@@ -87,6 +87,19 @@ export function TableSkeleton({ rows = 8, columns = 6 }: { rows?: number; column
 export function DashboardSkeleton() {
   return (
     <div className="animate-pulse">
+      {/* Hero card placeholder */}
+      <div className="bg-gradient-to-r from-indigo-600/30 to-purple-600/30 rounded-xl p-6 mb-8">
+        <SkeletonBlock className="h-5 w-48 mb-2 !bg-indigo-300/30" />
+        <SkeletonBlock className="h-3 w-64 mb-4 !bg-indigo-300/20" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="bg-white/10 rounded-lg p-4">
+              <SkeletonBlock className="h-4 w-24 mb-2 !bg-indigo-300/20" />
+              <SkeletonBlock className="h-3 w-16 !bg-indigo-300/15" />
+            </div>
+          ))}
+        </div>
+      </div>
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {Array.from({ length: 4 }).map((_, i) => (
