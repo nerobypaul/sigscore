@@ -279,8 +279,11 @@ export default function Contacts() {
       ) : contacts.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {search ? (
-            <div className="py-12 text-center text-gray-400 text-sm">
-              No contacts match your search
+            <div className="py-12 text-center">
+              <svg className="w-10 h-10 mx-auto text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+              <p className="text-gray-400 text-sm">No contacts match your search</p>
             </div>
           ) : (
             <EmptyState

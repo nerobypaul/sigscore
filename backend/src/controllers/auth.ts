@@ -249,7 +249,7 @@ export const handleResetPassword = async (req: Request, res: Response, next: Nex
     res.json({ message: 'Password has been reset successfully.' });
   } catch (error) {
     if (error instanceof ResetTokenError) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json({ error: 'The reset link is invalid or has expired. Please request a new one.' });
       return;
     }
     next(error);
