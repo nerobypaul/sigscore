@@ -305,7 +305,7 @@ export async function handlePostHogWebhook(
     if (SKIP_EVENTS.has(eventName)) continue;
 
     // Check if this event is tracked (if trackedEvents is set)
-    if (cfg.trackedEvents.length > 0 && !cfg.trackedEvents.includes(eventName)) {
+    if (cfg.trackedEvents?.length > 0 && !cfg.trackedEvents.includes(eventName)) {
       continue;
     }
 
@@ -396,7 +396,7 @@ export async function syncPostHogEvents(
     errors: [],
   };
 
-  for (const eventName of cfg.trackedEvents) {
+  for (const eventName of cfg.trackedEvents ?? []) {
     try {
       const afterIso = since.toISOString();
       const path = `/api/projects/${cfg.projectId}/events?event=${encodeURIComponent(eventName)}&after=${encodeURIComponent(afterIso)}&limit=${MAX_EVENTS_PER_FETCH}`;
@@ -467,7 +467,7 @@ export async function syncPostHogEvents(
       }
 
       // Small delay between event type queries for rate limiting
-      if (cfg.trackedEvents.indexOf(eventName) < cfg.trackedEvents.length - 1) {
+      if ((cfg.trackedEvents ?? []).indexOf(eventName) < (cfg.trackedEvents ?? []).length - 1) {
         await sleep(200);
       }
     } catch (err) {
