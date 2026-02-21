@@ -41,9 +41,8 @@ router.post('/npm/:sourceId/sync', async (req: Request, res: Response): Promise<
 
     res.json({ message: 'Sync job queued', jobId: job.id });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to enqueue sync';
     logger.error('npm sync enqueue error', { error: err });
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: 'Failed to enqueue npm sync job' });
   }
 });
 
@@ -63,9 +62,8 @@ router.post('/npm/test', validate(testPackagesSchema), async (req: Request, res:
 
     res.json(result);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Test failed';
     logger.error('npm test endpoint error', { error: err });
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: 'npm connection test failed' });
   }
 });
 
@@ -88,9 +86,8 @@ router.post('/pypi/:sourceId/sync', async (req: Request, res: Response): Promise
 
     res.json({ message: 'Sync job queued', jobId: job.id });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to enqueue sync';
     logger.error('PyPI sync enqueue error', { error: err });
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: 'Failed to enqueue PyPI sync job' });
   }
 });
 
@@ -110,9 +107,8 @@ router.post('/pypi/test', validate(testPackagesSchema), async (req: Request, res
 
     res.json(result);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Test failed';
     logger.error('PyPI test endpoint error', { error: err });
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: 'PyPI connection test failed' });
   }
 });
 
@@ -165,9 +161,8 @@ router.post(
         },
       });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to create Segment source';
       logger.error('Segment create error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to create Segment source' });
     }
   },
 );
@@ -211,9 +206,8 @@ router.get(
         },
       });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to get Segment source';
       logger.error('Segment get error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to retrieve Segment source' });
     }
   },
 );
@@ -253,9 +247,8 @@ router.post(
 
       res.json({ sharedSecret: newSecret });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to rotate secret';
       logger.error('Segment rotate-secret error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to rotate Segment secret' });
     }
   },
 );
@@ -289,9 +282,8 @@ router.delete(
 
       res.json({ ok: true, deleted: sourceId });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to delete Segment source';
       logger.error('Segment delete error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to delete Segment source' });
     }
   },
 );

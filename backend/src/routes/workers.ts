@@ -62,9 +62,8 @@ router.get(
         timestamp: new Date().toISOString(),
       });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to get worker status';
       logger.error('Worker status endpoint error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to retrieve worker status' });
     }
   },
 );

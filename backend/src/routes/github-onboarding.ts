@@ -60,15 +60,8 @@ router.post('/github/repos', validate(reposSchema), async (req: Request, res: Re
     const repos = await listUserRepos(token);
     res.json({ repos });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to list repos';
     logger.error('GitHub onboarding repos error', { error: err });
-
-    if (message.includes('401')) {
-      res.status(401).json({ error: 'Invalid GitHub token. Please check your personal access token.' });
-      return;
-    }
-
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: 'Failed to list repositories. Please check your GitHub token and try again.' });
   }
 });
 
@@ -95,15 +88,8 @@ router.post(
 
       res.json(summary);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'GitHub onboarding failed';
       logger.error('GitHub onboarding connect error', { error: err });
-
-      if (message.includes('401')) {
-        res.status(401).json({ error: 'Invalid GitHub token. Please check your personal access token.' });
-        return;
-      }
-
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'GitHub onboarding failed. Please check your token and try again.' });
     }
   },
 );
