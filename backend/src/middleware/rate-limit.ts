@@ -42,6 +42,18 @@ export const authLimiter = rateLimit({
  * 100 requests per 1-minute window per IP.
  * Applied to: /api/v1/*
  */
+// Paths that have their own dedicated rate limiters — skip apiLimiter to avoid
+// express-rate-limit ERR_ERL_DOUBLE_COUNT warnings.
+const DEDICATED_LIMITER_PATHS = [
+  '/api/v1/auth/login',
+  '/api/v1/auth/register',
+  '/api/v1/auth/forgot-password',
+  '/api/v1/webhooks',
+  '/api/v1/demo',
+  '/api/v1/graphql',
+  '/api/v1/signals',
+];
+
 export const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 100,
@@ -51,6 +63,7 @@ export const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: getStore(),
+  skip: (req) => DEDICATED_LIMITER_PATHS.some((p) => req.originalUrl.startsWith(p)),
 });
 
 /**
