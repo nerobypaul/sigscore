@@ -97,10 +97,8 @@ router.post(
 
       res.json({ ok: true, signalId: result.signalId });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Webhook processing failed';
       logger.error('Intercom webhook error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Webhook processing failed' });
     }
   },
 );
@@ -143,10 +141,8 @@ router.post(
         webhookSecret: status.webhookSecret,
       });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to connect Intercom';
       logger.error('Intercom connect error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to connect Intercom' });
     }
   },
 );
@@ -163,10 +159,8 @@ router.get(
       const status = await getIntercomStatus(organizationId);
       res.json(status);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to get status';
       logger.error('Intercom status error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to get status' });
     }
   },
 );
@@ -190,10 +184,8 @@ router.post(
         jobId: job.id,
       });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to queue sync';
       logger.error('Intercom sync error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to queue sync' });
     }
   },
 );
@@ -213,10 +205,8 @@ router.delete(
 
       res.json({ ok: true, message: 'Intercom disconnected' });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to disconnect';
       logger.error('Intercom disconnect error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to disconnect' });
     }
   },
 );

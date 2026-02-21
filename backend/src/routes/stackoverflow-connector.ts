@@ -54,10 +54,8 @@ router.post(
         trackedTags,
       });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to configure Stack Overflow';
       logger.error('Stack Overflow connect error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to configure Stack Overflow' });
     }
   },
 );
@@ -74,10 +72,8 @@ router.get(
       const status = await getStackOverflowStatus(organizationId);
       res.json(status);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to get status';
       logger.error('Stack Overflow status error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to get status' });
     }
   },
 );
@@ -101,10 +97,8 @@ router.post(
         jobId: job.id,
       });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to queue sync';
       logger.error('Stack Overflow sync error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to queue sync' });
     }
   },
 );
@@ -124,10 +118,8 @@ router.delete(
 
       res.json({ ok: true, message: 'Stack Overflow disconnected' });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to disconnect';
       logger.error('Stack Overflow disconnect error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to disconnect' });
     }
   },
 );

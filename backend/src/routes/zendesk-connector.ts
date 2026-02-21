@@ -95,10 +95,8 @@ router.post(
 
       res.json({ ok: true, signalId: result.signalId });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Webhook processing failed';
       logger.error('Zendesk webhook error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Webhook processing failed' });
     }
   },
 );
@@ -143,10 +141,8 @@ router.post(
         webhookSecret: status.webhookSecret,
       });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to connect Zendesk';
       logger.error('Zendesk connect error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to connect Zendesk' });
     }
   },
 );
@@ -163,10 +159,8 @@ router.get(
       const status = await getZendeskStatus(organizationId);
       res.json(status);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to get status';
       logger.error('Zendesk status error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to get status' });
     }
   },
 );
@@ -190,10 +184,8 @@ router.post(
         jobId: job.id,
       });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to queue sync';
       logger.error('Zendesk sync error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to queue sync' });
     }
   },
 );
@@ -213,10 +205,8 @@ router.delete(
 
       res.json({ ok: true, message: 'Zendesk disconnected' });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to disconnect';
       logger.error('Zendesk disconnect error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to disconnect' });
     }
   },
 );

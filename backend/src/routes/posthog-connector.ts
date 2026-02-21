@@ -51,9 +51,8 @@ router.post('/webhook/:sourceId', async (req: Request, res: Response): Promise<v
 
     res.json({ ok: true, ...result });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Webhook processing failed';
     logger.error('PostHog webhook error', { error: err });
-    res.status(err instanceof Error && err.message.includes('not found') ? 404 : 500).json({ error: message });
+    res.status(500).json({ error: 'Webhook processing failed' });
   }
 });
 
@@ -92,9 +91,8 @@ router.post(
         message: 'PostHog connected successfully',
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to connect PostHog';
       logger.error('PostHog connect error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to connect PostHog' });
     }
   },
 );
@@ -111,9 +109,8 @@ router.get(
       const status = await getPostHogStatus(organizationId);
       res.json(status);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to get status';
       logger.error('PostHog status error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to get status' });
     }
   },
 );
@@ -133,9 +130,8 @@ router.post(
 
       res.json({ ok: true, message: 'PostHog sync queued', jobId: job.id });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to queue sync';
       logger.error('PostHog sync error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to queue sync' });
     }
   },
 );
@@ -155,9 +151,8 @@ router.delete(
 
       res.json({ ok: true, message: 'PostHog disconnected' });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to disconnect';
       logger.error('PostHog disconnect error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to disconnect' });
     }
   },
 );

@@ -53,7 +53,7 @@ router.post('/webhook', async (req: Request, res: Response): Promise<void> => {
     // For actual events, we need to find the source by guild ID
     const guildId = payload.guild_id as string | undefined;
     if (!guildId) {
-      res.status(400).json({ error: 'Missing guild_id' });
+      res.status(400).json({ error: 'Invalid Discord server configuration' });
       return;
     }
 
@@ -88,9 +88,8 @@ router.post('/webhook', async (req: Request, res: Response): Promise<void> => {
 
     res.json({ ok: true, ...result });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Webhook processing failed';
     logger.error('Discord webhook error', { error: err });
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: 'Webhook processing failed' });
   }
 });
 
@@ -167,9 +166,8 @@ router.post(
         channels: serverInfo.channels,
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to connect Discord';
       logger.error('Discord connect error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to connect Discord' });
     }
   },
 );
@@ -187,9 +185,8 @@ router.get(
       const result = await getDiscordChannels(organizationId);
       res.json(result);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch channels';
       logger.error('Discord channels error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to fetch channels' });
     }
   },
 );
@@ -211,9 +208,8 @@ router.put(
 
       res.json({ ok: true, monitoredChannels: channelIds.length });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to update channels';
       logger.error('Discord update channels error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to update channels' });
     }
   },
 );
@@ -233,9 +229,8 @@ router.post(
 
       res.json({ ok: true, message: 'Discord sync queued', jobId: job.id });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to queue sync';
       logger.error('Discord sync error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to queue sync' });
     }
   },
 );
@@ -252,9 +247,8 @@ router.get(
       const status = await getDiscordStatus(organizationId);
       res.json(status);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to get status';
       logger.error('Discord status error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to get status' });
     }
   },
 );
@@ -274,9 +268,8 @@ router.delete(
 
       res.json({ ok: true, message: 'Discord disconnected' });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to disconnect';
       logger.error('Discord disconnect error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to disconnect' });
     }
   },
 );

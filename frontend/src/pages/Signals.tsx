@@ -217,7 +217,8 @@ export default function Signals() {
         ) : signals.length === 0 ? (
           hasFilters ? (
             <div className="py-12 text-center text-gray-400 text-sm">
-              No signals match your filters
+              No signals match your filters.{' '}
+              <button onClick={clearFilters} className="text-indigo-600 hover:text-indigo-700 underline">Clear filters</button>
             </div>
           ) : (
             <EmptyState

@@ -132,10 +132,8 @@ router.post(
 
       res.json({ ok: true, signalId: result.signalId });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Webhook processing failed';
       logger.error('LinkedIn webhook error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Webhook processing failed' });
     }
   },
 );
@@ -177,10 +175,8 @@ router.post(
         webhookSecret: status.webhookSecret,
       });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to connect LinkedIn';
       logger.error('LinkedIn connect error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to connect LinkedIn' });
     }
   },
 );
@@ -197,10 +193,8 @@ router.get(
       const status = await getLinkedInStatus(organizationId);
       res.json(status);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to get status';
       logger.error('LinkedIn status error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to get status' });
     }
   },
 );
@@ -226,10 +220,8 @@ router.post(
         result,
       });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to import employees';
       logger.error('LinkedIn import error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to import employees' });
     }
   },
 );
@@ -253,10 +245,8 @@ router.post(
         jobId: job.id,
       });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to queue sync';
       logger.error('LinkedIn sync error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to queue sync' });
     }
   },
 );
@@ -276,10 +266,8 @@ router.delete(
 
       res.json({ ok: true, message: 'LinkedIn disconnected' });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to disconnect';
       logger.error('LinkedIn disconnect error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to disconnect' });
     }
   },
 );

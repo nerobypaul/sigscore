@@ -52,10 +52,8 @@ router.post(
         subreddits,
       });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to configure Reddit';
       logger.error('Reddit connect error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to configure Reddit' });
     }
   },
 );
@@ -72,10 +70,8 @@ router.get(
       const status = await getRedditStatus(organizationId);
       res.json(status);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to get status';
       logger.error('Reddit status error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to get status' });
     }
   },
 );
@@ -99,10 +95,8 @@ router.post(
         jobId: job.id,
       });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to queue sync';
       logger.error('Reddit sync error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to queue sync' });
     }
   },
 );
@@ -122,10 +116,8 @@ router.delete(
 
       res.json({ ok: true, message: 'Reddit disconnected' });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to disconnect';
       logger.error('Reddit disconnect error', { error: err });
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: 'Failed to disconnect' });
     }
   },
 );
