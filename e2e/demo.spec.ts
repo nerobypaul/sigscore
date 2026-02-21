@@ -150,26 +150,24 @@ test.describe('Demo Experience', () => {
   /**
    * Inject demo auth tokens into localStorage so the page loads as authenticated.
    */
-  async function injectDemoAuth(page: import('@playwright/test').Page) {
-    // Must visit a page first to set localStorage on the correct origin
+  async function injectDemoAuth(page: import('@playwright/test').Page, opts?: { keepTour?: boolean }) {
+    // Must visit a page first to set localStorage/sessionStorage on the correct origin
     await page.goto('/login');
     await page.evaluate(
-      ({ token, refresh, orgId }) => {
+      ({ token, refresh, orgId, dismissTour }) => {
         localStorage.setItem('accessToken', token);
         localStorage.setItem('refreshToken', refresh);
         localStorage.setItem('organizationId', orgId);
+        // Pre-dismiss onboarding tour so it doesn't block interactions
+        if (dismissTour) {
+          sessionStorage.setItem('sigscore-demo-tour-seen', '1');
+        }
       },
-      { token: accessToken, refresh: refreshToken, orgId: organizationId },
+      { token: accessToken, refresh: refreshToken, orgId: organizationId, dismissTour: !opts?.keepTour },
     );
     await page.goto('/');
     // Wait for the sidebar to confirm we're in the authenticated layout
-    await expect(page.locator('aside')).toBeVisible({ timeout: 15_000 });
-
-    // Dismiss onboarding hints if they appear (they overlay sidebar items)
-    const skipBtn = page.getByRole('button', { name: /skip/i });
-    if (await skipBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await skipBtn.click({ force: true });
-    }
+    await expect(page.locator('aside')).toBeVisible({ timeout: 20_000 });
 
     // Dismiss cookie banner if present
     const cookieBanner = page.locator('[aria-label="Cookie consent"]');
@@ -206,7 +204,7 @@ test.describe('Demo Experience', () => {
   });
 
   test('demo visitor sees onboarding hints overlay', async ({ page }) => {
-    await injectDemoAuth(page);
+    await injectDemoAuth(page, { keepTour: true });
 
     // Welcome step should appear
     await expect(page.getByText(/welcome to sigscore/i)).toBeVisible({ timeout: 5000 });
