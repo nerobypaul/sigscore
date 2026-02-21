@@ -44,7 +44,7 @@ const navSections: NavSection[] = [
       { to: '/enrichment', label: 'Enrichment', icon: EnrichmentIcon, disabledInDemo: true },
       { to: '/companies', label: 'Companies', icon: CompaniesIcon },
       { to: '/signals', label: 'Signals', icon: SignalsIcon, dataTour: 'nav-signals' },
-      { to: '/signals/feed', label: 'Signal Feed', icon: SignalFeedIcon },
+      { to: '/signals/feed', label: 'Signal Feed', icon: SignalFeedIcon, hideInDemo: true },
       { to: '/scores', label: 'PQA Scores', icon: ScoresIcon, dataTour: 'nav-scores' },
       { to: '/reports', label: 'Reports', icon: ReportsIcon },
     ],
