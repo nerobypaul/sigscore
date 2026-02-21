@@ -10,7 +10,16 @@ import { notifyOrgUsers } from './notifications';
 // ---------------------------------------------------------------------------
 
 export interface WorkflowTrigger {
-  event: 'signal_received' | 'contact_created' | 'deal_stage_changed' | 'score_changed';
+  event:
+    | 'signal_received'
+    | 'contact_created'
+    | 'contact_updated'
+    | 'company_created'
+    | 'deal_created'
+    | 'deal_stage_changed'
+    | 'score_changed'
+    | 'score_threshold'
+    | 'tag_added';
   filters?: Record<string, unknown>;
 }
 

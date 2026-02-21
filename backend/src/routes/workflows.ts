@@ -19,7 +19,17 @@ const createWorkflowSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   trigger: z.object({
-    event: z.enum(['signal_received', 'contact_created', 'deal_stage_changed', 'score_changed']),
+    event: z.enum([
+      'signal_received',
+      'contact_created',
+      'contact_updated',
+      'company_created',
+      'deal_created',
+      'deal_stage_changed',
+      'score_changed',
+      'score_threshold',
+      'tag_added',
+    ]),
     filters: z.record(z.unknown()).optional(),
   }),
   conditions: z
@@ -54,7 +64,17 @@ const updateWorkflowSchema = z.object({
   description: z.string().optional(),
   trigger: z
     .object({
-      event: z.enum(['signal_received', 'contact_created', 'deal_stage_changed', 'score_changed']),
+      event: z.enum([
+        'signal_received',
+        'contact_created',
+        'contact_updated',
+        'company_created',
+        'deal_created',
+        'deal_stage_changed',
+        'score_changed',
+        'score_threshold',
+        'tag_added',
+      ]),
       filters: z.record(z.unknown()).optional(),
     })
     .optional(),
