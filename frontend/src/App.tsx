@@ -64,6 +64,7 @@ const Impressum = lazy(() => import('./pages/Impressum'));
 const TeamSettings = lazy(() => import('./pages/TeamSettings'));
 const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
 const DataExport = lazy(() => import('./pages/DataExport'));
+const Anomalies = lazy(() => import('./pages/Anomalies'));
 const AccountAlerts = lazy(() => import('./pages/AccountAlerts'));
 const EnrichmentQueue = lazy(() => import('./pages/EnrichmentQueue'));
 const AccountReports = lazy(() => import('./pages/AccountReports'));
@@ -74,6 +75,7 @@ const CompareCommonRoom = lazy(() => import('./pages/CompareCommonRoom'));
 const CompareReodev = lazy(() => import('./pages/CompareReodev'));
 const Integrations = lazy(() => import('./pages/Integrations'));
 const IntegrationDetail = lazy(() => import('./pages/IntegrationDetail'));
+const AccountHealth = lazy(() => import('./pages/AccountHealth'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
@@ -206,10 +208,12 @@ function AppRoutes() {
           <Route path="/webhooks" element={<WebhookManager />} />
           <Route path="/sso-settings" element={<SsoSettings />} />
           <Route path="/settings/export" element={<DataExport />} />
+          <Route path="/anomalies" element={<Anomalies />} />
           <Route path="/alerts" element={<AccountAlerts />} />
           <Route path="/reports" element={<AccountReports />} />
           <Route path="/enrichment" element={<EnrichmentQueue />} />
           <Route path="/api-usage" element={<ApiUsage />} />
+          <Route path="/health" element={<AccountHealth />} />
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/integrations/:type" element={<IntegrationDetail />} />
         </Route>
