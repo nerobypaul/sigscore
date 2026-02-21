@@ -37,6 +37,7 @@ export default function Activities() {
   const [filterStatus, setFilterStatus] = useState('');
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
 
   const fetchActivities = useCallback(async () => {
     setLoading(true);
@@ -143,7 +144,7 @@ export default function Activities() {
         ) : (
           <div className="divide-y divide-gray-100">
             {activities.map((activity) => (
-              <ActivityRow key={activity.id} activity={activity} onUpdate={fetchActivities} />
+              <ActivityRow key={activity.id} activity={activity} onUpdate={fetchActivities} onClick={() => setSelectedActivity(activity)} />
             ))}
           </div>
         )}
@@ -184,6 +185,23 @@ export default function Activities() {
           }}
         />
       )}
+
+      {selectedActivity && (
+        <ActivityDetailModal
+          activity={selectedActivity}
+          onClose={() => setSelectedActivity(null)}
+          onSaved={() => {
+            setSelectedActivity(null);
+            fetchActivities();
+            toast.success('Activity updated successfully');
+          }}
+          onDeleted={() => {
+            setSelectedActivity(null);
+            fetchActivities();
+            toast.success('Activity deleted');
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -191,9 +209,11 @@ export default function Activities() {
 function ActivityRow({
   activity,
   onUpdate,
+  onClick,
 }: {
   activity: Activity;
   onUpdate: () => void;
+  onClick: () => void;
 }) {
   const toast = useToast();
 
@@ -214,10 +234,10 @@ function ActivityRow({
   };
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 transition-colors">
+    <div onClick={onClick} className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer">
       {/* Complete toggle */}
       <button
-        onClick={handleToggleComplete}
+        onClick={(e) => { e.stopPropagation(); handleToggleComplete(); }}
         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
           activity.status === 'COMPLETED'
             ? 'bg-green-500 border-green-500 text-white'
@@ -429,6 +449,267 @@ function CreateActivityModal({
             >
               {saving ? 'Creating...' : 'Create Activity'}
             </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ActivityDetailModal({
+  activity,
+  onClose,
+  onSaved,
+  onDeleted,
+}: {
+  activity: Activity;
+  onClose: () => void;
+  onSaved: () => void;
+  onDeleted: () => void;
+}) {
+  const toast = useToast();
+  const [form, setForm] = useState({
+    type: activity.type,
+    title: activity.title,
+    description: activity.description || '',
+    status: activity.status,
+    priority: activity.priority,
+    dueDate: activity.dueDate ? activity.dueDate.slice(0, 10) : '',
+    contactId: activity.contactId || '',
+    companyId: activity.companyId || '',
+    dealId: activity.dealId || '',
+  });
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+
+    try {
+      await api.put(`/activities/${activity.id}`, {
+        type: form.type,
+        title: form.title,
+        description: form.description || undefined,
+        status: form.status,
+        priority: form.priority,
+        dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : undefined,
+        completedAt: form.status === 'COMPLETED' ? new Date().toISOString() : undefined,
+        contactId: form.contactId || undefined,
+        companyId: form.companyId || undefined,
+        dealId: form.dealId || undefined,
+      });
+      onSaved();
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      const msg = axiosErr.response?.data?.error || 'Failed to update activity';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await api.delete(`/activities/${activity.id}`);
+      onDeleted();
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      const msg = axiosErr.response?.data?.error || 'Failed to delete activity';
+      toast.error(msg);
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Activity Details</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Close">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSave} className="p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+            <input
+              type="text"
+              required
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+              <select
+                value={form.type}
+                onChange={(e) => setForm({ ...form, type: e.target.value as ActivityType })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              >
+                <option value="TASK">Task</option>
+                <option value="CALL">Call</option>
+                <option value="MEETING">Meeting</option>
+                <option value="EMAIL">Email</option>
+                <option value="NOTE">Note</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+              <select
+                value={form.priority}
+                onChange={(e) => setForm({ ...form, priority: e.target.value as ActivityPriority })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              >
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="URGENT">Urgent</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value as ActivityStatus })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              >
+                <option value="PENDING">Pending</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Due date</label>
+            <input
+              type="date"
+              value={form.dueDate}
+              onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Contact ID</label>
+              <input
+                type="text"
+                value={form.contactId}
+                onChange={(e) => setForm({ ...form, contactId: e.target.value })}
+                placeholder="Optional"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Company ID</label>
+              <input
+                type="text"
+                value={form.companyId}
+                onChange={(e) => setForm({ ...form, companyId: e.target.value })}
+                placeholder="Optional"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Deal ID</label>
+              <input
+                type="text"
+                value={form.dealId}
+                onChange={(e) => setForm({ ...form, dealId: e.target.value })}
+                placeholder="Optional"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Metadata */}
+          <div className="text-xs text-gray-400 pt-1 space-y-0.5">
+            <p>Created: {new Date(activity.createdAt).toLocaleString()}</p>
+            <p>Updated: {new Date(activity.updatedAt).toLocaleString()}</p>
+            {activity.completedAt && (
+              <p>Completed: {new Date(activity.completedAt).toLocaleString()}</p>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <div>
+              {confirmDelete ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-red-600">Are you sure?</span>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="px-3 py-1.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {deleting ? 'Deleting...' : 'Yes, delete'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(true)}
+                  className="px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
