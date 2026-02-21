@@ -15,7 +15,7 @@ Thanks for your interest in contributing to Sigscore! This guide will help you g
 ```bash
 # Clone the repo
 git clone https://github.com/nerobypaul/sigscore.git
-cd headless-crm
+cd sigscore
 
 # Install dependencies (all workspaces)
 npm install

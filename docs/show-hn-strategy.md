@@ -95,7 +95,7 @@ Happy to answer questions about architecture, devtool GTM, or anything else.
 
 ## Pre-launch Checklist
 - [ ] Make GitHub repo public (Paul)
-- [ ] Rename repo from headless-crm to sigscore (Paul)
+- [x] Rename repo from headless-crm to sigscore (Paul)
 - [x] Add LICENSE file (MIT)
 - [x] Add README.md with architecture, quickstart, screenshots
 - [x] Remove fake social proof from landing page

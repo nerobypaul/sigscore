@@ -79,7 +79,7 @@ Built this for devtool companies that want to track developer activity across Gi
 
 ```bash
 git clone https://github.com/nerobypaul/sigscore.git
-cd headless-crm
+cd sigscore
 cp .env.example .env
 # Set JWT_SECRET and JWT_REFRESH_SECRET
 docker compose -f docker-compose.prod.yml up -d --build

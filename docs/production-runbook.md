@@ -80,7 +80,7 @@ railway logs --service worker --tail 200
 ```bash
 # 1. Clone the repo
 git clone https://github.com/nerobypaul/sigscore.git
-cd headless-crm
+cd sigscore
 
 # 2. Create env file
 cp .env.example .env
@@ -1026,7 +1026,7 @@ railway up
 
 # Docker Compose
 git clone https://github.com/nerobypaul/sigscore.git
-cd headless-crm
+cd sigscore
 cp .env.example .env  # restore from secrets manager
 docker compose -f docker-compose.prod.yml up -d --build
 ```

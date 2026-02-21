@@ -1,7 +1,7 @@
 {
-  "name": "headless-crm",
+  "name": "sigscore",
   "version": "1.0.0",
-  "description": "Modern headless CRM system with API-first architecture",
+  "description": "Developer signal intelligence for devtool companies",
   "private": true,
   "workspaces": [
     "backend",

@@ -131,7 +131,7 @@ Sigscore is not a CRM. It is a signal intelligence layer. It ingests developer a
 
 ```bash
 git clone https://github.com/nerobypaul/sigscore.git
-cd headless-crm
+cd sigscore
 
 cp .env.example .env
 # Set JWT_SECRET and JWT_REFRESH_SECRET at minimum
@@ -152,7 +152,7 @@ Open [http://localhost:3000](http://localhost:3000) to get started.
 # Prerequisites: Node >= 18, PostgreSQL 16, Redis 7
 
 git clone https://github.com/nerobypaul/sigscore.git
-cd headless-crm
+cd sigscore
 
 npm install
 
