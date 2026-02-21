@@ -20,7 +20,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'welcome',
     title: 'Welcome to Sigscore',
     description:
-      'Sigscore tracks developer signals across GitHub, npm, and more to show you which companies are evaluating your tool. Let us show you around.',
+      'Sigscore aggregates 16 signal sources — GitHub, npm, PyPI, Segment, and more — to show you which companies are evaluating your tool before they fill out a form. Let us show you around.',
     target: '[data-tour="dashboard-title"]',
     placement: 'bottom',
     action: 'Next',
