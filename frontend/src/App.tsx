@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth';
 import { ToastProvider } from './components/Toast';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -8,6 +8,12 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Spinner from './components/Spinner';
 import CommandPalette from './components/CommandPalette';
 import CookieConsent from './components/CookieConsent';
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
 
 // Lazy-loaded pages — each becomes its own chunk for faster initial load
 const Login = lazy(() => import('./pages/Login'));
@@ -218,6 +224,7 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <ScrollToTop />
         <AuthProvider>
           <ToastProvider>
             <AppRoutes />

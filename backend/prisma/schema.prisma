@@ -93,6 +93,7 @@ model Organization {
   accountReports         AccountReport[]
 
   @@index([slug])
+  @@index([slug, createdAt])
   @@map("organizations")
 }
 
@@ -673,6 +674,7 @@ model ApiKey {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
+  @@index([organizationId, active])
   @@index([keyHash])
   @@map("api_keys")
 }

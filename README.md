@@ -4,6 +4,7 @@
 
 **Developer Signal Intelligence for devtool companies.**
 
+[![CI](https://github.com/nerobypaul/headless-crm/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nerobypaul/headless-crm/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-288%20unit%20%2B%2056%20E2E-brightgreen)](https://github.com/nerobypaul/headless-crm)
