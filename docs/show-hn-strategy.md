@@ -27,7 +27,7 @@ one-click intelligence before sales conversations.
 
 Tech stack:
 - Backend: Express + TypeScript + Prisma + PostgreSQL + Redis + BullMQ (20 queues)
-- Frontend: React 18 + Vite + Tailwind (code-split, 283KB initial bundle)
+- Frontend: React 18 + Vite + Tailwind (code-split, 295KB initial bundle)
 - GraphQL: Apollo Server with DataLoader (11 loaders)
 - Auth: JWT + refresh tokens + API keys + SAML SSO + OIDC (PKCE) + GitHub/Google OAuth
 - Real-time: WebSocket with JWT auth, org-scoped broadcast
@@ -71,7 +71,7 @@ DevSignal is the tool I wished existed: connect GitHub, see results in 2 minutes
   Rule-based scoring is transparent and debuggable. Customers see exactly
   why an account scored 87.
 - All frontend charts are pure SVG/CSS. Zero charting library dependencies.
-  Bundle stayed at 283KB initial (89KB gzip).
+  Bundle stayed at 295KB initial (91KB gzip).
 
 **What's not great yet**
 
@@ -102,7 +102,7 @@ Happy to answer questions about architecture, devtool GTM, or anything else.
 - [x] Fix pricing FAQ self-host answer
 - [x] Deploy to Railway and verify /health
 - [ ] Load test for ~2,000-5,000 visitors in 4 hours
-- [x] Build demo mode with pre-seeded data (8 companies, 600 signals, score trends, 3 AI briefs)
+- [x] Build demo mode with pre-seeded data (8 companies, 600 signals, score trends, 5 AI briefs)
 - [x] Prepare Reddit cross-posts (r/SaaS, r/devtools, r/selfhosted)
 - [x] SEO: robots.txt, sitemap.xml, per-page document.title (16 pages)
 - [x] Production hardening: gzip compression, Redis rate limiting, connection pooling
