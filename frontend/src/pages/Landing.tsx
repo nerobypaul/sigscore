@@ -502,7 +502,7 @@ export default function Landing() {
                 )}
               </button>
               <Link
-                to="/register"
+                to="/register?plan=free"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-transparent hover:bg-gray-800 text-gray-200 font-semibold px-8 py-3.5 rounded-xl text-base transition-colors border border-gray-600 hover:border-gray-500"
               >
                 Start Free — No Credit Card
@@ -862,7 +862,7 @@ export default function Landing() {
 
           <div className="mt-10 text-center">
             <Link
-              to="/register"
+              to="/register?plan=free"
               className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3 rounded-xl text-base transition-colors"
             >
               Start Free — No Credit Card
@@ -1206,7 +1206,7 @@ export default function Landing() {
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link
-                  to="/register"
+                  to="/register?plan=free"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-indigo-700 font-semibold px-8 py-3.5 rounded-xl text-base hover:bg-indigo-50 transition-colors"
                 >
                   Get Started Free — No Credit Card

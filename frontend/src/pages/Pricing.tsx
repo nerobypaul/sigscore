@@ -888,7 +888,7 @@ export default function Pricing() {
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link
-                  to="/register"
+                  to="/register?plan=free"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-indigo-700 font-semibold px-5 py-3 sm:px-8 sm:py-3.5 rounded-xl text-base hover:bg-indigo-50 transition-colors"
                 >
                   Start Free
