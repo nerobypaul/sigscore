@@ -205,6 +205,241 @@ export interface BatchIngestResult {
 }
 
 // ---------------------------------------------------------------------------
+// AI types
+// ---------------------------------------------------------------------------
+
+export interface AccountBrief {
+  id: string;
+  accountId: string;
+  summary: string;
+  highlights: string[];
+  risks: string[];
+  opportunities: string[];
+  generatedAt: string;
+}
+
+export interface SuggestedAction {
+  action: string;
+  reason: string;
+  priority: 'high' | 'medium' | 'low';
+  channel?: string;
+}
+
+export interface EnrichedContact {
+  contactId: string;
+  enrichedFields: Record<string, unknown>;
+  sources: string[];
+  enrichedAt: string;
+}
+
+export interface AiConfig {
+  enabled: boolean;
+  provider?: string;
+  hasApiKey: boolean;
+}
+
+export interface AiConfigUpdate {
+  apiKey: string;
+}
+
+// ---------------------------------------------------------------------------
+// Webhook types
+// ---------------------------------------------------------------------------
+
+export type WebhookEventType =
+  | 'signal.created'
+  | 'contact.created'
+  | 'contact.updated'
+  | 'company.created'
+  | 'company.updated'
+  | 'deal.created'
+  | 'deal.updated'
+  | 'score.changed';
+
+export interface WebhookSubscription {
+  id: string;
+  targetUrl: string;
+  event: WebhookEventType;
+  active: boolean;
+  secret: string;
+  hookId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WebhookSubscriptionInput {
+  targetUrl: string;
+  event: WebhookEventType;
+  hookId?: string;
+}
+
+export interface WebhookSubscriptionUpdate {
+  active: boolean;
+}
+
+export interface WebhookTestResult {
+  success: boolean;
+  statusCode?: number;
+  response?: string;
+  duration?: number;
+  payload?: Record<string, unknown>;
+  headers?: Record<string, string>;
+}
+
+export interface WebhookDelivery {
+  id: string;
+  subscriptionId: string;
+  event: string;
+  statusCode?: number;
+  success: boolean;
+  duration?: number;
+  createdAt: string;
+}
+
+export interface WebhookSubscriptionStatus {
+  subscription: WebhookSubscription;
+  deliveryStats: {
+    total: number;
+    successful: number;
+    failed: number;
+    failureRate: number;
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Alert types
+// ---------------------------------------------------------------------------
+
+export type AlertTriggerType =
+  | 'score_drop'
+  | 'score_rise'
+  | 'score_threshold'
+  | 'engagement_drop'
+  | 'new_hot_signal'
+  | 'account_inactive';
+
+export interface AlertChannels {
+  inApp: boolean;
+  email: boolean;
+  slack: boolean;
+  slackChannel?: string;
+}
+
+export interface AlertConditions {
+  threshold?: number;
+  dropPercent?: number;
+  risePercent?: number;
+  withinDays?: number;
+  inactiveDays?: number;
+  direction?: 'above' | 'below';
+  sourceTypes?: string[];
+}
+
+export interface AlertRule {
+  id: string;
+  name: string;
+  description?: string | null;
+  triggerType: AlertTriggerType;
+  conditions: AlertConditions;
+  channels: AlertChannels;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
+
+export interface AlertRuleInput {
+  name: string;
+  description?: string;
+  triggerType: AlertTriggerType;
+  conditions: AlertConditions;
+  channels: AlertChannels;
+  enabled?: boolean;
+}
+
+export interface AlertTestResult {
+  success: boolean;
+  message: string;
+  channels: {
+    inApp: boolean;
+    email: boolean;
+    slack: boolean;
+  };
+}
+
+export interface AlertHistoryParams {
+  limit?: number;
+  cursor?: string;
+}
+
+export interface AlertHistoryResponse {
+  history: Array<{
+    id: string;
+    type: string;
+    title: string;
+    body?: string;
+    entityType?: string;
+    entityId?: string;
+    createdAt: string;
+  }>;
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Scoring config types
+// ---------------------------------------------------------------------------
+
+export interface ScoringCondition {
+  field: string;
+  operator: 'gt' | 'lt' | 'eq' | 'contains';
+  value: string;
+}
+
+export type ScoringDecay = 'none' | '7d' | '14d' | '30d' | '90d';
+
+export interface ScoringRule {
+  id: string;
+  name: string;
+  description: string;
+  signalType: string;
+  weight: number;
+  decay: ScoringDecay;
+  conditions: ScoringCondition[];
+  enabled: boolean;
+}
+
+export interface TierThresholds {
+  HOT: number;
+  WARM: number;
+  COLD: number;
+}
+
+export interface ScoringConfig {
+  rules: ScoringRule[];
+  tierThresholds: TierThresholds;
+  maxScore: number;
+}
+
+export interface ScorePreview {
+  accountId: string;
+  currentScore: number;
+  previewScore: number;
+  currentTier: ScoreTier;
+  previewTier: ScoreTier;
+}
+
+export interface RecomputeResult {
+  updated: number;
+  config: ScoringConfig;
+}
+
+// ---------------------------------------------------------------------------
 // Client options
 // ---------------------------------------------------------------------------
 
