@@ -28,6 +28,9 @@ export const QUEUE_NAMES = {
   WEEKLY_DIGEST: 'weekly-digest',
   DATA_EXPORT: 'data-export',
   DEMO_CLEANUP: 'demo-cleanup',
+  ALERT_EVALUATION: 'alert-evaluation',
+  ALERT_CHECK: 'alert-check',
+  ANOMALY_DETECTION: 'anomaly-detection',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -153,6 +156,25 @@ export interface DataExportJobData {
 export interface DemoCleanupJobData {
   /** Placeholder field — the job is self-contained (finds stale orgs itself). */
   trigger: 'scheduled' | 'manual';
+}
+
+export interface AlertEvaluationJobData {
+  organizationId: string;
+  accountId: string;
+  /** The new score after recomputation (for quick comparison). */
+  newScore: number;
+  /** The previous score before recomputation (null if first computation). */
+  oldScore: number | null;
+}
+
+export interface AlertCheckJobData {
+  /** Scheduler sentinel or a specific organizationId. */
+  organizationId: string;
+}
+
+export interface AnomalyDetectionJobData {
+  /** Scheduler sentinel ('__scheduler__') or a specific organizationId. */
+  organizationId: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -415,6 +437,42 @@ export const demoCleanupQueue = new Queue<DemoCleanupJobData>(
   },
 );
 
+export const alertEvaluationQueue = new Queue<AlertEvaluationJobData>(
+  QUEUE_NAMES.ALERT_EVALUATION,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 2_000 },
+    },
+  },
+);
+
+export const alertCheckQueue = new Queue<AlertCheckJobData>(
+  QUEUE_NAMES.ALERT_CHECK,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 5_000 },
+    },
+  },
+);
+
+export const anomalyDetectionQueue = new Queue<AnomalyDetectionJobData>(
+  QUEUE_NAMES.ANOMALY_DETECTION,
+  {
+    ...defaultQueueOpts,
+    defaultJobOptions: {
+      ...defaultQueueOpts.defaultJobOptions,
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 5_000 },
+    },
+  },
+);
+
 // ---------------------------------------------------------------------------
 // Convenience: all queues in a single array
 // ---------------------------------------------------------------------------
@@ -441,6 +499,9 @@ const allQueues: Queue[] = [
   weeklyDigestQueue,
   dataExportQueue,
   demoCleanupQueue,
+  alertEvaluationQueue,
+  alertCheckQueue,
+  anomalyDetectionQueue,
 ];
 
 /**

@@ -19,6 +19,7 @@ import {
   intercomSyncQueue,
   zendeskSyncQueue,
   bulkEnrichmentQueue,
+  alertEvaluationQueue,
   SignalProcessingJobData,
   ScoreComputationJobData,
   WebhookDeliveryJobData,
@@ -37,6 +38,7 @@ import {
   IntercomSyncJobData,
   ZendeskSyncJobData,
   BulkEnrichmentJobData,
+  AlertEvaluationJobData,
   scoreSnapshotQueue,
   ScoreSnapshotJobData,
   weeklyDigestQueue,
@@ -536,6 +538,40 @@ export const enqueueDataExport = async (
     organizationId: data.organizationId,
     format: data.format,
     entities: data.entities,
+  });
+  return job;
+};
+
+// ---------------------------------------------------------------------------
+// Alert Evaluation
+// ---------------------------------------------------------------------------
+
+/**
+ * Enqueue an alert evaluation job for a specific account after score change.
+ * Deduplicates by account+timestamp bucket to avoid flooding the queue when
+ * multiple score recomputations happen in quick succession.
+ */
+export const enqueueAlertEvaluation = async (
+  organizationId: string,
+  accountId: string,
+  newScore: number,
+  oldScore: number | null,
+): Promise<Job<AlertEvaluationJobData>> => {
+  const job = await alertEvaluationQueue.add(
+    'evaluate-alerts',
+    { organizationId, accountId, newScore, oldScore },
+    {
+      // Deduplication: collapse rapid-fire evaluations for the same account
+      // into a single job by using a time-bucketed ID (5-minute buckets)
+      jobId: `alert-eval-${accountId}-${Math.floor(Date.now() / 300_000)}`,
+    },
+  );
+  logger.debug('Enqueued alert evaluation', {
+    jobId: job.id,
+    organizationId,
+    accountId,
+    newScore,
+    oldScore,
   });
   return job;
 };

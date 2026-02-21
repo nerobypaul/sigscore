@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import { signalSyncQueue, hubspotSyncQueue, discordSyncQueue, salesforceSyncQueue, stackoverflowSyncQueue, twitterSyncQueue, redditSyncQueue, linkedinSyncQueue, posthogSyncQueue, bulkEnrichmentQueue, scoreSnapshotQueue, weeklyDigestQueue, demoCleanupQueue } from './queue';
+import { signalSyncQueue, hubspotSyncQueue, discordSyncQueue, salesforceSyncQueue, stackoverflowSyncQueue, twitterSyncQueue, redditSyncQueue, linkedinSyncQueue, posthogSyncQueue, bulkEnrichmentQueue, scoreSnapshotQueue, weeklyDigestQueue, demoCleanupQueue, anomalyDetectionQueue, alertCheckQueue } from './queue';
 import { getConnectedOrganizations } from '../services/hubspot-sync';
 import { getConnectedOrganizations as getSalesforceConnectedOrganizations } from '../services/salesforce-sync';
 import { getDiscordConnectedOrganizations } from '../services/discord-connector';
@@ -166,6 +166,28 @@ export const setupScheduler = async (): Promise<void> => {
     },
   );
 
+  // Signal anomaly detection every hour — detect spikes and drops in account activity.
+  // Uses z-score method against 30-day rolling baseline. Notifications have 24h cooldown.
+  await anomalyDetectionQueue.add(
+    'anomaly-detection-scheduler',
+    { organizationId: '__scheduler__' },
+    {
+      repeat: { pattern: '30 * * * *' },
+      jobId: 'scheduled-anomaly-detection',
+    },
+  );
+
+  // Alert rule check every 5 minutes — evaluates time-based rules (engagement_drop,
+  // account_inactive) that cannot be triggered by score recomputation alone.
+  await alertCheckQueue.add(
+    'alert-check-scheduler',
+    { organizationId: '__scheduler__' },
+    {
+      repeat: { pattern: '*/5 * * * *' },
+      jobId: 'scheduled-alert-check',
+    },
+  );
+
   logger.info('BullMQ scheduled jobs configured', {
     jobs: [
       { name: 'sync-all-npm', schedule: 'every 6 hours' },
@@ -181,6 +203,8 @@ export const setupScheduler = async (): Promise<void> => {
       { name: 'clearbit-enrichment', schedule: 'daily at 3 AM' },
       { name: 'score-snapshot', schedule: 'daily at 2 AM' },
       { name: 'demo-cleanup', schedule: 'daily at 4 AM' },
+      { name: 'anomaly-detection', schedule: 'every hour at :30' },
+      { name: 'alert-check', schedule: 'every 5 minutes' },
     ],
   });
 };

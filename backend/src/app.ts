@@ -77,6 +77,7 @@ import invitationRoutes from './routes/invitations';
 import healthRoutes from './routes/health';
 import seoRoutes from './routes/seo';
 import changelogRoutes from './routes/changelog';
+import anomalyRoutes from './routes/anomalies';
 import { apiUsageTracker } from './middleware/api-usage';
 import { requestIdMiddleware } from './middleware/request-id';
 import { sentryErrorHandler } from './utils/sentry';
@@ -285,6 +286,9 @@ app.use('/api/v1/account-alerts', accountAlertRoutes);
 
 // API routes — Account Reports (shareable)
 app.use('/api/v1/account-reports', accountReportRoutes);
+
+// API routes — Signal Anomaly Detection
+app.use('/api/v1/anomalies', anomalyRoutes);
 
 // API routes — Data Export (enterprise compliance & data portability)
 app.use('/api/v1/exports', dataExportRoutes);

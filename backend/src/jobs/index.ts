@@ -8,6 +8,9 @@ export {
   signalSyncQueue,
   workflowExecutionQueue,
   demoCleanupQueue,
+  anomalyDetectionQueue,
+  alertEvaluationQueue,
+  alertCheckQueue,
   closeAllQueues,
 } from './queue';
 
@@ -20,6 +23,9 @@ export type {
   SignalSyncJobData,
   WorkflowExecutionJobData,
   DemoCleanupJobData,
+  AnomalyDetectionJobData,
+  AlertEvaluationJobData,
+  AlertCheckJobData,
 } from './queue';
 
 export { startWorkers, stopWorkers } from './workers';
@@ -34,4 +40,5 @@ export {
   enqueueSignalSync,
   enqueueSignalSyncAll,
   enqueueWorkflowExecution,
+  enqueueAlertEvaluation,
 } from './producers';

@@ -46,6 +46,10 @@ import {
   WeeklyDigestJobData,
   DataExportJobData,
   DemoCleanupJobData,
+  AlertEvaluationJobData,
+  AlertCheckJobData,
+  AnomalyDetectionJobData,
+  anomalyDetectionQueue,
 } from './queue';
 import { generateExport, setExportStatus } from '../services/data-export';
 import { processEmailStep } from '../services/email-sequences';
@@ -53,6 +57,9 @@ import { generateWeeklyDigest } from '../services/weekly-digest';
 import { renderWeeklyDigestEmail, renderWeeklyDigestSubject } from '../services/email-templates';
 import { sendEmail } from '../services/email-sender';
 import { cleanupDemoOrg } from '../services/demo-seed';
+import { processAnomalyDetection, enqueueAnomalyDetectionForAllOrgs } from './anomaly-detection';
+import { evaluateAlertsForAccount } from './alert-evaluation';
+import { processAlertCheck } from './alert-check-cron';
 import { prisma } from '../config/database';
 import { config } from '../config';
 
@@ -1006,6 +1013,119 @@ function createDemoCleanupWorker(): Worker<DemoCleanupJobData> {
 }
 
 // ---------------------------------------------------------------------------
+// Anomaly Detection Worker
+// ---------------------------------------------------------------------------
+function createAnomalyDetectionWorker(): Worker<AnomalyDetectionJobData> {
+  return new Worker<AnomalyDetectionJobData>(
+    QUEUE_NAMES.ANOMALY_DETECTION,
+    async (job: Job<AnomalyDetectionJobData>) => {
+      const { organizationId } = job.data;
+
+      // Handle scheduler sentinel: enqueue individual jobs for all orgs
+      if (organizationId === '__scheduler__') {
+        logger.info('Anomaly detection scheduler triggered', { jobId: job.id });
+        const orgIds = await enqueueAnomalyDetectionForAllOrgs();
+        for (const orgId of orgIds) {
+          await anomalyDetectionQueue.add(
+            'detect-anomalies',
+            { organizationId: orgId },
+            { jobId: `anomaly-detect-${orgId}-${Date.now()}` },
+          );
+        }
+        logger.info('Anomaly detection enqueued for all orgs', { count: orgIds.length });
+        return { scheduled: true, orgs: orgIds.length };
+      }
+
+      logger.info('Anomaly detection started', {
+        jobId: job.id,
+        organizationId,
+        attempt: job.attemptsMade + 1,
+      });
+
+      const result = await processAnomalyDetection(organizationId);
+
+      logger.info('Anomaly detection completed', {
+        jobId: job.id,
+        organizationId,
+        anomaliesDetected: result.anomaliesDetected,
+        notificationsCreated: result.notificationsCreated,
+      });
+
+      return result;
+    },
+    {
+      connection: bullConnection,
+      concurrency: 2,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Alert Evaluation Worker
+// ---------------------------------------------------------------------------
+function createAlertEvaluationWorker(): Worker<AlertEvaluationJobData> {
+  return new Worker<AlertEvaluationJobData>(
+    QUEUE_NAMES.ALERT_EVALUATION,
+    async (job: Job<AlertEvaluationJobData>) => {
+      const { organizationId, accountId, newScore, oldScore } = job.data;
+      logger.info('Alert evaluation started', {
+        jobId: job.id,
+        organizationId,
+        accountId,
+        newScore,
+        oldScore,
+        attempt: job.attemptsMade + 1,
+      });
+
+      const result = await evaluateAlertsForAccount({
+        organizationId,
+        accountId,
+        newScore,
+        oldScore,
+      });
+
+      logger.info('Alert evaluation completed', {
+        jobId: job.id,
+        organizationId,
+        accountId,
+        evaluated: result.evaluated,
+        triggered: result.triggered,
+      });
+
+      return result;
+    },
+    {
+      connection: bullConnection,
+      concurrency: 5,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Alert Check Worker (cron-based time-sensitive alerts)
+// ---------------------------------------------------------------------------
+function createAlertCheckWorker(): Worker<AlertCheckJobData> {
+  return new Worker<AlertCheckJobData>(
+    QUEUE_NAMES.ALERT_CHECK,
+    async (job: Job<AlertCheckJobData>) => {
+      const result = await processAlertCheck(job.data);
+
+      logger.info('Alert check job completed', {
+        jobId: job.id,
+        organizationId: job.data.organizationId,
+        ...result,
+      });
+
+      return result;
+    },
+    {
+      connection: bullConnection,
+      concurrency: 2,
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Lifecycle helpers
 // ---------------------------------------------------------------------------
 function attachLogging(worker: Worker): void {
@@ -1053,8 +1173,11 @@ export const startWorkers = (): void => {
   const weeklyDigestWorker = createWeeklyDigestWorker();
   const dataExportWorker = createDataExportWorker();
   const demoCleanupWorker = createDemoCleanupWorker();
+  const anomalyDetectionWorker = createAnomalyDetectionWorker();
+  const alertEvaluationWorker = createAlertEvaluationWorker();
+  const alertCheckWorker = createAlertCheckWorker();
 
-  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, redditSyncWorker, linkedinSyncWorker, posthogSyncWorker, bulkEnrichmentWorker, scoreSnapshotWorker, weeklyDigestWorker, dataExportWorker, demoCleanupWorker].forEach((w) => {
+  [signalWorker, scoreWorker, webhookWorker, enrichmentWorker, signalSyncWorker, workflowWorker, emailSendWorker, hubspotSyncWorker, discordSyncWorker, salesforceSyncWorker, stackoverflowSyncWorker, twitterSyncWorker, redditSyncWorker, linkedinSyncWorker, posthogSyncWorker, bulkEnrichmentWorker, scoreSnapshotWorker, weeklyDigestWorker, dataExportWorker, demoCleanupWorker, anomalyDetectionWorker, alertEvaluationWorker, alertCheckWorker].forEach((w) => {
     attachLogging(w);
     workers.push(w);
   });
