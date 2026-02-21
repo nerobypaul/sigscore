@@ -142,7 +142,7 @@ test.describe('Demo Flow', () => {
     await expect(page.getByText('Companies')).toBeVisible({ timeout: 5000 });
 
     // Should see demo companies listed
-    await expect(page.getByText('Acme DevTools')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Arcline Tools')).toBeVisible({ timeout: 5000 });
 
     // Sparkline SVGs should be rendered (one per company row)
     const sparklines = page.locator('svg[aria-label^="Score trend"]');

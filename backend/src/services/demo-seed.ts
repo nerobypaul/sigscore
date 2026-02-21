@@ -179,12 +179,12 @@ async function seedFullDemoData(
 
   const companyDefs = [
     {
-      name: 'Acme DevTools',
-      domain: 'acmedev.io',
+      name: 'Arcline Tools',
+      domain: 'arcline.dev',
       industry: 'Developer Tools',
       size: 'SMALL' as const,
-      githubOrg: 'acmedev',
-      website: 'https://acmedev.io',
+      githubOrg: 'arcline-dev',
+      website: 'https://arcline.dev',
       description: 'Modern CLI tooling for cloud-native development workflows. Series A, 45 employees. Power users of our SDK with 8 active developers.',
       score: 92,
       tier: 'HOT' as const,
@@ -381,10 +381,10 @@ async function seedFullDemoData(
 
   // Prepare contact definitions (CPU-only)
   const contactDefs = [
-    // Acme DevTools (3 contacts)
-    { firstName: 'Sarah', lastName: 'Chen', email: 'sarah@acmedev.io', title: 'VP Engineering', companyIdx: 0, github: 'sarahchen-dev', linkedIn: 'https://linkedin.com/in/sarahchen', customFields: { seniority: 'VP', department: 'Engineering' } },
-    { firstName: 'Marcus', lastName: 'Johnson', email: 'marcus@acmedev.io', title: 'Sr Backend Engineer', companyIdx: 0, github: 'marcusj', linkedIn: 'https://linkedin.com/in/marcusjohnson', customFields: { seniority: 'Senior', department: 'Engineering' } },
-    { firstName: 'Priya', lastName: 'Patel', email: 'priya@acmedev.io', title: 'DevOps Lead', companyIdx: 0, github: 'priyapatel', linkedIn: 'https://linkedin.com/in/priyapatel', customFields: { seniority: 'Lead', department: 'DevOps' } },
+    // Arcline Tools (3 contacts)
+    { firstName: 'Sarah', lastName: 'Chen', email: 'sarah@arcline.dev', title: 'VP Engineering', companyIdx: 0, github: 'sarahchen-dev', linkedIn: 'https://linkedin.com/in/sarahchen', customFields: { seniority: 'VP', department: 'Engineering' } },
+    { firstName: 'Marcus', lastName: 'Johnson', email: 'marcus@arcline.dev', title: 'Sr Backend Engineer', companyIdx: 0, github: 'marcusj', linkedIn: 'https://linkedin.com/in/marcusjohnson', customFields: { seniority: 'Senior', department: 'Engineering' } },
+    { firstName: 'Priya', lastName: 'Patel', email: 'priya@arcline.dev', title: 'DevOps Lead', companyIdx: 0, github: 'priyapatel', linkedIn: 'https://linkedin.com/in/priyapatel', customFields: { seniority: 'Lead', department: 'DevOps' } },
     // NovaCLI (2 contacts)
     { firstName: 'Alex', lastName: 'Rivera', email: 'alex@novacli.com', title: 'CTO', companyIdx: 1, github: 'alexrivera', linkedIn: 'https://linkedin.com/in/alexrivera', customFields: { seniority: 'C-Level', department: 'Engineering' } },
     { firstName: 'Jamie', lastName: 'Lee', email: 'jamie@novacli.com', title: 'Staff Engineer', companyIdx: 1, github: 'jamielee-dev', linkedIn: 'https://linkedin.com/in/jamielee', customFields: { seniority: 'Staff', department: 'Engineering' } },
@@ -402,9 +402,9 @@ async function seedFullDemoData(
     { firstName: 'Avery', lastName: 'Williams', email: 'avery@lumina.systems', title: 'Solutions Architect', companyIdx: 6, github: 'averyw', linkedIn: 'https://linkedin.com/in/averywilliams', customFields: { seniority: 'Senior', department: 'Architecture' } },
     // OpenGrid (1 contact)
     { firstName: 'Quinn', lastName: 'Davis', email: 'quinn@opengrid.org', title: 'Core Maintainer', companyIdx: 7, github: 'quinndavis', linkedIn: 'https://linkedin.com/in/quinndavis', customFields: { seniority: 'Senior', department: 'Open Source' } },
-    // Extra contacts for Acme (to reach ~15-20)
-    { firstName: 'Kai', lastName: 'Yamamoto', email: 'kai@acmedev.io', title: 'Platform Engineer', companyIdx: 0, github: 'kaiyamamoto', linkedIn: 'https://linkedin.com/in/kaiyamamoto', customFields: { seniority: 'Mid', department: 'Platform' } },
-    { firstName: 'Elena', lastName: 'Rodriguez', email: 'elena@acmedev.io', title: 'Security Engineer', companyIdx: 0, github: 'elenarodriguez', linkedIn: 'https://linkedin.com/in/elenarodriguez', customFields: { seniority: 'Senior', department: 'Security' } },
+    // Extra contacts for Arcline (to reach ~15-20)
+    { firstName: 'Kai', lastName: 'Yamamoto', email: 'kai@arcline.dev', title: 'Platform Engineer', companyIdx: 0, github: 'kaiyamamoto', linkedIn: 'https://linkedin.com/in/kaiyamamoto', customFields: { seniority: 'Mid', department: 'Platform' } },
+    { firstName: 'Elena', lastName: 'Rodriguez', email: 'elena@arcline.dev', title: 'Security Engineer', companyIdx: 0, github: 'elenarodriguez', linkedIn: 'https://linkedin.com/in/elenarodriguez', customFields: { seniority: 'Senior', department: 'Security' } },
     // Extra for NovaCLI
     { firstName: 'Devi', lastName: 'Rao', email: 'devi@novacli.com', title: 'Backend Engineer', companyIdx: 1, github: 'devirao', linkedIn: 'https://linkedin.com/in/devirao', customFields: { seniority: 'Mid', department: 'Engineering' } },
     // Extra for CloudForge
@@ -495,7 +495,7 @@ async function seedFullDemoData(
   // ── Deals (needs contacts) ────────────────────────────────────────────────
 
   const dealDefs = [
-    { title: 'Acme DevTools - Enterprise Expansion', amount: 50000, stage: 'NEGOTIATION' as const, companyIdx: 0, contactIdx: 0, probability: 75, daysCreated: 21 },
+    { title: 'Arcline Tools - Enterprise Expansion', amount: 50000, stage: 'NEGOTIATION' as const, companyIdx: 0, contactIdx: 0, probability: 75, daysCreated: 21 },
     { title: 'NovaCLI - Pro Plan Upgrade', amount: 25000, stage: 'ACTIVATED' as const, companyIdx: 1, contactIdx: 3, probability: 45, daysCreated: 14 },
     { title: 'CloudForge - Team License', amount: 15000, stage: 'SALES_QUALIFIED' as const, companyIdx: 2, contactIdx: 5, probability: 60, daysCreated: 10 },
   ];
@@ -602,13 +602,13 @@ async function seedFullDemoData(
   // All dependencies (contacts, deals, sources) are resolved above.
 
   const activityDefs = [
-    { type: 'MEETING' as const, title: 'Intro call with Sarah Chen (Acme DevTools)', contactIdx: 0, companyIdx: 0, dealIdx: 0, daysAgo: 18, status: 'COMPLETED' as const },
-    { type: 'EMAIL' as const, title: 'Sent enterprise pricing to Acme DevTools', contactIdx: 0, companyIdx: 0, dealIdx: 0, daysAgo: 14, status: 'COMPLETED' as const },
-    { type: 'CALL' as const, title: 'Technical deep-dive with Marcus (Acme)', contactIdx: 1, companyIdx: 0, dealIdx: 0, daysAgo: 10, status: 'COMPLETED' as const },
+    { type: 'MEETING' as const, title: 'Intro call with Sarah Chen (Arcline Tools)', contactIdx: 0, companyIdx: 0, dealIdx: 0, daysAgo: 18, status: 'COMPLETED' as const },
+    { type: 'EMAIL' as const, title: 'Sent enterprise pricing to Arcline Tools', contactIdx: 0, companyIdx: 0, dealIdx: 0, daysAgo: 14, status: 'COMPLETED' as const },
+    { type: 'CALL' as const, title: 'Technical deep-dive with Marcus (Arcline)', contactIdx: 1, companyIdx: 0, dealIdx: 0, daysAgo: 10, status: 'COMPLETED' as const },
     { type: 'MEETING' as const, title: 'Demo with Alex Rivera (NovaCLI)', contactIdx: 3, companyIdx: 1, dealIdx: 1, daysAgo: 7, status: 'COMPLETED' as const },
     { type: 'EMAIL' as const, title: 'Follow-up: NovaCLI Pro plan features', contactIdx: 3, companyIdx: 1, dealIdx: 1, daysAgo: 5, status: 'COMPLETED' as const },
     { type: 'MEETING' as const, title: 'CloudForge evaluation kickoff', contactIdx: 5, companyIdx: 2, dealIdx: 2, daysAgo: 3, status: 'COMPLETED' as const },
-    { type: 'TASK' as const, title: 'Prepare SOW for Acme DevTools enterprise deal', contactIdx: 0, companyIdx: 0, dealIdx: 0, daysAgo: 0, status: 'PENDING' as const, priority: 'HIGH' as const },
+    { type: 'TASK' as const, title: 'Prepare SOW for Arcline Tools enterprise deal', contactIdx: 0, companyIdx: 0, dealIdx: 0, daysAgo: 0, status: 'PENDING' as const, priority: 'HIGH' as const },
     { type: 'CALL' as const, title: 'Follow up with Jordan Park on team license', contactIdx: 5, companyIdx: 2, dealIdx: 2, daysAgo: 0, status: 'PENDING' as const },
   ];
 
@@ -666,10 +666,10 @@ async function seedFullDemoData(
   prisma.accountBrief.create({
     data: {
       organizationId,
-      accountId: companies[0].id, // Acme DevTools
-      content: `## Acme DevTools - Account Intelligence Brief
+      accountId: companies[0].id, // Arcline Tools
+      content: `## Arcline Tools - Account Intelligence Brief
 
-**Company Overview:** Acme DevTools builds modern CLI tooling for cloud-native development. Series A, 45 employees, headquartered in San Francisco. Founded 2022.
+**Company Overview:** Arcline Tools builds modern CLI tooling for cloud-native development. Series A, 45 employees, headquartered in San Francisco. Founded 2022.
 
 **Product Usage Signals (Last 30 Days):**
 - 8 active developers using the SDK (up from 3 last month - 167% growth)

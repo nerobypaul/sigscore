@@ -63,12 +63,12 @@ export async function seedDemoData(
 
   const companyDefs = [
     {
-      name: 'Acme Dev Tools',
-      domain: 'acmedev.io',
+      name: 'Arcline Tools',
+      domain: 'arcline.dev',
       industry: 'Developer Tools',
       size: 'SMALL' as const,
-      githubOrg: 'acmedev',
-      website: 'https://acmedev.io',
+      githubOrg: 'arcline-dev',
+      website: 'https://arcline.dev',
       description: 'Modern CLI tooling for cloud-native development workflows.',
       score: 87,
       tier: 'HOT' as const,
@@ -188,10 +188,10 @@ export async function seedDemoData(
   // ── Contacts ───────────────────────────────────────────────────────────
 
   const contactDefs = [
-    // Acme Dev Tools (3 contacts)
-    { firstName: 'Sarah', lastName: 'Chen', email: 'sarah@acmedev.io', title: 'CTO', companyIdx: 0, linkedIn: 'https://linkedin.com/in/sarahchen', github: 'https://github.com/sarahchen' },
-    { firstName: 'Marcus', lastName: 'Williams', email: 'marcus@acmedev.io', title: 'Senior Engineer', companyIdx: 0, linkedIn: 'https://linkedin.com/in/marcuswilliams', github: 'https://github.com/marcuswilliams' },
-    { firstName: 'Priya', lastName: 'Patel', email: 'priya@acmedev.io', title: 'DevRel Lead', companyIdx: 0, linkedIn: 'https://linkedin.com/in/priyapatel', github: 'https://github.com/priyapatel' },
+    // Arcline Tools (3 contacts)
+    { firstName: 'Sarah', lastName: 'Chen', email: 'sarah@arcline.dev', title: 'CTO', companyIdx: 0, linkedIn: 'https://linkedin.com/in/sarahchen', github: 'https://github.com/sarahchen' },
+    { firstName: 'Marcus', lastName: 'Williams', email: 'marcus@arcline.dev', title: 'Senior Engineer', companyIdx: 0, linkedIn: 'https://linkedin.com/in/marcuswilliams', github: 'https://github.com/marcuswilliams' },
+    { firstName: 'Priya', lastName: 'Patel', email: 'priya@arcline.dev', title: 'DevRel Lead', companyIdx: 0, linkedIn: 'https://linkedin.com/in/priyapatel', github: 'https://github.com/priyapatel' },
     // NovaCLI (2 contacts)
     { firstName: 'James', lastName: 'Rodriguez', email: 'james@novacli.com', title: 'Co-founder & CEO', companyIdx: 1, linkedIn: 'https://linkedin.com/in/jamesrodriguez', github: 'https://github.com/jamesrod' },
     { firstName: 'Aisha', lastName: 'Khan', email: 'aisha@novacli.com', title: 'Staff Engineer', companyIdx: 1, linkedIn: 'https://linkedin.com/in/aishakhan', github: 'https://github.com/aishak' },
@@ -233,11 +233,11 @@ export async function seedDemoData(
   // ── Deals ──────────────────────────────────────────────────────────────
 
   const dealDefs = [
-    { title: 'Acme Dev Tools - Team Expansion', amount: 24000, stage: 'TEAM_ADOPTION' as const, companyIdx: 0, contactIdx: 0, probability: 60 },
+    { title: 'Arcline Tools - Team Expansion', amount: 24000, stage: 'TEAM_ADOPTION' as const, companyIdx: 0, contactIdx: 0, probability: 60 },
     { title: 'DataPipe Labs - Team Plan', amount: 12000, stage: 'TEAM_ADOPTION' as const, companyIdx: 3, contactIdx: 8, probability: 55 },
     { title: 'NovaCLI - Pro Upgrade', amount: 9480, stage: 'ACTIVATED' as const, companyIdx: 1, contactIdx: 3, probability: 40 },
     { title: 'CloudForge - Platform Integration', amount: 36000, stage: 'ACTIVATED' as const, companyIdx: 2, contactIdx: 5, probability: 35 },
-    { title: 'Acme Dev Tools - Enterprise Expansion', amount: 48000, stage: 'EXPANSION_SIGNAL' as const, companyIdx: 0, contactIdx: 0, probability: 70 },
+    { title: 'Arcline Tools - Enterprise Expansion', amount: 48000, stage: 'EXPANSION_SIGNAL' as const, companyIdx: 0, contactIdx: 0, probability: 70 },
     { title: 'DataPipe Labs - Scale Tier', amount: 35880, stage: 'SALES_QUALIFIED' as const, companyIdx: 3, contactIdx: 8, probability: 75 },
     { title: 'CloudForge - Annual License (Won)', amount: 18000, stage: 'CLOSED_WON' as const, companyIdx: 2, contactIdx: 5, probability: 100, closedAt: daysAgo(15) },
     { title: 'ByteStack - Free Trial', amount: 0, stage: 'IDENTIFIED' as const, companyIdx: 4, contactIdx: 10, probability: 10 },
@@ -329,7 +329,7 @@ export async function seedDemoData(
   // ── Activities ─────────────────────────────────────────────────────────
 
   const activityDefs = [
-    { type: 'MEETING' as const, title: 'Intro call with Acme Dev Tools', contactIdx: 0, companyIdx: 0, dealIdx: 0, daysAgo: 14, status: 'COMPLETED' as const },
+    { type: 'MEETING' as const, title: 'Intro call with Arcline Tools', contactIdx: 0, companyIdx: 0, dealIdx: 0, daysAgo: 14, status: 'COMPLETED' as const },
     { type: 'CALL' as const, title: 'Follow-up with NovaCLI on Pro features', contactIdx: 3, companyIdx: 1, dealIdx: 2, daysAgo: 7, status: 'COMPLETED' as const },
     { type: 'EMAIL' as const, title: 'Sent pricing proposal to DataPipe Labs', contactIdx: 8, companyIdx: 3, dealIdx: 5, daysAgo: 3, status: 'COMPLETED' as const },
     { type: 'MEETING' as const, title: 'Quarterly review with CloudForge', contactIdx: 5, companyIdx: 2, dealIdx: 3, daysAgo: 1, status: 'PENDING' as const },

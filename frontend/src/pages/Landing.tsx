@@ -238,13 +238,13 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 
 function ProductMockup() {
   const accounts = [
-    { name: 'Acme Tools', score: 92, tier: 'HOT', tierColor: 'bg-red-100 text-red-700', signals: 210, users: 8 },
+    { name: 'Arcline Tools', score: 92, tier: 'HOT', tierColor: 'bg-red-100 text-red-700', signals: 210, users: 8 },
     { name: 'NovaCLI', score: 84, tier: 'HOT', tierColor: 'bg-red-100 text-red-700', signals: 130, users: 5 },
     { name: 'CloudForge', score: 71, tier: 'WARM', tierColor: 'bg-amber-100 text-amber-700', signals: 95, users: 3 },
   ];
 
   const signalFeed = [
-    { icon: 'star', text: '3 engineers at Acme starred your repo', time: '2m ago', color: 'text-amber-500' },
+    { icon: 'star', text: '3 engineers at Arcline starred your repo', time: '2m ago', color: 'text-amber-500' },
     { icon: 'up', text: 'CloudForge npm downloads up 200%', time: '14m ago', color: 'text-emerald-500' },
     { icon: 'issue', text: 'NovaCLI opened 2 GitHub issues', time: '1h ago', color: 'text-indigo-500' },
   ];

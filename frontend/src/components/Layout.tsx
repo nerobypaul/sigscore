@@ -257,15 +257,20 @@ export default function Layout() {
                   <div className="mt-0.5 space-y-0.5">
                     {visibleItems.map((item) =>
                       isItemDisabled(item) ? (
-                        <div
+                        <button
                           key={item.to}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 cursor-default"
-                          title="Available with your own account"
+                          type="button"
+                          onClick={() => {
+                            toast.info(`Sign up free to unlock ${item.label}`);
+                            navigate('/register?from=demo');
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-400 hover:bg-gray-800/30 transition-colors cursor-pointer"
+                          title="Sign up free to unlock this feature"
                         >
                           <item.icon />
-                          <span className="flex-1">{item.label}</span>
+                          <span className="flex-1 text-left">{item.label}</span>
                           <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">Pro</span>
-                        </div>
+                        </button>
                       ) : (
                       <NavLink
                         key={item.to}
