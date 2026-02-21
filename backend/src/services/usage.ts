@@ -1,5 +1,8 @@
 import { prisma } from '../config/database';
+import { redis } from '../config/redis';
 import { logger } from '../utils/logger';
+
+const USAGE_CACHE_TTL = 60; // seconds
 
 // ---------------------------------------------------------------------------
 // Plan limit definitions
@@ -63,8 +66,20 @@ export async function getPlanForOrg(organizationId: string): Promise<PlanName> {
 
 /**
  * Return current usage counts for an organization.
+ * Uses Redis cache with 60s TTL to avoid 3 COUNT queries on every request.
  */
 export async function getUsage(organizationId: string) {
+  const cacheKey = `usage:${organizationId}`;
+
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached) as { contacts: number; signals: number; users: number };
+    }
+  } catch (_err) {
+    // Redis unavailable — fall through to database
+  }
+
   const [contactCount, signalCount, userCount] = await Promise.all([
     prisma.contact.count({ where: { organizationId } }),
     prisma.signal.count({
@@ -76,7 +91,15 @@ export async function getUsage(organizationId: string) {
     prisma.userOrganization.count({ where: { organizationId } }),
   ]);
 
-  return { contacts: contactCount, signals: signalCount, users: userCount };
+  const result = { contacts: contactCount, signals: signalCount, users: userCount };
+
+  try {
+    await redis.set(cacheKey, JSON.stringify(result), 'EX', USAGE_CACHE_TTL);
+  } catch (_err) {
+    // Redis unavailable — continue without caching
+  }
+
+  return result;
 }
 
 export type Resource = 'contacts' | 'signals' | 'users';

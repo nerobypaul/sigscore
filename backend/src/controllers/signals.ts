@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ScoreTier } from '@prisma/client';
 import * as signalService from '../services/signals';
 import * as accountScoreService from '../services/account-scores';
-import { enqueueWebhookDelivery, enqueueWorkflowExecution } from '../jobs/producers';
+import { enqueueScoreComputation, enqueueWebhookDelivery, enqueueWorkflowExecution } from '../jobs/producers';
 import { notifyHighValueSignal } from '../services/slack-notifications';
 import { logger } from '../utils/logger';
 import { parsePageInt } from '../utils/pagination';
@@ -30,11 +30,10 @@ export const ingestSignal = async (req: Request, res: Response, next: NextFuncti
       actorId: signal.actorId,
     }).catch((err) => logger.error('Webhook enqueue error:', err));
 
-    // Recompute score if signal matched to an account
+    // Enqueue async score recomputation (deduplicated per account via BullMQ)
     if (signal.accountId) {
-      accountScoreService
-        .computeAccountScore(organizationId, signal.accountId)
-        .catch((err) => logger.error('Score recompute error:', err));
+      enqueueScoreComputation(organizationId, signal.accountId)
+        .catch((err) => logger.error('Score enqueue error:', err));
     }
 
     // Enqueue workflow processing via BullMQ (async with retries)

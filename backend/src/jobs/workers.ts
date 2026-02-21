@@ -107,7 +107,7 @@ function createScoreComputationWorker(): Worker<ScoreComputationJobData> {
     },
     {
       connection: bullConnection,
-      concurrency: 3,
+      concurrency: 5,
     },
   );
 }
