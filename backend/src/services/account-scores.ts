@@ -2,7 +2,7 @@ import { Prisma, ScoreTier, ScoreTrend } from '@prisma/client';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
 import { notifyTierChange, sendAccountAlert } from './slack-notifications';
-import { enqueueWorkflowExecution } from '../jobs/producers';
+import { enqueueWorkflowExecution, enqueueAlertEvaluation } from '../jobs/producers';
 import { getScoringConfig, computeTierWithThresholds, type TierThresholds } from './scoring-rules';
 import { fireScoreChanged } from './webhook-events';
 
@@ -261,6 +261,10 @@ export const computeAccountScore = async (organizationId: string, accountId: str
       userCount,
     }).catch((err) => logger.error('Workflow enqueue error:', err));
   }
+
+  // Enqueue alert rule evaluation (fire-and-forget, async with retries)
+  enqueueAlertEvaluation(organizationId, accountId, totalScore, oldScore)
+    .catch((err) => logger.error('Alert evaluation enqueue error:', err));
 
   return score;
 };

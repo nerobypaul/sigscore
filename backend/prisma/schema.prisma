@@ -1158,6 +1158,7 @@ model AccountAlertRule {
   conditions      Json     // { threshold: 70, dropPercent: 20, inactiveDays: 14, sourceTypes: [...] }
   channels        Json     // { inApp: true, email: true, slack: false, slackChannel: "" }
   enabled         Boolean  @default(true)
+  lastTriggeredAt DateTime?
   createdById     String
   createdBy       User     @relation(fields: [createdById], references: [id])
   createdAt       DateTime @default(now())
@@ -1165,6 +1166,7 @@ model AccountAlertRule {
 
   @@map("account_alert_rules")
   @@index([organizationId])
+  @@index([enabled, triggerType])
 }
 
 // ============================================================
