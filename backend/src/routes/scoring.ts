@@ -4,12 +4,62 @@ import { authenticate, requireOrganization, requireOrgRole } from '../middleware
 import { validate } from '../middleware/validate';
 import { logger } from '../utils/logger';
 import * as scoringRules from '../services/scoring-rules';
+import {
+  SIGNAL_HALF_LIVES,
+  DEFAULT_HALF_LIFE,
+  computeDecayWeight,
+} from '../services/account-scores';
 
 const router = Router();
 
-// All scoring config routes require authentication + organization + ADMIN role
+// Authentication + organization required for all scoring routes
 router.use(authenticate);
 router.use(requireOrganization);
+
+// ---------------------------------------------------------------------------
+// GET /decay-config — Return signal decay half-life configuration
+// Available to all authenticated users (not admin-only) so the frontend
+// can display decay parameters on score detail views.
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/decay-config',
+  async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Build a response that includes the half-life map, the default, and
+      // example decay curves so the frontend can render explanatory charts.
+      const exampleDays = [0, 1, 3, 7, 14, 21, 30, 60, 90];
+      const exampleCurves: Record<string, { day: number; weight: number }[]> = {};
+
+      // Pick a few representative signal types for the example curves
+      const representativeTypes = [
+        'signup',        // very durable (60d half-life)
+        'repo_fork',     // durable (28d)
+        'api_call',      // medium (14d)
+        'page_view',     // transient (5d)
+      ];
+
+      for (const signalType of representativeTypes) {
+        exampleCurves[signalType] = exampleDays.map((day) => ({
+          day,
+          weight: Math.round(computeDecayWeight(signalType, day) * 1000) / 1000,
+        }));
+      }
+
+      res.json({
+        halfLives: SIGNAL_HALF_LIVES,
+        defaultHalfLife: DEFAULT_HALF_LIFE,
+        decayFormula: 'weight = e^(-ln(2) / halfLife * daysOld)',
+        windowDays: 90,
+        exampleCurves,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+// --- All routes below require ADMIN role ---
 router.use(requireOrgRole('ADMIN'));
 
 // ---------------------------------------------------------------------------
