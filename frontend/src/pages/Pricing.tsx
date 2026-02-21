@@ -274,7 +274,7 @@ const faqs: FAQItem[] = [
   {
     question: 'Is my data secure?',
     answer:
-      'Yes. SOC 2 compliant infrastructure, encrypted at rest (AES-256) and in transit (TLS 1.3). RBAC on all plans, audit logging on Scale. We use row-level multi-tenancy so your data is logically isolated.',
+      'Yes. All data encrypted in transit and at rest via managed PostgreSQL. RBAC on all plans, audit logging on Scale. We use row-level multi-tenancy so your data is logically isolated. Self-host option available for full control.',
   },
   {
     question: 'Can I self-host?',

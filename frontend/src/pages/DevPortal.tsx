@@ -401,6 +401,13 @@ console.log(result.summary); // { total: 2, succeeded: 2, failed: 0 }`,
 });`,
       },
       {
+        name: 'getAccountSignals',
+        description: 'Get all signals for a specific account.',
+        signature: 'signals.getAccountSignals(accountId: string, params?: ListParams): Promise<Signal[]>',
+        returnType: 'Signal[]',
+        example: `const signals = await ds.signals.getAccountSignals('comp_abc123', { limit: 20 });`,
+      },
+      {
         name: 'getTimeline',
         description: 'Get the merged timeline (signals + activities) for an account.',
         signature: 'signals.getTimeline(accountId: string): Promise<Array<Signal | Activity>>',
