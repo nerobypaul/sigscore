@@ -7,6 +7,7 @@ import {
   mergeContacts,
   enrichContact,
   getIdentityGraph,
+  getAutoMergeStats,
 } from '../services/identity-resolution';
 import { logger } from '../utils/logger';
 
@@ -130,6 +131,27 @@ router.get(
       const graph = await getIdentityGraph(orgId, contactId);
 
       res.json(graph);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// GET /api/v1/identity/auto-merge-stats
+// View auto-merge statistics for the organization
+// Requires: MEMBER+
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/auto-merge-stats',
+  requireOrgRole('MEMBER'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const orgId = req.organizationId!;
+      const stats = await getAutoMergeStats(orgId);
+
+      res.json(stats);
     } catch (err) {
       next(err);
     }

@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { broadcastSignalCreated } from './websocket';
-import { resolveSignalIdentity } from './identity-resolution';
+import { resolveSignalIdentity, autoMergeIfHighConfidence } from './identity-resolution';
 import { fireSignalCreated } from './webhook-events';
 import { logger } from '../utils/logger';
 import { generateDeduplicationKey } from '../utils/deduplication';
@@ -111,6 +111,18 @@ export const ingestSignal = async (organizationId: string, data: SignalInput) =>
   fireSignalCreated(organizationId, signal as unknown as Record<string, unknown>)
     .catch((err) => logger.error('Webhook fire error (signal.created):', err));
 
+  // Auto-merge high-confidence identity matches (fire-and-forget, never blocks ingestion)
+  if (resolved.actorId) {
+    autoMergeIfHighConfidence(resolved.actorId, organizationId, {
+      email: data.metadata?.email as string | undefined
+        ?? data.metadata?.maintainer_email as string | undefined,
+      githubUsername: data.metadata?.sender_login as string | undefined
+        ?? (data.anonymousId?.startsWith('github:') ? data.anonymousId.slice(7) : undefined),
+      npmUsername: data.metadata?.npm_username as string | undefined
+        ?? (data.anonymousId?.startsWith('npm:') ? data.anonymousId.slice(4) : undefined),
+    }).catch((err) => logger.error('Auto-merge error (non-blocking):', err));
+  }
+
   return { ...signal, deduplicated: false };
 };
 
@@ -163,21 +175,21 @@ export const ingestSignalBatch = async (organizationId: string, signals: SignalI
   }
 
   if (newSignals.length > 0) {
+    // Pre-resolve identities outside transaction for each new signal
+    const resolvedList = await Promise.all(
+      newSignals.map(({ data }) =>
+        resolveSignalIdentity(organizationId, {
+          actorId: data.actorId,
+          accountId: data.accountId,
+          anonymousId: data.anonymousId,
+          metadata: data.metadata,
+        }),
+      ),
+    );
+
     try {
       const created = await prisma.$transaction(async (tx) => {
         const txResults: { idx: number; signal: unknown }[] = [];
-
-        // Pre-resolve identities outside transaction for each new signal
-        const resolvedList = await Promise.all(
-          newSignals.map(({ data }) =>
-            resolveSignalIdentity(organizationId, {
-              actorId: data.actorId,
-              accountId: data.accountId,
-              anonymousId: data.anonymousId,
-              metadata: data.metadata,
-            }),
-          ),
-        );
 
         for (let j = 0; j < newSignals.length; j++) {
           const { idx, data, dedupKey } = newSignals[j];
@@ -213,6 +225,22 @@ export const ingestSignalBatch = async (organizationId: string, signals: SignalI
       for (const { idx, signal } of created) {
         results[idx] = { success: true, signal, deduplicated: false };
         broadcastSignalCreated(organizationId, signal);
+      }
+
+      // Auto-merge for each resolved actor (fire-and-forget, never blocks batch)
+      for (let j = 0; j < newSignals.length; j++) {
+        const resolved = resolvedList[j];
+        const { data } = newSignals[j];
+        if (resolved.actorId) {
+          autoMergeIfHighConfidence(resolved.actorId, organizationId, {
+            email: data.metadata?.email as string | undefined
+              ?? data.metadata?.maintainer_email as string | undefined,
+            githubUsername: data.metadata?.sender_login as string | undefined
+              ?? (data.anonymousId?.startsWith('github:') ? data.anonymousId.slice(7) : undefined),
+            npmUsername: data.metadata?.npm_username as string | undefined
+              ?? (data.anonymousId?.startsWith('npm:') ? data.anonymousId.slice(4) : undefined),
+          }).catch((err) => logger.error('Auto-merge error in batch (non-blocking):', err));
+        }
       }
     } catch (error: unknown) {
       // Transaction failed -- all new signals rolled back, report each as failed

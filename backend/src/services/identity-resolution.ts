@@ -19,6 +19,7 @@ import { Prisma, IdentityType, CompanySize } from '@prisma/client';
 import { prisma } from '../config/database';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { notifyOrgUsers } from './notifications';
 
 // ---------------------------------------------------------------------------
 // Free email provider list (50+ domains to skip during domain -> company)
@@ -1415,6 +1416,418 @@ export async function resolveSignalIdentity(
   return {
     actorId: data.actorId || null,
     accountId: data.accountId || null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Auto-Merge: Cooldown Tracking
+// ---------------------------------------------------------------------------
+
+/**
+ * In-memory cooldown set to prevent re-attempting the same merge pair within 24h.
+ * Keys are "contactIdA:contactIdB" (sorted alphabetically) with a TTL.
+ */
+const autoMergeCooldown = new Map<string, number>();
+
+/** Cooldown period: 24 hours in milliseconds. */
+const AUTO_MERGE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Returns a canonical pair key (sorted) for two contact IDs.
+ */
+function mergePairKey(a: string, b: string): string {
+  return a < b ? `${a}:${b}` : `${b}:${a}`;
+}
+
+/**
+ * Checks if a merge pair is on cooldown.
+ */
+function isOnCooldown(a: string, b: string): boolean {
+  const key = mergePairKey(a, b);
+  const expiry = autoMergeCooldown.get(key);
+  if (!expiry) return false;
+  if (Date.now() > expiry) {
+    autoMergeCooldown.delete(key);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Sets a cooldown for a merge pair.
+ */
+function setCooldown(a: string, b: string): void {
+  const key = mergePairKey(a, b);
+  autoMergeCooldown.set(key, Date.now() + AUTO_MERGE_COOLDOWN_MS);
+}
+
+/**
+ * Periodic cleanup of expired cooldown entries (runs lazily).
+ */
+function cleanupCooldowns(): void {
+  const now = Date.now();
+  for (const [key, expiry] of autoMergeCooldown) {
+    if (now > expiry) {
+      autoMergeCooldown.delete(key);
+    }
+  }
+}
+
+// Run cooldown cleanup every hour
+setInterval(cleanupCooldowns, 60 * 60 * 1000).unref();
+
+// ---------------------------------------------------------------------------
+// Auto-Merge: Core Logic
+// ---------------------------------------------------------------------------
+
+/**
+ * After signal identity resolution, check if we found a high-confidence match
+ * to an existing contact that is DIFFERENT from the one currently associated.
+ * If confidence >= AUTO_MERGE_THRESHOLD, auto-merge the contacts.
+ *
+ * Returns the primary contact ID after potential merge.
+ */
+export async function autoMergeIfHighConfidence(
+  resolvedContactId: string,
+  organizationId: string,
+  signalMetadata: { email?: string; githubUsername?: string; npmUsername?: string },
+): Promise<string> {
+  // Collect all identities belonging to the resolved contact
+  const resolvedIdentities = await prisma.contactIdentity.findMany({
+    where: { contactId: resolvedContactId },
+    select: { type: true, value: true, confidence: true },
+  });
+
+  if (resolvedIdentities.length === 0) {
+    return resolvedContactId;
+  }
+
+  // Also include signal metadata as candidate identity values to check
+  const candidateValues: Array<{ type: IdentityType; value: string }> = [];
+  for (const identity of resolvedIdentities) {
+    candidateValues.push({ type: identity.type, value: identity.value });
+  }
+  if (signalMetadata.email) {
+    const normalizedEmail = signalMetadata.email.toLowerCase().trim();
+    if (!candidateValues.some((c) => c.type === 'EMAIL' && c.value === normalizedEmail)) {
+      candidateValues.push({ type: 'EMAIL', value: normalizedEmail });
+    }
+  }
+  if (signalMetadata.githubUsername) {
+    const normalizedGh = signalMetadata.githubUsername.toLowerCase();
+    if (!candidateValues.some((c) => c.type === 'GITHUB' && c.value === normalizedGh)) {
+      candidateValues.push({ type: 'GITHUB', value: normalizedGh });
+    }
+  }
+  if (signalMetadata.npmUsername) {
+    const normalizedNpm = signalMetadata.npmUsername.toLowerCase();
+    if (!candidateValues.some((c) => c.type === 'NPM' && c.value === normalizedNpm)) {
+      candidateValues.push({ type: 'NPM', value: normalizedNpm });
+    }
+  }
+
+  // Find OTHER contacts in the same org that share any of these identity values
+  const overlappingIdentities = await prisma.contactIdentity.findMany({
+    where: {
+      OR: candidateValues.map((cv) => ({
+        type: cv.type,
+        value: cv.value,
+      })),
+      contactId: { not: resolvedContactId },
+      contact: { organizationId },
+    },
+    select: {
+      contactId: true,
+      type: true,
+      value: true,
+      confidence: true,
+    },
+  });
+
+  if (overlappingIdentities.length === 0) {
+    return resolvedContactId;
+  }
+
+  // Group overlapping identities by contactId
+  const overlapByContact = new Map<string, Array<{ type: IdentityType; value: string; confidence: number }>>();
+  for (const oi of overlappingIdentities) {
+    const existing = overlapByContact.get(oi.contactId) || [];
+    existing.push({ type: oi.type, value: oi.value, confidence: oi.confidence });
+    overlapByContact.set(oi.contactId, existing);
+  }
+
+  // If 3+ other contacts overlap, flag for manual review (never auto-merge)
+  if (overlapByContact.size > 1) {
+    logger.info('Auto-merge: 3+ contacts overlap, flagging for manual review', {
+      resolvedContactId,
+      organizationId,
+      overlappingContactIds: [...overlapByContact.keys()],
+    });
+    return resolvedContactId;
+  }
+
+  // Exactly 1 other contact overlaps
+  const [otherContactId, sharedIdentities] = [...overlapByContact.entries()][0];
+
+  // Calculate the max confidence from shared identities
+  const maxConfidence = Math.max(...sharedIdentities.map((si) => si.confidence));
+
+  // Check if confidence meets threshold
+  if (maxConfidence < CONFIDENCE.AUTO_MERGE_THRESHOLD) {
+    logger.debug('Auto-merge: confidence below threshold', {
+      resolvedContactId,
+      otherContactId,
+      maxConfidence,
+      threshold: CONFIDENCE.AUTO_MERGE_THRESHOLD,
+    });
+    return resolvedContactId;
+  }
+
+  // Check cooldown
+  if (isOnCooldown(resolvedContactId, otherContactId)) {
+    logger.debug('Auto-merge: pair on cooldown', {
+      resolvedContactId,
+      otherContactId,
+    });
+    return resolvedContactId;
+  }
+
+  // Safety check: never auto-merge if either contact is the only one in their company
+  const [resolvedContact, otherContact] = await Promise.all([
+    prisma.contact.findUnique({
+      where: { id: resolvedContactId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        companyId: true,
+        _count: { select: { signals: true } },
+      },
+    }),
+    prisma.contact.findUnique({
+      where: { id: otherContactId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        companyId: true,
+        _count: { select: { signals: true } },
+      },
+    }),
+  ]);
+
+  if (!resolvedContact || !otherContact) {
+    return resolvedContactId;
+  }
+
+  // Check sole-contact-in-company constraint
+  for (const contact of [resolvedContact, otherContact]) {
+    if (contact.companyId) {
+      const companyContactCount = await prisma.contact.count({
+        where: { companyId: contact.companyId, organizationId },
+      });
+      if (companyContactCount <= 1) {
+        logger.debug('Auto-merge: skipping — contact is sole member of company', {
+          contactId: contact.id,
+          companyId: contact.companyId,
+        });
+        // Set cooldown to avoid re-checking this pair repeatedly
+        setCooldown(resolvedContactId, otherContactId);
+        return resolvedContactId;
+      }
+    }
+  }
+
+  // Determine primary: keep the contact with more signals
+  const resolvedSignalCount = resolvedContact._count.signals;
+  const otherSignalCount = otherContact._count.signals;
+
+  const primaryId = resolvedSignalCount >= otherSignalCount
+    ? resolvedContact.id
+    : otherContact.id;
+  const duplicateId = primaryId === resolvedContact.id
+    ? otherContact.id
+    : resolvedContact.id;
+
+  const primaryName = primaryId === resolvedContact.id
+    ? `${resolvedContact.firstName} ${resolvedContact.lastName}`.trim()
+    : `${otherContact.firstName} ${otherContact.lastName}`.trim();
+  const duplicateName = primaryId === resolvedContact.id
+    ? `${otherContact.firstName} ${otherContact.lastName}`.trim()
+    : `${resolvedContact.firstName} ${resolvedContact.lastName}`.trim();
+
+  // Perform the merge
+  try {
+    const result = await mergeContacts(organizationId, primaryId, [duplicateId]);
+
+    if (result.merged === 1) {
+      const confidencePercent = Math.round(maxConfidence * 100);
+
+      logger.info('Auto-merge completed', {
+        organizationId,
+        primaryId,
+        duplicateId,
+        primaryName,
+        duplicateName,
+        confidence: maxConfidence,
+        sharedIdentities: sharedIdentities.map((si) => `${si.type}:${si.value}`),
+      });
+
+      // Store auto-merge history in org settings
+      await recordAutoMerge(organizationId, {
+        primary: primaryId,
+        primaryName,
+        merged: duplicateId,
+        mergedName: duplicateName,
+        confidence: maxConfidence,
+        sharedIdentities: sharedIdentities.map((si) => ({
+          type: si.type,
+          value: si.value,
+        })),
+        timestamp: new Date().toISOString(),
+      });
+
+      // Notify all org users about the auto-merge (fire-and-forget)
+      notifyOrgUsers(organizationId, {
+        type: 'auto_merge',
+        title: `Auto-merged ${primaryName} with ${duplicateName} (${confidencePercent}% confidence)`,
+        body: `Shared identities: ${sharedIdentities.map((si) => `${si.type}=${si.value}`).join(', ')}`,
+        entityType: 'contact',
+        entityId: primaryId,
+      }).catch((err) => {
+        logger.warn('Failed to send auto-merge notification', { error: err });
+      });
+
+      // Set cooldown (the duplicate no longer exists, but the key prevents
+      // any stale references from re-triggering within the window)
+      setCooldown(primaryId, duplicateId);
+
+      return primaryId;
+    }
+
+    // Merge returned 0 or had errors
+    if (result.errors.length > 0) {
+      logger.warn('Auto-merge had errors', {
+        primaryId,
+        duplicateId,
+        errors: result.errors,
+      });
+    }
+    setCooldown(resolvedContactId, otherContactId);
+    return resolvedContactId;
+  } catch (err) {
+    logger.error('Auto-merge failed', {
+      primaryId,
+      duplicateId,
+      organizationId,
+      error: err,
+    });
+    // Set cooldown even on failure to avoid retry storms
+    setCooldown(resolvedContactId, otherContactId);
+    return resolvedContactId;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Auto-Merge: History Tracking (stored in org.settings.autoMergeHistory)
+// ---------------------------------------------------------------------------
+
+interface AutoMergeRecord {
+  primary: string;
+  primaryName: string;
+  merged: string;
+  mergedName: string;
+  confidence: number;
+  sharedIdentities: Array<{ type: string; value: string }>;
+  timestamp: string;
+}
+
+/**
+ * Appends an auto-merge record to the organization's settings.autoMergeHistory
+ * array, capped at 100 entries (FIFO).
+ */
+async function recordAutoMerge(
+  organizationId: string,
+  record: AutoMergeRecord,
+): Promise<void> {
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { settings: true },
+    });
+
+    const settings = (org?.settings as Record<string, unknown>) || {};
+    const history = Array.isArray(settings.autoMergeHistory)
+      ? (settings.autoMergeHistory as AutoMergeRecord[])
+      : [];
+
+    // Prepend new record and cap at 100
+    history.unshift(record);
+    if (history.length > 100) {
+      history.length = 100;
+    }
+
+    await prisma.organization.update({
+      where: { id: organizationId },
+      data: {
+        settings: {
+          ...settings,
+          autoMergeHistory: history,
+        } as unknown as Prisma.InputJsonValue,
+      },
+    });
+  } catch (err) {
+    logger.warn('Failed to record auto-merge history', {
+      organizationId,
+      error: err,
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Auto-Merge: Stats (read from org.settings.autoMergeHistory)
+// ---------------------------------------------------------------------------
+
+export interface AutoMergeStats {
+  totalAutoMerges: number;
+  last24h: number;
+  recentMerges: Array<{
+    primary: string;
+    merged: string;
+    confidence: number;
+    timestamp: string;
+  }>;
+}
+
+/**
+ * Returns auto-merge statistics for an organization.
+ */
+export async function getAutoMergeStats(
+  organizationId: string,
+): Promise<AutoMergeStats> {
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { settings: true },
+  });
+
+  const settings = (org?.settings as Record<string, unknown>) || {};
+  const history = Array.isArray(settings.autoMergeHistory)
+    ? (settings.autoMergeHistory as AutoMergeRecord[])
+    : [];
+
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  const last24h = history.filter((r) => r.timestamp >= twentyFourHoursAgo).length;
+
+  return {
+    totalAutoMerges: history.length,
+    last24h,
+    recentMerges: history.slice(0, 20).map((r) => ({
+      primary: r.primary,
+      merged: r.merged,
+      confidence: r.confidence,
+      timestamp: r.timestamp,
+    })),
   };
 }
 
