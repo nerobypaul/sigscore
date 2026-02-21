@@ -1,5 +1,5 @@
 # ============================================================
-# DevSignal CRM Backend — Multi-stage Production Dockerfile
+# Sigscore CRM Backend — Multi-stage Production Dockerfile
 # ============================================================
 # Build context must be the monorepo root so the lockfile is available.
 # Usage: docker build -f backend/Dockerfile .

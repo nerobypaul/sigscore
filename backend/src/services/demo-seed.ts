@@ -1,3 +1,4 @@
+import type { SignalSourceType } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
@@ -415,75 +416,81 @@ async function seedFullDemoData(
   // ── Run companyTags + scores + snapshots + contacts + sources in parallel ──
   // These all depend only on companies + organizationId (already created above)
 
-  const contactCreatePromise = Promise.all(
-    contactDefs.map((c) =>
-      prisma.contact.create({
-        data: {
-          organizationId,
-          firstName: c.firstName,
-          lastName: c.lastName,
-          email: c.email,
-          title: c.title,
-          companyId: companies[c.companyIdx].id,
-          github: `https://github.com/${c.github}`,
-          linkedIn: c.linkedIn,
-          customFields: c.customFields as unknown as Prisma.InputJsonValue,
-        },
-      }),
-    ),
-  );
+  const contactCreatePromise = prisma.contact.createManyAndReturn({
+    data: contactDefs.map((c) => ({
+      organizationId,
+      firstName: c.firstName,
+      lastName: c.lastName,
+      email: c.email,
+      title: c.title,
+      companyId: companies[c.companyIdx].id,
+      github: `https://github.com/${c.github}`,
+      linkedIn: c.linkedIn,
+      customFields: c.customFields as unknown as Prisma.InputJsonValue,
+    })),
+  });
 
   const demoConfig = { demo: true } as unknown as Prisma.InputJsonValue;
-  const sourceCreatePromise = Promise.all([
-    prisma.signalSource.create({ data: { organizationId, type: 'GITHUB', name: 'GitHub', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'NPM', name: 'npm Registry', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'PRODUCT_API', name: 'Product Analytics', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'CUSTOM_WEBHOOK', name: 'Zapier Webhooks', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'SEGMENT', name: 'Segment', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'DISCORD', name: 'Discord', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'PYPI', name: 'PyPI', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'TWITTER', name: 'Twitter/X', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'STACKOVERFLOW', name: 'Stack Overflow', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'REDDIT', name: 'Reddit', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'POSTHOG', name: 'PostHog', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'LINKEDIN', name: 'LinkedIn', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'INTERCOM', name: 'Intercom', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'ZENDESK', name: 'Zendesk', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'WEBSITE', name: 'Website Tracker', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-    prisma.signalSource.create({ data: { organizationId, type: 'DOCS', name: 'Documentation', config: demoConfig, status: 'ACTIVE', lastSyncAt: now } }),
-  ]);
+  const sourceTypes: Array<{ type: SignalSourceType; name: string }> = [
+    { type: 'GITHUB', name: 'GitHub' },
+    { type: 'NPM', name: 'npm Registry' },
+    { type: 'PRODUCT_API', name: 'Product Analytics' },
+    { type: 'CUSTOM_WEBHOOK', name: 'Zapier Webhooks' },
+    { type: 'SEGMENT', name: 'Segment' },
+    { type: 'DISCORD', name: 'Discord' },
+    { type: 'PYPI', name: 'PyPI' },
+    { type: 'TWITTER', name: 'Twitter/X' },
+    { type: 'STACKOVERFLOW', name: 'Stack Overflow' },
+    { type: 'REDDIT', name: 'Reddit' },
+    { type: 'POSTHOG', name: 'PostHog' },
+    { type: 'LINKEDIN', name: 'LinkedIn' },
+    { type: 'INTERCOM', name: 'Intercom' },
+    { type: 'ZENDESK', name: 'Zendesk' },
+    { type: 'WEBSITE', name: 'Website Tracker' },
+    { type: 'DOCS', name: 'Documentation' },
+  ];
+  const sourceCreatePromise = prisma.signalSource.createManyAndReturn({
+    data: sourceTypes.map((s) => ({
+      organizationId,
+      type: s.type,
+      name: s.name,
+      config: demoConfig,
+      status: 'ACTIVE',
+      lastSyncAt: now,
+    })),
+  });
 
-  // Fire all parallel: tags, scores, snapshots, contacts, sources
-  const [contacts, [githubSource, npmSource, productSource, webhookSource, segmentSource, discordSource, pypiSource, twitterSource, stackoverflowSource, redditSource, posthogSource, linkedinSource, intercomSource, zendeskSource, websiteSource, docsSource]] = await Promise.all([
+  // Prepare score data (CPU-only)
+  const scoreData: Prisma.AccountScoreCreateManyInput[] = companyDefs.map((def, i) => ({
+    organizationId,
+    accountId: companies[i].id,
+    score: def.score,
+    tier: def.tier,
+    trend: def.trend,
+    signalCount: def.signalCount,
+    userCount: def.userCount,
+    lastSignalAt: daysAgo(def.tier === 'HOT' ? 0 : def.tier === 'WARM' ? 2 : 10),
+    computedAt: now,
+    factors: [
+      { name: 'Signal Volume', weight: 0.3, value: Math.min(100, def.score + 10), description: `${def.signalCount} signals in last 30d` },
+      { name: 'User Growth', weight: 0.25, value: Math.min(100, def.score + 5), description: `${def.userCount} active users` },
+      { name: 'Feature Breadth', weight: 0.2, value: Math.max(0, def.score - 5), description: 'Distinct features used' },
+      { name: 'Recency', weight: 0.15, value: Math.min(100, def.score + 15), description: 'Time since last signal' },
+      { name: 'Team Size', weight: 0.1, value: Math.max(0, def.score - 10), description: 'Estimated team members' },
+    ] as unknown as Prisma.InputJsonValue,
+  }));
+
+  // Fire all parallel: 5 batch operations instead of 44 individual creates
+  const [contacts, sources] = await Promise.all([
     contactCreatePromise,
     sourceCreatePromise,
     prisma.companyTag.createMany({ data: companyTagData, skipDuplicates: true }),
-    Promise.all(
-      companyDefs.map((def, i) =>
-        prisma.accountScore.create({
-          data: {
-            organizationId,
-            accountId: companies[i].id,
-            score: def.score,
-            tier: def.tier,
-            trend: def.trend,
-            signalCount: def.signalCount,
-            userCount: def.userCount,
-            lastSignalAt: daysAgo(def.tier === 'HOT' ? 0 : def.tier === 'WARM' ? 2 : 10),
-            computedAt: now,
-            factors: [
-              { name: 'Signal Volume', weight: 0.3, value: Math.min(100, def.score + 10), description: `${def.signalCount} signals in last 30d` },
-              { name: 'User Growth', weight: 0.25, value: Math.min(100, def.score + 5), description: `${def.userCount} active users` },
-              { name: 'Feature Breadth', weight: 0.2, value: Math.max(0, def.score - 5), description: 'Distinct features used' },
-              { name: 'Recency', weight: 0.15, value: Math.min(100, def.score + 15), description: 'Time since last signal' },
-              { name: 'Team Size', weight: 0.1, value: Math.max(0, def.score - 10), description: 'Estimated team members' },
-            ] as unknown as Prisma.InputJsonValue,
-          },
-        }),
-      ),
-    ),
+    prisma.accountScore.createMany({ data: scoreData }),
     prisma.scoreSnapshot.createMany({ data: snapshotData }),
   ]);
+
+  // Destructure sources by insertion order (matches sourceTypes array above)
+  const [githubSource, npmSource, productSource, webhookSource, segmentSource, discordSource, pypiSource, twitterSource, stackoverflowSource, redditSource, posthogSource, linkedinSource, intercomSource, zendeskSource, websiteSource, docsSource] = sources;
 
   // ── Deals (needs contacts) ────────────────────────────────────────────────
 

@@ -6,6 +6,17 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 
+const DEMO_SEED_TIMEOUT_MS = 45_000; // 45s — matches frontend step animation
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_resolve, reject) =>
+      setTimeout(() => reject(new Error(`Demo seed timed out after ${ms}ms`)), ms),
+    ),
+  ]);
+}
+
 // ---------------------------------------------------------------------------
 // PUBLIC DEMO ENDPOINTS (no auth required — they create their own session)
 // ---------------------------------------------------------------------------
@@ -18,7 +29,7 @@ router.post(
   '/seed',
   async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const result = await createDemoEnvironment();
+      const result = await withTimeout(createDemoEnvironment(), DEMO_SEED_TIMEOUT_MS);
 
       logger.info('Public demo environment created', {
         organizationId: result.organizationId,
@@ -51,6 +62,11 @@ router.post(
         counts: result.counts,
       });
     } catch (error) {
+      if (error instanceof Error && error.message.includes('timed out')) {
+        logger.warn('Demo seed timed out', { error: error.message });
+        res.status(504).json({ error: 'Demo is taking longer than usual. Please try again.' });
+        return;
+      }
       logger.error('Failed to create demo environment', { error });
       next(error);
     }

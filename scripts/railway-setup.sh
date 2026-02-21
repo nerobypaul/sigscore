@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────
-# DevSignal — Railway Setup Helper
+# Sigscore — Railway Setup Helper
 # Run once to provision infrastructure on Railway.
 # Prerequisites: `npm i -g @railway/cli` and `railway login`
 # ─────────────────────────────────────────────────────────────
@@ -8,7 +8,7 @@ set -euo pipefail
 
 BOLD="\033[1m"; GREEN="\033[0;32m"; YELLOW="\033[0;33m"; RESET="\033[0m"
 
-printf "\n${BOLD}DevSignal — Railway Setup${RESET}\n\n"
+printf "\n${BOLD}Sigscore — Railway Setup${RESET}\n\n"
 
 # ── 1. Link to Railway project ───────────────────────────────
 printf "${YELLOW}Step 1: Link project${RESET}\n"
@@ -78,10 +78,10 @@ printf "  Share the same PostgreSQL + Redis plugins.\n\n"
 # ── 7. Custom domain ─────────────────────────────────────────
 printf "${YELLOW}Step 7: Custom domain${RESET}\n"
 printf "  railway domain\n"
-printf "  Then add a CNAME record for devsignal.dev → <railway-domain>\n\n"
+printf "  Then add a CNAME record for sigscore.dev → <railway-domain>\n\n"
 
 # ── 8. Verify ────────────────────────────────────────────────
 printf "${YELLOW}Step 8: Run smoke test${RESET}\n"
-printf "  ./scripts/smoke-test.sh https://devsignal.dev\n\n"
+printf "  ./scripts/smoke-test.sh https://sigscore.dev\n\n"
 
-printf "${GREEN}${BOLD}Setup complete!${RESET} Your DevSignal instance should be live.\n\n"
+printf "${GREEN}${BOLD}Setup complete!${RESET} Your Sigscore instance should be live.\n\n"

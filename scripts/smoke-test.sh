@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────
-# DevSignal Deployment Smoke Test
+# Sigscore Deployment Smoke Test
 # Verifies critical endpoints on a live deployment using only curl.
 # Usage: ./scripts/smoke-test.sh [BASE_URL] [--verbose]
 # ─────────────────────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ run_cors_test() {
   local raw
   raw=$(curl -s -D "$tmpfile" -o /dev/null -w "%{http_code}|%{time_total}" \
     --max-time "$MAX_TIME" -X OPTIONS \
-    -H "Origin: https://devsignal.dev" \
+    -H "Origin: https://sigscore.dev" \
     -H "Access-Control-Request-Method: POST" \
     "$url" 2>/dev/null) || {
     log_fail "$label" "CORS headers" "timeout/error" "$MAX_TIME"
@@ -105,7 +105,7 @@ run_cors_test() {
 
 # ── Banner ───────────────────────────────────────────────────────────
 
-printf "\n${BOLD}DevSignal Smoke Test${RESET}\n"
+printf "\n${BOLD}Sigscore Smoke Test${RESET}\n"
 printf "Target: %s\n" "$BASE_URL"
 printf "Max response time: %ss\n\n" "$MAX_TIME"
 
