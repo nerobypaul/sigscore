@@ -333,14 +333,16 @@ function ProductMockup() {
 // Landing Page
 // ---------------------------------------------------------------------------
 
-// Demo loading progress steps — timed to roughly match the ~20s seed
+// Demo loading progress steps — durations intentionally exceed typical API time (~10-20s)
+// so the animation is still running when the redirect happens (avoids "hung UI" perception)
 const DEMO_STEPS = [
-  { label: 'Creating your sandbox', duration: 2000 },
-  { label: 'Seeding 8 companies', duration: 3000 },
-  { label: 'Adding 18 contacts', duration: 3000 },
-  { label: 'Generating 600 signals', duration: 5000 },
-  { label: 'Computing PQA scores', duration: 3000 },
-  { label: 'Building AI briefs', duration: 4000 },
+  { label: 'Creating your sandbox', duration: 3000 },
+  { label: 'Seeding 8 companies', duration: 4000 },
+  { label: 'Adding 18 contacts', duration: 4000 },
+  { label: 'Generating 600 signals', duration: 6000 },
+  { label: 'Computing PQA scores', duration: 5000 },
+  { label: 'Building AI briefs', duration: 8000 },
+  { label: 'Finalizing your dashboard', duration: 15000 },
 ];
 
 export default function Landing() {
