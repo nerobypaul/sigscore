@@ -57,14 +57,14 @@ describe('Auth Integration', () => {
       expect(res.body.user.email).toBe(validPayload.email);
     });
 
-    it('should return 400 for duplicate email', async () => {
+    it('should return 409 for duplicate email', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(mockUserRow({ email: validPayload.email }));
 
       const res = await request(app)
         .post('/api/v1/auth/register')
         .send(validPayload);
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(409);
       expect(res.body.error).toBeDefined();
     });
 

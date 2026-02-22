@@ -101,7 +101,7 @@ describe('Auth Controller', () => {
       expect(next).not.toHaveBeenCalled();
     });
 
-    it('should return 400 if user already exists', async () => {
+    it('should return 409 if user already exists', async () => {
       mockPrismaUser.findUnique.mockResolvedValue(testData.user({ email: validBody.email }));
 
       const req = mockRequest({ body: validBody });
@@ -110,8 +110,8 @@ describe('Auth Controller', () => {
 
       await register(req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Unable to create account with the provided information' });
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(res.json).toHaveBeenCalledWith({ error: 'An account with this email already exists. Try signing in instead.' });
       expect(mockPrismaUser.create).not.toHaveBeenCalled();
     });
 
