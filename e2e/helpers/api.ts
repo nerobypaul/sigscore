@@ -18,9 +18,12 @@ export interface TestUser {
 
 let userCounter = 0;
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 /**
  * Registers a new user, creates an organization, and returns full auth context.
  * Each call produces a unique user to avoid collisions across test files.
+ * Retries on 429 rate limit with exponential backoff.
  */
 export async function createTestUser(request: APIRequestContext): Promise<TestUser> {
   const id = ++userCounter;
@@ -30,10 +33,16 @@ export async function createTestUser(request: APIRequestContext): Promise<TestUs
   const firstName = `Test${id}`;
   const lastName = 'User';
 
-  // Register
-  const regRes = await request.post(`${API_BASE}/auth/register`, {
+  // Register with rate-limit retry
+  let regRes = await request.post(`${API_BASE}/auth/register`, {
     data: { email, password, firstName, lastName },
   });
+  for (let attempt = 0; attempt < 3 && regRes.status() === 429; attempt++) {
+    await sleep((attempt + 1) * 15_000);
+    regRes = await request.post(`${API_BASE}/auth/register`, {
+      data: { email, password, firstName, lastName },
+    });
+  }
   if (!regRes.ok()) {
     throw new Error(`Registration failed: ${regRes.status()} ${await regRes.text()}`);
   }

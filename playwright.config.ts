@@ -9,7 +9,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: 1,
   reporter: process.env.CI ? 'github' : 'html',
-  timeout: 30_000,
+  timeout: isRemote ? 60_000 : 30_000,
 
   use: {
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',

@@ -54,7 +54,12 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Skip token refresh for auth endpoints — 401 there means bad credentials,
+    // not an expired token. Let the calling component handle the error directly.
+    const url = originalRequest.url || '';
+    const isAuthEndpoint = /\/auth\/(login|register|forgot-password)/.test(url);
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
 
       try {
