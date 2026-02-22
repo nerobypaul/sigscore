@@ -7,6 +7,7 @@ import { useToast } from '../components/Toast';
 import ActivityTimeline from '../components/ActivityTimeline';
 import CustomFieldsDisplay from '../components/CustomFieldsDisplay';
 import { CompanyHoverCard } from '../components/HoverCard';
+import Notes from '../components/Notes';
 
 export default function ContactDetail() {
   useEffect(() => { document.title = 'Contact Detail — Sigscore'; }, []);
@@ -152,6 +153,9 @@ export default function ContactDetail() {
 
           {/* Custom Fields */}
           <CustomFieldsDisplay entityType="contact" entityId={id!} />
+
+          {/* Team Notes */}
+          <Notes entityType="contact" entityId={id!} />
 
           {/* Identity Resolution */}
           <IdentitySection contactId={id!} />

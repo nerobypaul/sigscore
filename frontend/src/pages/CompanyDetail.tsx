@@ -11,6 +11,7 @@ import AccountTimeline from '../components/AccountTimeline';
 import AIBriefPanel from '../components/AIBriefPanel';
 import ScoreTrendChart from '../components/ScoreTrendChart';
 import CustomFieldsDisplay from '../components/CustomFieldsDisplay';
+import Notes from '../components/Notes';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -494,6 +495,9 @@ function OverviewTab({ companyId, company, score, signals, activities, contacts,
             </div>
           </div>
         )}
+
+        {/* Team Notes */}
+        <Notes entityType="company" entityId={companyId} />
 
         {/* Custom Fields */}
         <CustomFieldsDisplay entityType="company" entityId={companyId} />

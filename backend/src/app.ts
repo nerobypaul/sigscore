@@ -36,6 +36,7 @@ import analyticsRoutes from './routes/analytics';
 import workflowRoutes from './routes/workflows';
 import connectorRoutes from './routes/connectors';
 import segmentWebhookRoutes from './routes/segment-webhook';
+import resendWebhookRoutes from './routes/resend-webhooks';
 import slackInteractionsRoutes from './routes/slack-interactions';
 import bulkRoutes from './routes/bulk';
 import notificationRoutes from './routes/notifications';
@@ -79,6 +80,7 @@ import seoRoutes from './routes/seo';
 import changelogRoutes from './routes/changelog';
 import anomalyRoutes from './routes/anomalies';
 import signalPatternRoutes from './routes/signal-patterns';
+import noteRoutes from './routes/notes';
 import { apiUsageTracker } from './middleware/api-usage';
 import { requestIdMiddleware } from './middleware/request-id';
 import { sentryErrorHandler } from './utils/sentry';
@@ -174,6 +176,7 @@ app.use('/api/v1/sources', signalSourceRoutes);
 // more specific /webhooks paths take precedence.
 app.use('/api/v1/webhooks/github', githubWebhookRoutes);
 app.use('/api/v1/webhooks/segment', segmentWebhookRoutes);
+app.use('/api/v1/webhooks/resend', resendWebhookRoutes);
 app.use('/api/v1/webhooks/slack', slackInteractionsRoutes);
 app.use('/api/v1/webhooks/subscribe', webhookSubscriptionRoutes);
 
@@ -226,6 +229,9 @@ app.use('/api/v1/invitations', invitationRoutes);
 
 // API routes — Audit Log
 app.use('/api/v1/audit', auditRoutes);
+
+// API routes — Notes (team collaboration)
+app.use('/api/v1/notes', noteRoutes);
 
 // API routes — Saved Views
 app.use('/api/v1/views', savedViewRoutes);

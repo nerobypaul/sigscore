@@ -43,6 +43,7 @@ model User {
   invitations              Invitation[]
   accountAlertRules        AccountAlertRule[]
   accountReports           AccountReport[]
+  notes                    Note[]
 
   @@index([email])
   @@map("users")
@@ -91,6 +92,7 @@ model Organization {
   customFieldDefinitions CustomFieldDefinition[]
   accountAlertRules      AccountAlertRule[]
   accountReports         AccountReport[]
+  notes                  Note[]
 
   @@index([slug])
   @@index([slug, createdAt])
@@ -972,12 +974,14 @@ model EmailSend {
   id           String   @id @default(uuid())
   enrollmentId String
   stepId       String
-  status       String   @default("pending") // pending, sent, delivered, opened, clicked, bounced, failed
+  status       String   @default("pending") // pending, sent, delivered, opened, clicked, bounced, complained, failed
   sentAt       DateTime?
+  deliveredAt  DateTime?
   openedAt     DateTime?
   clickedAt    DateTime?
   bouncedAt    DateTime?
-  messageId    String?  // from email provider
+  complainedAt DateTime?
+  messageId    String?  // Resend message ID for webhook correlation
   errorMessage String?
   createdAt    DateTime @default(now())
 
@@ -987,6 +991,7 @@ model EmailSend {
   @@index([enrollmentId])
   @@index([stepId])
   @@index([status])
+  @@index([messageId])
   @@map("email_sends")
 }
 
@@ -1195,4 +1200,29 @@ model AccountReport {
   @@map("account_reports")
   @@index([organizationId])
   @@index([companyId])
+}
+
+// ============================================================
+// NOTES — Team collaboration notes on entities
+// ============================================================
+
+model Note {
+  id             String   @id @default(cuid())
+  organizationId String
+  authorId       String
+  entityType     String   // 'company', 'contact', 'deal'
+  entityId       String
+  content        String
+  mentions       String[] // user IDs mentioned via @[Name](userId)
+  isPinned       Boolean  @default(false)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  author         User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, entityType, entityId, createdAt(sort: Desc)])
+  @@index([organizationId, authorId])
+  @@map("notes")
 }
