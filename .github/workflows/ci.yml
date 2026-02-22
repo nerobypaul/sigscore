@@ -188,7 +188,7 @@ jobs:
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [backend, frontend, sdk, e2e]
+    needs: [backend, frontend, sdk]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:

@@ -45,7 +45,7 @@ export async function createTestUser(request: APIRequestContext): Promise<TestUs
   // Create organization
   const orgRes = await request.post(`${API_BASE}/organizations`, {
     headers: { Authorization: `Bearer ${accessToken}` },
-    data: { name: `E2E Org ${id}` },
+    data: { name: `E2E Org ${id}-${timestamp}` },
   });
   if (!orgRes.ok()) {
     throw new Error(`Org creation failed: ${orgRes.status()} ${await orgRes.text()}`);
