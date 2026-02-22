@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const isRemote = !!process.env.E2E_BASE_URL;
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
@@ -22,18 +24,21 @@ export default defineConfig({
     },
   ],
 
-  webServer: [
-    {
-      command: 'npm run dev --workspace=backend',
-      url: 'http://localhost:4000/health',
-      reuseExistingServer: !process.env.CI,
-      timeout: 30_000,
-    },
-    {
-      command: 'npm run dev --workspace=frontend',
-      url: 'http://localhost:5173',
-      reuseExistingServer: !process.env.CI,
-      timeout: 30_000,
-    },
-  ],
+  // Skip local webServer startup when testing against a remote URL
+  ...(isRemote ? {} : {
+    webServer: [
+      {
+        command: 'npm run dev --workspace=backend',
+        url: 'http://localhost:4000/health',
+        reuseExistingServer: !process.env.CI,
+        timeout: 30_000,
+      },
+      {
+        command: 'npm run dev --workspace=frontend',
+        url: 'http://localhost:5173',
+        reuseExistingServer: !process.env.CI,
+        timeout: 30_000,
+      },
+    ],
+  }),
 });
