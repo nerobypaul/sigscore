@@ -330,17 +330,18 @@ async function seedFullDemoData(
     });
   });
 
-  // Prepare score snapshot data (CPU-only)
+  // Prepare score snapshot data (CPU-only) — 45 days of history for rich trend charts
+  const SNAPSHOT_DAYS = 45;
   const snapshotData: Prisma.ScoreSnapshotCreateManyInput[] = [];
   companyDefs.forEach((def, companyIdx) => {
     const currentScore = def.score;
     let startOffset: number;
     switch (def.trend) {
       case 'RISING':
-        startOffset = currentScore >= 80 ? -18 : -12;
+        startOffset = currentScore >= 80 ? -25 : -18;
         break;
       case 'FALLING':
-        startOffset = 10;
+        startOffset = 15;
         break;
       case 'STABLE':
       default:
@@ -348,8 +349,8 @@ async function seedFullDemoData(
         break;
     }
     const startScore = Math.max(0, Math.min(100, currentScore + startOffset));
-    for (let day = 14; day >= 1; day--) {
-      const progress = (14 - day) / 13;
+    for (let day = SNAPSHOT_DAYS; day >= 1; day--) {
+      const progress = (SNAPSHOT_DAYS - day) / (SNAPSHOT_DAYS - 1);
       const interpolated = startScore + (currentScore - startScore) * progress;
       const varianceRange = def.trend === 'STABLE' ? 2 : 4;
       const variance = (Math.random() * 2 - 1) * varianceRange;
@@ -842,6 +843,141 @@ async function seedFullDemoData(
       outputTokens: 590,
     },
   }),
+  ]);
+
+  // ── Anomaly Notifications + ICP Settings (parallel) ──────────────────────
+  // Anomalies are stored as Notification records with type='signal_anomaly'.
+  // ICP definitions are stored in organization.settings.icpDefinitions JSON.
+
+  const anomalyDefs: Array<{
+    companyIdx: number;
+    anomalyType: 'SPIKE' | 'DROP';
+    severity: 'moderate' | 'high';
+    todayCount: number;
+    mean: number;
+    stddev: number;
+    zScore: number;
+    hoursAgo: number;
+  }> = [
+    // Arcline Tools — signal spike (high severity, 3.2x normal)
+    { companyIdx: 0, anomalyType: 'SPIKE', severity: 'high', todayCount: 48, mean: 15, stddev: 4.2, zScore: 7.86, hoursAgo: 3 },
+    // NovaCLI — signal spike (moderate, npm download burst)
+    { companyIdx: 1, anomalyType: 'SPIKE', severity: 'moderate', todayCount: 28, mean: 12, stddev: 5.1, zScore: 3.14, hoursAgo: 8 },
+    // CloudForge — signal spike (moderate, docs traffic surge)
+    { companyIdx: 2, anomalyType: 'SPIKE', severity: 'moderate', todayCount: 22, mean: 9, stddev: 3.8, zScore: 3.42, hoursAgo: 18 },
+    // DataPipe Labs — signal drop (moderate, sudden decrease)
+    { companyIdx: 3, anomalyType: 'DROP', severity: 'moderate', todayCount: 1, mean: 6, stddev: 2.1, zScore: -2.38, hoursAgo: 26 },
+    // Synthwave AI — signal spike (high, API call explosion)
+    { companyIdx: 4, anomalyType: 'SPIKE', severity: 'high', todayCount: 19, mean: 4, stddev: 1.8, zScore: 8.33, hoursAgo: 5 },
+    // Lumina Systems — signal drop (moderate, went quiet)
+    { companyIdx: 6, anomalyType: 'DROP', severity: 'moderate', todayCount: 0, mean: 3, stddev: 1.2, zScore: -2.5, hoursAgo: 48 },
+    // ByteShift — signal spike (moderate, weekend hackathon)
+    { companyIdx: 5, anomalyType: 'SPIKE', severity: 'moderate', todayCount: 12, mean: 3, stddev: 1.5, zScore: 6.0, hoursAgo: 36 },
+  ];
+
+  const anomalyNotifications: Prisma.NotificationCreateManyInput[] = anomalyDefs.map((ad) => {
+    const companyName = companyDefs[ad.companyIdx].name;
+    const companyId = companies[ad.companyIdx].id;
+    const expectedMin = Math.max(0, Math.round(ad.mean - 2 * ad.stddev));
+    const expectedMax = Math.round(ad.mean + 2 * ad.stddev);
+
+    const emoji = ad.anomalyType === 'SPIKE' ? 'Signal spike' : 'Signal drop';
+    const severityLabel = ad.severity === 'high' ? 'significant' : 'notable';
+
+    const title = `${emoji} detected for ${companyName}`;
+    const bodyDescription = ad.anomalyType === 'SPIKE'
+      ? `${companyName} has ${ad.todayCount} signals today, which is a ${severityLabel} increase above the expected range of ${expectedMin}-${expectedMax} (avg: ${ad.mean}/day).`
+      : `${companyName} has only ${ad.todayCount} signals today, which is a ${severityLabel} decrease below the expected range of ${expectedMin}-${expectedMax} (avg: ${ad.mean}/day).`;
+
+    const body = JSON.stringify({
+      anomalyType: ad.anomalyType,
+      severity: ad.severity,
+      todayCount: ad.todayCount,
+      mean: ad.mean,
+      stddev: ad.stddev,
+      expectedMin,
+      expectedMax,
+      zScore: ad.zScore,
+      accountName: companyName,
+      description: bodyDescription,
+    });
+
+    const createdAt = new Date(now);
+    createdAt.setHours(createdAt.getHours() - ad.hoursAgo);
+
+    return {
+      organizationId,
+      userId,
+      type: 'signal_anomaly',
+      title,
+      body,
+      entityType: 'company',
+      entityId: companyId,
+      read: ad.hoursAgo > 24,
+      createdAt,
+    };
+  });
+
+  const icpDefinitions = [
+    {
+      id: `icp_demo_1_${Date.now()}`,
+      organizationId,
+      name: 'High-Intent Series A DevTools',
+      description: 'Developer tool companies showing strong adoption signals with growing teams',
+      criteria: {
+        minScore: 60,
+        signalTypes: ['github_star', 'github_pr', 'npm_download', 'api_call', 'feature_usage'],
+        minSignalCount: 50,
+        engagementPatterns: ['accelerating', 'steady'],
+        industries: ['Developer Tools', 'Cloud Infrastructure'],
+        companySize: ['STARTUP', 'SMALL'],
+      },
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: `icp_demo_2_${Date.now() + 1}`,
+      organizationId,
+      name: 'Enterprise Expansion Targets',
+      description: 'Medium to large companies evaluating enterprise features with multiple active users',
+      criteria: {
+        minScore: 50,
+        signalTypes: ['page_view', 'api_call', 'docs_read', 'feature_usage'],
+        minSignalCount: 30,
+        engagementPatterns: ['accelerating', 'steady'],
+        industries: ['Cloud Infrastructure', 'Data Infrastructure', 'AI/ML Infrastructure'],
+        companySize: ['MEDIUM', 'LARGE'],
+      },
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: `icp_demo_3_${Date.now() + 2}`,
+      organizationId,
+      name: 'Open Source Champions',
+      description: 'Accounts with strong GitHub activity indicating community-driven adoption',
+      criteria: {
+        minScore: 40,
+        signalTypes: ['github_star', 'github_fork', 'github_pr', 'github_issue', 'github_commit'],
+        minSignalCount: 20,
+        engagementPatterns: ['accelerating', 'steady', 'decelerating'],
+      },
+      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+
+  await Promise.all([
+    // Anomaly notifications (batch)
+    prisma.notification.createMany({ data: anomalyNotifications }),
+    // Update org settings to include ICP definitions
+    prisma.organization.update({
+      where: { id: organizationId },
+      data: {
+        settings: {
+          plan: 'pro',
+          demo: true,
+          icpDefinitions,
+        } as unknown as Prisma.InputJsonValue,
+      },
+    }),
   ]);
 
   return {
