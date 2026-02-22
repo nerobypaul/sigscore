@@ -1,6 +1,9 @@
 import { APIRequestContext } from '@playwright/test';
 
-const API_BASE = process.env.E2E_API_URL || 'http://localhost:4000/api/v1';
+// Derive API base from E2E_BASE_URL (production SPA serves API at same origin)
+// or fall back to E2E_API_URL / localhost for local dev
+const API_BASE = process.env.E2E_API_URL
+  || (process.env.E2E_BASE_URL ? `${process.env.E2E_BASE_URL}/api/v1` : 'http://localhost:4000/api/v1');
 
 export interface TestUser {
   email: string;

@@ -26,7 +26,7 @@ test.describe('Authentication flows', () => {
       await page.getByLabel('First name').fill(firstName);
       await page.getByLabel('Last name').fill(lastName);
       await page.getByLabel('Email').fill(email);
-      await page.getByLabel('Password').fill(password);
+      await page.locator('#password').fill(password);
 
       // Submit
       await page.getByRole('button', { name: /create account/i }).click();
@@ -75,7 +75,7 @@ test.describe('Authentication flows', () => {
       await page.goto('/login');
 
       await page.getByLabel('Email').fill('nonexistent@test.sigscore.dev');
-      await page.getByLabel('Password').fill('WrongPassword999!');
+      await page.locator('#password').fill('WrongPassword999!');
       await page.getByRole('button', { name: /sign in/i }).click();
 
       // The error alert should appear
@@ -96,7 +96,7 @@ test.describe('Authentication flows', () => {
       await page.goto('/login');
 
       await page.getByLabel('Email').fill(user.email);
-      await page.getByLabel('Password').fill('CompletelyWrong!');
+      await page.locator('#password').fill('CompletelyWrong!');
       await page.getByRole('button', { name: /sign in/i }).click();
 
       const errorAlert = page.locator('.bg-red-50.text-red-700');
