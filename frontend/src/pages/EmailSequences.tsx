@@ -5,7 +5,22 @@ import { useToast } from '../components/Toast';
 import Spinner from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
 
-interface Sequence {
+interface SequenceStats {
+  totalSent: number;
+  totalDelivered: number;
+  totalOpened: number;
+  totalClicked: number;
+  totalBounced: number;
+  totalFailed: number;
+  openRate: number;
+  clickRate: number;
+  bounceRate: number;
+  totalEnrollments: number;
+  activeEnrollments: number;
+  completedEnrollments: number;
+}
+
+interface SequenceRaw {
   id: string;
   name: string;
   status: 'active' | 'draft' | 'paused' | 'archived';
@@ -13,12 +28,39 @@ interface Sequence {
   fromName?: string | null;
   fromEmail?: string | null;
   replyTo?: string | null;
+  steps?: unknown[];
+  _count?: { enrollments: number };
+  stats?: SequenceStats;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Sequence {
+  id: string;
+  name: string;
+  status: 'active' | 'draft' | 'paused' | 'archived';
+  triggerType: string;
   stepCount: number;
   enrolledCount: number;
   openRate: number;
   clickRate: number;
   createdAt: string;
   updatedAt: string;
+}
+
+function mapSequence(raw: SequenceRaw): Sequence {
+  return {
+    id: raw.id,
+    name: raw.name,
+    status: raw.status,
+    triggerType: raw.triggerType,
+    stepCount: raw.steps?.length ?? 0,
+    enrolledCount: raw._count?.enrollments ?? raw.stats?.totalEnrollments ?? 0,
+    openRate: raw.stats?.openRate ?? 0,
+    clickRate: raw.stats?.clickRate ?? 0,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+  };
 }
 
 interface Pagination {
@@ -69,7 +111,8 @@ export default function EmailSequences() {
       const params: Record<string, string | number> = { page, limit: 20 };
       if (statusFilter !== 'all') params.status = statusFilter;
       const { data } = await api.get('/sequences', { params });
-      setSequences(data.sequences || []);
+      const rawSequences: SequenceRaw[] = data.sequences || [];
+      setSequences(rawSequences.map(mapSequence));
       setPagination(data.pagination || null);
     } catch {
       setSequences([]);
@@ -282,8 +325,8 @@ export default function EmailSequences() {
                       </td>
                       <td className="py-3 px-4 text-right text-gray-600">{seq.stepCount}</td>
                       <td className="py-3 px-4 text-right text-gray-600">{seq.enrolledCount}</td>
-                      <td className="py-3 px-4 text-right text-gray-600">{(seq.openRate * 100).toFixed(1)}%</td>
-                      <td className="py-3 px-4 text-right text-gray-600">{(seq.clickRate * 100).toFixed(1)}%</td>
+                      <td className="py-3 px-4 text-right text-gray-600">{seq.openRate}%</td>
+                      <td className="py-3 px-4 text-right text-gray-600">{seq.clickRate}%</td>
                     </tr>
                   ))}
                 </tbody>

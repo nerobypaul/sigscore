@@ -69,6 +69,7 @@ export const config = {
 
   email: {
     resendApiKey: process.env.RESEND_API_KEY || '',
+    resendWebhookSecret: process.env.RESEND_WEBHOOK_SECRET || '',
     fromAddress: process.env.EMAIL_FROM || 'Sigscore <notifications@sigscore.dev>',
   },
 

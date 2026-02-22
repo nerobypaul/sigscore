@@ -697,14 +697,23 @@ export async function getSequenceStats(sequenceId: string) {
     prisma.emailEnrollment.count({ where: { sequenceId, status: 'completed' } }),
     prisma.emailSend.findMany({
       where: { enrollment: { sequenceId } },
-      select: { status: true },
+      select: { status: true, openedAt: true, clickedAt: true },
     }),
   ]);
 
+  // Count sent emails (anything that left the pending/failed state)
   const totalSent = sends.filter((s) => s.status !== 'pending' && s.status !== 'failed').length;
-  const totalOpened = sends.filter((s) => s.status === 'opened' || s.status === 'clicked').length;
-  const totalClicked = sends.filter((s) => s.status === 'clicked').length;
+  // Use timestamp fields for opens/clicks — more accurate than status alone because
+  // status only reflects the latest lifecycle state (e.g., a clicked email has status
+  // "clicked" but also has an openedAt timestamp).
+  const totalDelivered = sends.filter((s) =>
+    s.status === 'delivered' || s.status === 'opened' || s.status === 'clicked' ||
+    s.openedAt !== null || s.clickedAt !== null,
+  ).length;
+  const totalOpened = sends.filter((s) => s.openedAt !== null).length;
+  const totalClicked = sends.filter((s) => s.clickedAt !== null).length;
   const totalBounced = sends.filter((s) => s.status === 'bounced').length;
+  const totalComplained = sends.filter((s) => s.status === 'complained').length;
   const totalFailed = sends.filter((s) => s.status === 'failed').length;
 
   return {
@@ -712,9 +721,11 @@ export async function getSequenceStats(sequenceId: string) {
     activeEnrollments,
     completedEnrollments,
     totalSent,
+    totalDelivered,
     totalOpened,
     totalClicked,
     totalBounced,
+    totalComplained,
     totalFailed,
     openRate: totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) : 0,
     clickRate: totalSent > 0 ? Math.round((totalClicked / totalSent) * 100) : 0,

@@ -25,11 +25,18 @@ interface Enrollment {
 
 interface SequenceStats {
   totalSent: number;
+  totalDelivered: number;
+  totalOpened: number;
+  totalClicked: number;
+  totalBounced: number;
+  totalComplained: number;
+  totalFailed: number;
   openRate: number;
   clickRate: number;
   bounceRate: number;
+  totalEnrollments: number;
   activeEnrollments: number;
-  completed: number;
+  completedEnrollments: number;
 }
 
 interface Sequence {
@@ -556,11 +563,12 @@ export default function EmailSequenceDetail() {
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               {([
                 { label: 'Total Sent', value: stats.totalSent.toLocaleString(), color: 'bg-blue-500' },
-                { label: 'Open Rate', value: `${(stats.openRate * 100).toFixed(1)}%`, color: 'bg-green-500' },
-                { label: 'Click Rate', value: `${(stats.clickRate * 100).toFixed(1)}%`, color: 'bg-indigo-500' },
-                { label: 'Bounce Rate', value: `${(stats.bounceRate * 100).toFixed(1)}%`, color: 'bg-red-500' },
+                { label: 'Total Delivered', value: (stats.totalDelivered ?? 0).toLocaleString(), color: 'bg-cyan-500' },
+                { label: 'Open Rate', value: `${stats.openRate}%`, color: 'bg-green-500' },
+                { label: 'Click Rate', value: `${stats.clickRate}%`, color: 'bg-indigo-500' },
+                { label: 'Bounce Rate', value: `${stats.bounceRate}%`, color: 'bg-red-500' },
                 { label: 'Active Enrollments', value: stats.activeEnrollments.toLocaleString(), color: 'bg-purple-500' },
-                { label: 'Completed', value: stats.completed.toLocaleString(), color: 'bg-emerald-500' },
+                { label: 'Completed', value: (stats.completedEnrollments ?? 0).toLocaleString(), color: 'bg-emerald-500' },
               ] as const).map((card) => (
                 <div key={card.label} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
                   <div className="flex items-center gap-3">
