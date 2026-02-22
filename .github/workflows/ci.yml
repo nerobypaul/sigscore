@@ -151,7 +151,7 @@ jobs:
     needs: [backend, frontend]
 
     env:
-      E2E_BASE_URL: https://energetic-wisdom-production.up.railway.app
+      E2E_BASE_URL: https://sigscore.dev
       CI: true
 
     steps:
